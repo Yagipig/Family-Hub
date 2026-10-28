@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #fbf6ec;
+  --color-ivory: #fffdf8;
+  --color-wine: #7b1e2b;
+  --color-wine-dark: #5c1520;
+  --color-champagne: #c9a96b;
+  --color-champagne-soft: #f1e6cc;
+  --color-ink: #2a1a1a;
+  --color-ink-soft: #5a4646;
+  --color-danger: #a4161a;
+  --color-ok: #1f6b3a;
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+}
+
+html { font-size: 18px; }
+body { background: var(--color-cream); color: var(--color-ink); font-family: var(--font-sans); }
+:focus-visible { outline: 3px solid var(--color-champagne); outline-offset: 2px; }
+
+/* In / lưu PDF (ví dụ cây gia phả): bỏ thanh điều hướng và các bảng điều khiển */
+@media print {
+  header, nav, .no-print, .react-flow__panel, .react-flow__minimap { display: none !important; }
+  body { background: #fff !important; }
+  main { max-width: none !important; padding: 0 !important; }
+}

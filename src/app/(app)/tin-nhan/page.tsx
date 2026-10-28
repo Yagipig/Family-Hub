@@ -1,0 +1,118 @@
+import Link from "next/link";
+import { requireSession } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { chatAllowed, loadUserTimezone } from "@/lib/chat-server";
+import { formatListTime, type ConversationRow } from "@/lib/chat";
+import { normalizeSearch, unreadLabel } from "@/lib/chat-text";
+import { Alert, Card, buttonClass } from "@/components/ui";
+import { ChatAutoRefresh } from "@/components/ChatAutoRefresh";
+
+export const metadata = { title: "Tin nhắn" };
+
+const KIND_LABEL: Record<ConversationRow["kind"], string> = {
+  family: "Cả gia đình",
+  branch: "Nhóm nhánh",
+  group: "Nhóm",
+  direct: "Nhắn riêng",
+};
+
+export default async function ChatListPage({ searchParams }: { searchParams: Promise<{ q?: string; ok?: string; error?: string }> }) {
+  const session = await requireSession();
+  const { q = "", ok, error } = await searchParams;
+  const supabase = await createClient();
+
+  if (!(await chatAllowed(supabase, session.familyId, "view"))) {
+    return (
+      <>
+        <h1 className="text-3xl font-bold text-wine">Tin nhắn</h1>
+        <Alert kind="error">Tài khoản của bạn (khách) chưa được dùng tính năng Tin nhắn. Hãy liên hệ quản trị viên nếu cần.</Alert>
+      </>
+    );
+  }
+
+  // Đảm bảo nhóm cả gia đình / nhóm nhánh đã có (lười, idempotent; trigger ở CSDL đã làm khi quyền thay đổi)
+  await supabase.rpc("ensure_chat_groups", { p_family: session.familyId });
+
+  const [{ data }, tz] = await Promise.all([
+    supabase.from("chat_conversations_v").select("*").order("last_activity_at", { ascending: false }).limit(200),
+    loadUserTimezone(supabase, session.userId),
+  ]);
+  const needle = normalizeSearch(q.slice(0, 80));
+  const all = ((data ?? []) as ConversationRow[])
+    // tin nhắn riêng chưa có tin nào thì chưa hiện
+    .filter((c) => c.kind !== "direct" || c.last_preview !== null);
+  const rows = needle ? all.filter((c) => normalizeSearch(c.title).includes(needle)) : all;
+  const totalUnread = all.reduce((n, c) => n + (c.muted ? 0 : c.unread_count), 0);
+
+  return (
+    <>
+      <ChatAutoRefresh />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold text-wine">
+          Tin nhắn{totalUnread > 0 && <span className="ml-3 rounded-full bg-wine px-3 py-1 align-middle text-base text-white">{unreadLabel(totalUnread)} chưa đọc</span>}
+        </h1>
+        <Link href="/tin-nhan/moi" className={buttonClass}>Tin nhắn mới</Link>
+      </div>
+      {ok && <Alert kind="ok">{ok}</Alert>}
+      {error && <Alert kind="error">{error}</Alert>}
+
+      <form method="get" action="/tin-nhan" role="search" className="flex flex-wrap gap-2">
+        <label className="min-w-0 flex-1 text-base font-semibold">
+          <span className="sr-only">Tìm cuộc trò chuyện</span>
+          <input
+            name="q"
+            defaultValue={q}
+            maxLength={80}
+            placeholder="Tìm theo tên người hoặc nhóm…"
+            className="block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-base font-normal text-ink"
+          />
+        </label>
+        <button className={buttonClass}>Tìm</button>
+        {q && <Link href="/tin-nhan" className="inline-flex min-h-12 items-center px-3 text-base font-semibold text-wine underline">Xoá tìm kiếm</Link>}
+      </form>
+
+      {rows.length === 0 ? (
+        <Card>
+          <p className="text-lg text-ink-soft">
+            {needle ? "Không tìm thấy cuộc trò chuyện phù hợp." : "Chưa có cuộc trò chuyện nào. Bấm “Tin nhắn mới” để bắt đầu."}
+          </p>
+        </Card>
+      ) : (
+        <ul className="space-y-3" aria-label="Các cuộc trò chuyện">
+          {rows.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={`/tin-nhan/${c.id}`}
+                className="block rounded-2xl border border-champagne/60 bg-ivory p-4 shadow-sm hover:border-wine focus-visible:outline-none"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-3">
+                      <span className={`text-xl text-ink ${c.unread_count > 0 ? "font-bold" : "font-semibold"}`}>{c.title}</span>
+                      <span className="text-sm text-ink-soft">{KIND_LABEL[c.kind]}{c.kind !== "direct" ? ` · ${c.member_count} người` : ""}</span>
+                      {c.muted && <span className="text-sm text-ink-soft">· Đã tắt thông báo</span>}
+                    </div>
+                    <p className={`mt-1 truncate text-base ${c.unread_count > 0 ? "font-semibold text-ink" : "text-ink-soft"}`}>
+                      {c.last_preview ? `${c.last_sender_name ? c.last_sender_name + ": " : ""}${c.last_preview}` : "Chưa có tin nhắn"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className="text-sm text-ink-soft" suppressHydrationWarning>{c.last_preview ? formatListTime(c.last_activity_at, tz) : ""}</span>
+                    {c.unread_count > 0 && (
+                      <span
+                        className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-wine px-2 text-base font-bold text-white"
+                        aria-label={`${c.unread_count >= 100 ? "Hơn 99" : c.unread_count} tin chưa đọc`}
+                      >
+                        {unreadLabel(c.unread_count)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}

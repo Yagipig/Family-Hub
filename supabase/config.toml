@@ -1,0 +1,13 @@
+# Cau hinh Supabase CLI cho moi truong local. Cac gia tri khac dung mac dinh cua CLI.
+# Neu CLI bao thieu truong, chay `supabase init` o thu muc tam roi sao chep cac muc con thieu.
+project_id = "family-hub"
+
+[auth]
+# Khong cho dang ky cong khai: tai khoan chi duoc tao qua loi moi (server dung service_role).
+enable_signup = false
+enable_anonymous_sign_ins = false
+minimum_password_length = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

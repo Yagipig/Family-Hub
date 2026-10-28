@@ -1,0 +1,28 @@
+# Phụ thuộc & build
+node_modules
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+
+# BÍ MẬT — không bao giờ đưa lên GitHub
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.age
+age-key*
+age-identity*
+.vercel
+supabase/.temp
+supabase/.branches
+
+# Bản sao lưu cục bộ
+backups/
+*.dump
+*.sql.gz
+
+# Hệ thống
+.DS_Store
+Thumbs.db
