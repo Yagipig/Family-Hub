@@ -15,7 +15,8 @@ export function LoginForm() {
         <Field label="Mật khẩu" name="password" type="password" autoComplete="current-password" required />
         <SubmitButton pendingText="Đang đăng nhập…">Đăng nhập</SubmitButton>
         <p className="text-sm text-ink-soft">
-          Đây là trang riêng tư của gia đình. Muốn tham gia, hãy nhờ quản trị viên gửi cho bạn một liên kết mời.
+          Đây là trang riêng tư của gia đình. Nếu chưa có tài khoản, hãy mở liên kết mời mà
+          gia đình đã chia sẻ với bạn để đăng ký tham gia.
         </p>
       </form>
     </Card>
