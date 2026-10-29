@@ -154,3 +154,28 @@ export function applyEdit(list: LocalMessage[], id: string, body: string, edited
 export function startsNewDay(prev: LocalMessage | undefined, cur: LocalMessage, dayOf: (iso: string) => string): boolean {
   return !prev || dayOf(prev.created_at) !== dayOf(cur.created_at);
 }
+
+/**
+ * Cụm tin liên tiếp (kiểu Messenger): hai tin chữ kề nhau thuộc cùng một cụm khi cùng người gửi,
+ * cùng ngày theo múi giờ người xem. Tin hệ thống, khác người gửi, khác ngày, hoặc người gửi
+ * không xác định (đã rời gia đình) đều cắt cụm. Chỉ tin đầu cụm hiện tên + ảnh người gửi,
+ * chỉ tin cuối cụm hiện giờ gửi; các tin giữa cụm đứng sát nhau.
+ */
+export function sameGroup(a: LocalMessage | undefined, b: LocalMessage | undefined, dayOf: (iso: string) => string): boolean {
+  if (!a || !b) return false;
+  return (
+    a.kind === "text" && b.kind === "text" &&
+    a.sender_id != null && a.sender_id === b.sender_id &&
+    dayOf(a.created_at) === dayOf(b.created_at)
+  );
+}
+
+/** Tin này có mở đầu một cụm không (hiện tên + ảnh người gửi nếu là tin của người khác). */
+export function isGroupStart(prev: LocalMessage | undefined, cur: LocalMessage, dayOf: (iso: string) => string): boolean {
+  return cur.kind === "text" && !sameGroup(prev, cur, dayOf);
+}
+
+/** Tin này có kết thúc một cụm không (hiện giờ gửi ở dưới cụm). */
+export function isGroupEnd(cur: LocalMessage, next: LocalMessage | undefined, dayOf: (iso: string) => string): boolean {
+  return cur.kind === "text" && !sameGroup(cur, next, dayOf);
+}
