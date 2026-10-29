@@ -42,6 +42,15 @@ describe("Cau ho lo to", () => {
       expect(line.length).toBeGreaterThan(15);
     }
   });
+  it("moi cau ve la cau hat hai ve va ket bang 'la con so N!' (dieu ganh hat)", () => {
+    for (let n = 1; n <= 90; n++) {
+      const line = NUMBER_LINES[n];
+      // Hai ve ngan cach bang dau phay, du dai de hat ~8-10 giay, lo so o cuoi cau
+      expect(line, `cau so ${n} chua dung dieu`).toContain(", ");
+      expect(line.length).toBeGreaterThan(45);
+      expect(line.endsWith(`là con số ${n}!`)).toBe(true);
+    }
+  });
   it("cau them cua admin duoc tron vao va thay {n}", () => {
     const line = callLineFor(5, { chatter: 100, extraLines: ["Cau rieng cua nha minh: so {n}!"], rand: () => 0.999 });
     // rand cao: bo qua cau rieng cua so (neu co), chon cau o cuoi pool -> co the la cau admin hoac cau chung cuoi
