@@ -28,10 +28,10 @@ export async function POST(request: Request) {
   if (error) return see(PAGE, "error", memberError(error));
 
   const branchName = new Map(branches.map((b) => [b.id, b.name]));
-  const header = ["Họ và tên", "Tên thường gọi", "Giới tính", "Nhánh", "Đời", "Tên đời / bối", "Ngày sinh (dương)", "Ngày sinh (âm)",
+  const header = ["Họ và tên", "Tên thường gọi", "Tên gọi khác", "Giới tính", "Nhánh", "Đời", "Tên đời / bối", "Ngày sinh (dương)", "Ngày sinh (âm)",
     "Nhắc sinh nhật theo", "Tình trạng", "Ngày mất (dương)", "Ngày mất (âm)", "Quê quán", "Điện thoại", "Email"];
   const body = rows.map((m) => [
-    m.full_name, m.nickname, m.gender ? GENDER_LABELS[m.gender] : "", m.branch_id ? (branchName.get(m.branch_id) ?? "") : "",
+    m.full_name, m.nickname, m.alt_names, m.gender ? GENDER_LABELS[m.gender] : "", m.branch_id ? (branchName.get(m.branch_id) ?? "") : "",
     m.generation_no, m.generation_title,
     csvSolarDate(m.birth_solar_year, m.birth_solar_month, m.birth_solar_day),
     csvLunarDate(m.birth_lunar_year, m.birth_lunar_month, m.birth_lunar_day, m.birth_lunar_leap),
