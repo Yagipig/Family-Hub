@@ -75,6 +75,27 @@ export type TreePerson = {
   avatar: string | null;
   /** số đời nhập tay (generation_no), có thể null */
   gen: number | null;
+  /** thứ tự hiển thị admin xếp trong nhóm anh chị em (display_order); null = chưa xếp tay */
+  ord?: number | null;
+  /** ngày/tháng sinh dương (đã che theo quyền thì null) */
+  bm?: number | null;
+  bd?: number | null;
+  /** ngày sinh âm lịch (năm/tháng/ngày/tháng nhuận) */
+  ly?: number | null;
+  lm?: number | null;
+  ld?: number | null;
+  lleap?: boolean;
+  /** ngày/tháng mất dương và âm (đã che theo quyền thì null) */
+  dm?: number | null;
+  dd?: number | null;
+  dlm?: number | null;
+  dld?: number | null;
+  dleap?: boolean;
+  hometown?: string | null;
+  genTitle?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  email?: string | null;
 };
 
 export type TreeLink = { id: string; child: string; parent: string; kind: ParentKind };

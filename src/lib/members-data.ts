@@ -34,19 +34,31 @@ export async function loadBranches(supabase: Supa): Promise<BranchRow[]> {
 type TreeMemberRow = {
   id: string; full_name: string; nickname: string | null; gender: TreePerson["gender"]; avatar_path: string | null;
   branch_id: string | null; birth_solar_year: number | null; is_deceased: boolean; death_solar_year: number | null; generation_no: number | null;
+  display_order?: number | null;
+  birth_solar_month: number | null; birth_solar_day: number | null;
+  birth_lunar_year: number | null; birth_lunar_month: number | null; birth_lunar_day: number | null; birth_lunar_leap: boolean;
+  death_solar_month: number | null; death_solar_day: number | null;
+  death_lunar_month: number | null; death_lunar_day: number | null; death_lunar_leap: boolean;
+  hometown: string | null; generation_title: string | null; bio: string | null; phone: string | null; email: string | null;
 };
 
 export function toTreePerson(r: TreeMemberRow): TreePerson {
   return {
     id: r.id, name: r.full_name, nick: r.nickname, gender: r.gender, branchId: r.branch_id, by: r.birth_solar_year,
     dy: r.death_solar_year, dead: r.is_deceased, avatar: r.avatar_path, gen: r.generation_no,
+    ord: r.display_order ?? null,
+    bm: r.birth_solar_month, bd: r.birth_solar_day,
+    ly: r.birth_lunar_year, lm: r.birth_lunar_month, ld: r.birth_lunar_day, lleap: r.birth_lunar_leap,
+    dm: r.death_solar_month, dd: r.death_solar_day,
+    dlm: r.death_lunar_month, dld: r.death_lunar_day, dleap: r.death_lunar_leap,
+    hometown: r.hometown, genTitle: r.generation_title, bio: r.bio, phone: r.phone, email: r.email,
   };
 }
 
 export async function loadTreeData(supabase: Supa): Promise<{ people: TreePerson[]; links: TreeLink[]; partners: TreePartner[] }> {
   const [members, links, partners] = await Promise.all([
     fetchAll<TreeMemberRow>((a, b) => supabase.from("members_view")
-      .select("id, full_name, nickname, gender, avatar_path, branch_id, birth_solar_year, is_deceased, death_solar_year, generation_no")
+      .select("id, full_name, nickname, gender, avatar_path, branch_id, birth_solar_year, is_deceased, death_solar_year, generation_no, display_order, birth_solar_month, birth_solar_day, birth_lunar_year, birth_lunar_month, birth_lunar_day, birth_lunar_leap, death_solar_month, death_solar_day, death_lunar_month, death_lunar_day, death_lunar_leap, hometown, generation_title, bio, phone, email")
       .order("id").range(a, b)),
     fetchAll<ParentLinkRow>((a, b) => supabase.from("member_parent_links_v").select("id, child_id, parent_id, kind").order("id").range(a, b)),
     fetchAll<PartnershipRow>((a, b) => supabase.from("member_partnerships_v")

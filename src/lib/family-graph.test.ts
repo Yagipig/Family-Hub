@@ -19,6 +19,23 @@ const people = [
 const links = [L("dad", "gp"), L("dad", "gm"), L("uncle", "gp"), L("uncle", "gm"), L("a", "dad"), L("a", "mom"), L("b", "dad"), L("b", "mom")];
 const partners = [M("gp", "gm"), M("dad", "mom")];
 
+describe("thứ tự anh chị em theo display_order (admin xếp)", () => {
+  it("ord thắng năm sinh; người chưa được xếp tay đứng cuối nhóm", () => {
+    const ps = [
+      P("gp", "Ông", 1950), P("gm", "Bà", 1953),
+      { ...P("k1", "Con Một", 2001), ord: 20 },
+      { ...P("k2", "Con Hai", 2005), ord: 10 },
+      P("k3", "Con Ba", 1999),
+    ];
+    const ix = buildIndex(ps,
+      [L("k1", "gp"), L("k1", "gm"), L("k2", "gp"), L("k2", "gm"), L("k3", "gp"), L("k3", "gm")],
+      [M("gp", "gm")]);
+    expect(siblingsOf(ix, "k1").map((s) => s.id)).toEqual(["k2", "k3"]);
+    const u = buildUnions(ix).find((x) => x.parents.includes("gp"))!;
+    expect(u.children).toEqual(["k2", "k1", "k3"]);
+  });
+});
+
 describe("buildIndex", () => {
   it("bỏ quan hệ trỏ tới người không tồn tại, quan hệ trùng và tự trỏ", () => {
     const ix = buildIndex(people, [...links, L("x", "dad"), L("dad", "dad"), L("a", "dad")], [...partners, M("gp", "zzz"), M("gm", "gp")]);
