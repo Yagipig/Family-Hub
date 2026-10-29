@@ -39,6 +39,9 @@ export default async function LotoHome({ searchParams }: { searchParams: Promise
 async function Rooms({ tz, isAdmin, coin, userId }: { tz: string; isAdmin: boolean; coin: ReturnType<typeof resolveCoin>; userId: string }) {
   const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
+  // Dọn phòng trống: phòng chờ nào không có người chơi nào sau 5 phút thì tự hủy
+  // (RPC chạy phía máy chủ; lỗi nếu có cũng bỏ qua để sảnh vẫn hiện bình thường).
+  await supabase.rpc("loto_cleanup_empty_rooms");
   const { data } = await supabase.from("loto_rooms").select("id, title, code, status, prize_points, created_at, mode, win_rows, code_required, host_user, created_by")
     .order("created_at", { ascending: false }).limit(8);
   const rooms = (data ?? []) as Array<{ id: string; title: string; code: string; status: string; prize_points: number; created_at: string; mode: string; win_rows: number; code_required: boolean; host_user: string | null; created_by: string | null }>;
