@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { gamesAccess } from "@/lib/games/server";
+import { resolveCoin } from "@/lib/coins";
 import { Alert, Card, Field, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
@@ -20,7 +21,7 @@ export default async function LotoHome({ searchParams }: { searchParams: Promise
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Lô tô</h1>
-      <GamesBanner />
+      <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {access.state !== "ok" ? (
@@ -29,13 +30,14 @@ export default async function LotoHome({ searchParams }: { searchParams: Promise
           <Link href="/tro-choi" className={buttonGhostClass}>Về trang trò chơi</Link>
         </Card>
       ) : (
-        <Rooms tz={session.timezone} isAdmin={access.isAdmin} />
+        <Rooms tz={session.timezone} isAdmin={access.isAdmin} coin={resolveCoin(access.settings)} />
       )}
     </>
   );
 }
 
-async function Rooms({ tz, isAdmin }: { tz: string; isAdmin: boolean }) {
+async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin: ReturnType<typeof resolveCoin> }) {
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
   const { data } = await supabase.from("loto_rooms").select("id, title, code, status, prize_points, created_at")
     .order("created_at", { ascending: false }).limit(8);
@@ -63,7 +65,7 @@ async function Rooms({ tz, isAdmin }: { tz: string; isAdmin: boolean }) {
           <div>
             <h2 className="text-xl font-bold">{r.title}</h2>
             <p className="text-base text-ink-soft">
-              Mã <strong className="tracking-widest">{r.code}</strong> · {STATUS[r.status] ?? r.status} · Giải kinh {r.prize_points} điểm · {formatDateTime(r.created_at, tz)}
+              Mã <strong className="tracking-widest">{r.code}</strong> · {STATUS[r.status] ?? r.status} · Giải kinh {r.prize_points} {coinLower} · {formatDateTime(r.created_at, tz)}
             </p>
           </div>
           <Link href={`/tro-choi/lo-to/${r.id}`} className={buttonClass}>{r.status === "waiting" || r.status === "playing" ? "Vào phòng" : "Xem lại"}</Link>
