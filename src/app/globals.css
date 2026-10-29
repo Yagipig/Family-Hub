@@ -15,8 +15,11 @@
 }
 
 html { font-size: 18px; }
-body { background: var(--color-cream); color: var(--color-ink); font-family: var(--font-sans); }
+body { background: var(--color-cream); color: var(--color-ink); font-family: var(--font-sans); overflow-x: clip; }
 :focus-visible { outline: 3px solid var(--color-champagne); outline-offset: 2px; }
+/* Dien thoai: bo vet sang khi cham, anh/video khong tran khoi khung */
+* { -webkit-tap-highlight-color: transparent; }
+img, video { max-width: 100%; }
 
 /* In / lưu PDF (ví dụ cây gia phả): bỏ thanh điều hướng và các bảng điều khiển */
 @media print {

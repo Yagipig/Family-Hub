@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Family Hub",
-    short_name: "Family Hub",
+    name: "My Family",
+    short_name: "My Family",
     description: "Không gian riêng tư của gia đình",
     start_url: "/",
     display: "standalone",
