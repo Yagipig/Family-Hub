@@ -95,3 +95,59 @@ export function completedRows(card: readonly number[], called: ReadonlySet<numbe
 export function isKinh(card: readonly number[], called: ReadonlySet<number> | readonly number[]): boolean {
   return completedRows(card, called).length > 0;
 }
+
+/** Bang co "sap kinh" khong: da du winRows-1 hang va con mot hang chi thieu dung 1 so. */
+export function isNearWin(card: readonly number[], called: readonly number[], winRows: number): boolean {
+  const set = new Set(called);
+  if (completedRows(card, set).length < winRows - 1) return false;
+  return lotoRows(card).some((row) => row.filter((v) => !set.has(v)).length === 1);
+}
+
+/**
+ * Xep lai bo cuc GIU NGUYEN dung 15 con so cua to: moi so thuoc ve mot cot co dinh theo dai so,
+ * chi thay doi so nam o hang nao (trong cot: so nho o tren). Tim cach xep bang quay lui ngau nhien
+ * sao cho moi hang van co dung 5 so. Tra ve to moi hop le, hoac null neu khong tim duoc (rat hiem).
+ */
+export function relayoutLotoCard(card: readonly number[], randBelow: (k: number) => number): LotoCard | null {
+  if (!isValidLotoCard(card)) return null;
+  // Gom so theo cot (da tang dan trong cot do to hop le).
+  const byCol: number[][] = Array.from({ length: LOTO_COLS }, () => []);
+  for (let c = 0; c < LOTO_COLS; c++) {
+    for (let r = 0; r < LOTO_ROWS; r++) {
+      const v = card[r * LOTO_COLS + c];
+      if (v !== 0) byCol[c].push(v);
+    }
+  }
+  const shuffled = <T,>(arr: T[]): T[] => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) { const j = randBelow(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  };
+  // Thu nhieu lan: moi lan xao thu tu cot + thu tu hang ung vien roi tham lam co quay lui nhe.
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const rowFree = new Array<number>(LOTO_ROWS).fill(LOTO_PER_ROW);
+    const place: number[][] = Array.from({ length: LOTO_COLS }, () => []);
+    let ok = true;
+    for (const c of shuffled(Array.from({ length: LOTO_COLS }, (_, i) => i))) {
+      const k = byCol[c].length;
+      const combos: number[][] = [];
+      for (let mask = 0; mask < (1 << LOTO_ROWS); mask++) {
+        const rows = [0, 1, 2].filter((r) => mask & (1 << r));
+        if (rows.length === k) combos.push(rows);
+      }
+      const candidates = shuffled(combos).filter((rows) => rows.every((r) => rowFree[r] > 0));
+      if (candidates.length === 0) { ok = false; break; }
+      const rows = candidates[0];
+      for (const r of rows) rowFree[r]--;
+      place[c] = rows;
+    }
+    if (!ok || rowFree.some((f) => f !== 0)) continue;
+    const out = new Array<number>(LOTO_COLS * LOTO_ROWS).fill(0);
+    for (let c = 0; c < LOTO_COLS; c++) {
+      const rows = [...place[c]].sort((a, b) => a - b);
+      byCol[c].forEach((v, i) => { out[rows[i] * LOTO_COLS + c] = v; });
+    }
+    if (isValidLotoCard(out)) return out;
+  }
+  return null;
+}

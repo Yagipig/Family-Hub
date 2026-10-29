@@ -39,6 +39,13 @@ const MESSAGES: Array<[RegExp, string]> = [
   [/not_paused/, "Ván không ở trạng thái tạm dừng."],
   [/wrong_mode/, "Phòng này không phải phòng lô tô truyền thống."],
   [/not_member/, "Người được chuyển không còn là thành viên gia đình."],
+  [/board_not_found/, "Không tìm thấy bảng tỉnh này."],
+  [/invalid_grid/, "Bảng chưa hợp lệ: mỗi hàng đúng 5 số, số thuộc đúng dải cột và tăng dần trong cột."],
+  [/no_history/, "Bảng này chưa có bản cũ nào trong lịch sử để khôi phục."],
+  [/bad_chatter/, "Tần suất câu hô vui phải từ 0 đến 100."],
+  [/bad_music_url/, "Đường dẫn nhạc chưa hợp lệ (phải bắt đầu bằng http hoặc https)."],
+  [/bad_extra_lines/, "Câu hô riêng chưa hợp lệ (tối đa 30 câu, mỗi câu tối đa 200 ký tự)."],
+  [/bad_loto_penalty/, "Mức phạt kinh sai phải từ 0 đến 100."],
 ];
 
 export function gamesError(error: { code?: string; message?: string } | null | undefined): string | null {

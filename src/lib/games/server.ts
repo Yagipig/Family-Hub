@@ -16,6 +16,10 @@ export type GameSettings = {
   bc_daily_loss_cap: number;
   bc_daily_win_cap: number;
   loto_false_penalty?: number;
+  /** Cau hinh am thanh lo to dot 2 (migration 20261104000006); thieu -> mac dinh. */
+  loto_music_url?: string | null;
+  loto_chatter?: number;
+  loto_extra_lines?: string[];
   /** Loại xu hiển thị thay cho "điểm" (cột có từ migration 20261104000002; thiếu → mặc định Điểm). */
   coin_unit?: string | null;
   coin_custom_name?: string | null;
