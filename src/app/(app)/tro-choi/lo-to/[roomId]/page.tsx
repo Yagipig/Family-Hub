@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { gamesAccess, profileNames } from "@/lib/games/server";
+import { resolveCoin } from "@/lib/coins";
 import { verifyLoto } from "@/lib/games/fair";
 import { Alert, Card, SelectField, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -32,7 +33,7 @@ export default async function LotoRoomPage({ params, searchParams }: {
     return (
       <>
         <h1 className="text-3xl font-bold text-wine">Lô tô</h1>
-        <GamesBanner />
+        <GamesBanner coinName={resolveCoin(access.settings).name} />
         <Card className="space-y-3">
           <p className="text-lg">{access.state === "off" ? "Trò chơi đang tạm tắt." : "Tài khoản khách không tham gia trò chơi."}</p>
           <Link href="/tro-choi" className={buttonGhostClass}>Về trang trò chơi</Link>
@@ -66,13 +67,13 @@ export default async function LotoRoomPage({ params, searchParams }: {
     <>
       <GamesAutoRefresh seconds={4} active={live} />
       <h1 className="text-3xl font-bold text-wine">{room.title}</h1>
-      <GamesBanner />
+      <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
 
       <Card className="space-y-2">
         <p className="text-lg">
-          Mã phòng <strong className="tracking-widest">{room.code}</strong> · <strong>{STATUS[room.status]}</strong> · Giải kinh {room.prize_points} điểm vui
+          Mã phòng <strong className="tracking-widest">{room.code}</strong> · <strong>{STATUS[room.status]}</strong> · Giải kinh {room.prize_points} {resolveCoin(access.settings).name.toLocaleLowerCase("vi-VN")}
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href={`/tro-choi/tv/${room.id}`} className={buttonGhostClass}>Chiếu lên TV</Link>
