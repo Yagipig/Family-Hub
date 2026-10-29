@@ -26,13 +26,17 @@ export default async function HomePage() {
   const upcoming = canEvents ? (await upcomingBirthdays(viewer, 30)).slice(0, 6) : [];
   const unreadCount = unread.count ?? 0;
 
-  const shortcuts = [];
-  for (const item of NAV) {
-    if (!item.enabled || item.href === "/" || item.href === "/cai-dat") continue;
-    if (item.roles && !item.roles.includes(session.role)) continue;
-    if (item.module && !(await can(session, item.module, "view"))) continue;
-    shortcuts.push(item);
-  }
+  // Song song như ở layout (và can() đã có cache theo request nên phần lớn là tra bộ nhớ).
+  const shortcuts = (
+    await Promise.all(
+      NAV.map(async (item) => {
+        if (!item.enabled || item.href === "/" || item.href === "/cai-dat") return null;
+        if (item.roles && !item.roles.includes(session.role)) return null;
+        if (item.module && !(await can(session, item.module, "view"))) return null;
+        return item;
+      }),
+    )
+  ).filter((item): item is (typeof NAV)[number] => item !== null);
 
   return (
     <>
