@@ -27,3 +27,14 @@ img, video { max-width: 100%; }
   body { background: #fff !important; }
   main { max-width: none !important; padding: 0 !important; }
 }
+
+/* Bóng lô tô vừa hô: nảy vào sân */
+@keyframes loto-pop {
+  0% { transform: scale(0.35); }
+  55% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+.animate-loto-pop { animation: loto-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-loto-pop { animation: none; }
+}

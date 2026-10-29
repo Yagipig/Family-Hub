@@ -81,7 +81,7 @@ export function LotoHostPanel({
       {msg && <p className="rounded-xl bg-champagne-soft px-4 py-2 text-base font-semibold">{msg}</p>}
       {status === "playing" && (
         <div className="flex flex-wrap gap-3">
-          <button type="button" disabled={busy} onClick={() => void callChain(1)} className={`${btn} bg-wine text-white hover:bg-wine-dark disabled:opacity-50`}>GỌI 1 SỐ</button>
+          <button type="button" disabled={busy} onClick={() => void callChain(1)} className={`${btn} rounded-full bg-[linear-gradient(180deg,#fde047,#f59e0b)] px-8 text-[#571c10] shadow-[0_5px_0_#b45309] transition-transform active:translate-y-0.5 disabled:opacity-50`}>🎲 GỌI 1 SỐ</button>
           <button type="button" disabled={busy} onClick={() => void callChain(3)} className={`${btn} bg-wine text-white hover:bg-wine-dark disabled:opacity-50`}>GỌI LIÊN TIẾP 3 SỐ</button>
           <button type="button" disabled={busy} onClick={() => void callChain(5)} className={`${btn} bg-wine text-white hover:bg-wine-dark disabled:opacity-50`}>GỌI LIÊN TIẾP 5 SỐ</button>
           {busy ? (
