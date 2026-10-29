@@ -30,18 +30,22 @@ export default async function LotoHome({ searchParams }: { searchParams: Promise
           <Link href="/tro-choi" className={buttonGhostClass}>Về trang trò chơi</Link>
         </Card>
       ) : (
-        <Rooms tz={session.timezone} isAdmin={access.isAdmin} coin={resolveCoin(access.settings)} />
+        <Rooms tz={session.timezone} isAdmin={access.isAdmin} coin={resolveCoin(access.settings)} userId={session.userId} />
       )}
     </>
   );
 }
 
-async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin: ReturnType<typeof resolveCoin> }) {
+async function Rooms({ tz, isAdmin, coin, userId }: { tz: string; isAdmin: boolean; coin: ReturnType<typeof resolveCoin>; userId: string }) {
   const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
-  const { data } = await supabase.from("loto_rooms").select("id, title, code, status, prize_points, created_at, mode, win_rows")
+  const { data } = await supabase.from("loto_rooms").select("id, title, code, status, prize_points, created_at, mode, win_rows, code_required, host_user, created_by")
     .order("created_at", { ascending: false }).limit(8);
-  const rooms = (data ?? []) as Array<{ id: string; title: string; code: string; status: string; prize_points: number; created_at: string; mode: string; win_rows: number }>;
+  const rooms = (data ?? []) as Array<{ id: string; title: string; code: string; status: string; prize_points: number; created_at: string; mode: string; win_rows: number; code_required: boolean; host_user: string | null; created_by: string | null }>;
+  const { data: inv } = rooms.length
+    ? await supabase.from("loto_invites").select("room_id").eq("user_id", userId).in("room_id", rooms.map((r) => r.id))
+    : { data: [] };
+  const invitedRooms = new Set(((inv ?? []) as Array<{ room_id: string }>).map((i) => i.room_id));
   return (
     <>
       <GamesAutoRefresh seconds={8} active={rooms.some((r) => r.status === "waiting" || r.status === "playing" || r.status === "paused")} />
@@ -78,6 +82,9 @@ async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin
             <label className="flex min-h-11 items-center gap-3 text-base font-semibold">
               <input type="checkbox" name="allowChange" className="h-6 w-6" /> Cho người chơi đổi bảng trước khi bắt đầu
             </label>
+            <label className="flex min-h-11 items-center gap-3 text-base font-semibold">
+              <input type="checkbox" name="codeRequired" defaultChecked className="h-6 w-6" /> Yêu cầu mã phòng để tham gia (người được mời vào thẳng; bỏ chọn = phòng mở, ai cũng vào được)
+            </label>
           </div>
           <div><SubmitButton>Tạo phòng — tôi làm chủ phòng</SubmitButton></div>
         </form>
@@ -88,17 +95,24 @@ async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin
           {isAdmin && <Link href="/admin/tro-choi" className={buttonClass}>Tạo phòng lô tô</Link>}
         </Card>
       )}
-      {rooms.map((r) => (
+      {rooms.map((r) => {
+        const mine = (r.host_user ?? r.created_by) === userId;
+        const invited = invitedRooms.has(r.id);
+        return (
         <Card key={r.id} className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold">{r.title}</h2>
             <p className="text-base text-ink-soft">
-              Mã <strong className="tracking-widest">{r.code}</strong> · {STATUS[r.status] ?? r.status}{r.mode === "province" ? ` · Truyền thống 63 tỉnh · thắng ${r.win_rows} hàng` : ""} · Giải kinh {r.prize_points} {coinLower} · {formatDateTime(r.created_at, tz)}
+              {(mine || isAdmin) && r.code_required ? <>Mã <strong className="tracking-widest">{r.code}</strong> · </> : null}
+              {!r.code_required ? <>Phòng mở (không cần mã) · </> : null}
+              {r.code_required && !mine && !isAdmin ? <>{invited ? <><strong className="text-wine">Bạn được mời</strong> · </> : <>Cần mã phòng · </>}</> : null}
+              {STATUS[r.status] ?? r.status}{r.mode === "province" ? ` · Truyền thống 63 tỉnh · thắng ${r.win_rows} hàng` : ""} · Giải kinh {r.prize_points} {coinLower} · {formatDateTime(r.created_at, tz)}
             </p>
           </div>
           <Link href={`/tro-choi/lo-to/${r.id}`} className={buttonClass}>{r.status === "waiting" || r.status === "playing" ? "Vào phòng" : "Xem lại"}</Link>
         </Card>
-      ))}
+        );
+      })}
     </>
   );
 }
