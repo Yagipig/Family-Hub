@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import { login } from "./actions";
 import { Alert, Card, Field } from "@/components/ui";
+import { PasswordField } from "@/components/PasswordField";
 import { SubmitButton } from "@/components/SubmitButton";
 
 export function LoginForm() {
@@ -12,7 +13,7 @@ export function LoginForm() {
         <h2 className="text-xl font-bold">Đăng nhập</h2>
         {state?.error && <Alert kind="error">{state.error}</Alert>}
         <Field label="Email" name="email" type="email" autoComplete="email" required />
-        <Field label="Mật khẩu" name="password" type="password" autoComplete="current-password" required />
+        <PasswordField label="Mật khẩu" name="password" autoComplete="current-password" required />
         <SubmitButton pendingText="Đang đăng nhập…">Đăng nhập</SubmitButton>
         <p className="text-sm text-ink-soft">
           Đây là trang riêng tư của gia đình. Nếu chưa có tài khoản, hãy mở liên kết mời mà
