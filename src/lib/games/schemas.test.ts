@@ -33,7 +33,9 @@ describe("schemas: chi nhan diem ao nguyen, trong gioi han", () => {
     expect(bcBetSchema.safeParse({ roundId: id, symbol: "3", amount: "-5" }).success).toBe(false);
     expect(bcBetSchema.safeParse({ roundId: "x", symbol: "3", amount: "5" }).success).toBe(false);
     expect(lotoJoinSchema.safeParse({ roomId: id, cards: "4" }).success).toBe(false);
-    expect(lotoJoinSchema.safeParse({ roomId: id, cards: "3" }).success).toBe(true);
+    expect(lotoJoinSchema.safeParse({ roomId: id, cards: "3" }).success).toBe(false); // thieu muc cuoc
+    expect(lotoJoinSchema.safeParse({ roomId: id, cards: "3", stake: "3000" }).success).toBe(false); // khong phai menh gia
+    expect(lotoJoinSchema.safeParse({ roomId: id, cards: "3", stake: "5000" }).success).toBe(true);
     expect(lotoCodeSchema.parse({ code: " ab3dEf " }).code).toBe("AB3DEF");
     expect(lotoCodeSchema.safeParse({ code: "AB0DEF" }).success).toBe(false); // 0 va O khong co trong bang ky tu
     const lot = { title: "Tet", drawAt: "2027-02-05T20:00", price: "5", free: "1", max: "3", prizes: [{ kind: "points", label: "Nhat", points: 30 }] };
