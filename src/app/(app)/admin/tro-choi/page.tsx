@@ -3,11 +3,12 @@ import { can, requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import type { GameSettings } from "@/lib/games/server";
+import { profileNames } from "@/lib/games/server";
 import { noticeFor } from "@/lib/games/notice";
 import { Alert, Card, Field, SelectField, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton, ConfirmButton } from "@/components/SubmitButton";
 import {
-  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveCoin, saveLotoAudio, saveLotoPenalty, saveSettings,
+  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, decideGrant, openBcRoom, openLottery, runLotteryNow, saveCoin, saveLotoAudio, saveLotoPenalty, saveSettings,
 } from "./actions";
 import { COIN_UNITS, CUSTOM_COIN_ICONS, CUSTOM_COIN_KEY, coinLabel, resolveCoin } from "@/lib/coins";
 
@@ -34,13 +35,16 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
     );
   }
 
-  const [{ data: pk }, { data: dr }, { data: lr }, { data: rm }, { data: ldr }] = await Promise.all([
+  const [{ data: pk }, { data: dr }, { data: lr }, { data: rm }, { data: ldr }, { data: gr }] = await Promise.all([
     supabase.from("lixi_packets").select("id, title, status, prize_count, created_at").order("created_at", { ascending: false }).limit(5),
     supabase.from("lottery_draws").select("id, title, status, draw_at, ticket_count").order("created_at", { ascending: false }).limit(5),
     supabase.from("loto_rooms").select("id, title, code, status, prize_points").order("created_at", { ascending: false }).limit(5),
     supabase.from("bc_rooms").select("id, title").eq("status", "open").maybeSingle(),
     supabase.from("lixi_draws").select("packet_id").limit(1000),
+    supabase.from("point_grant_requests").select("id, user_id, amount, created_at").eq("status", "pending").order("created_at").limit(20),
   ]);
+  const grantRequests = (gr ?? []) as Array<{ id: string; user_id: string; amount: number; created_at: string }>;
+  const grantNames = await profileNames(grantRequests.map((g) => g.user_id));
   const packets = (pk ?? []) as Array<{ id: string; title: string; status: string; prize_count: number }>;
   const drawCount = new Map<string, number>();
   for (const d of (ldr ?? []) as Array<{ packet_id: string }>) drawCount.set(d.packet_id, (drawCount.get(d.packet_id) ?? 0) + 1);
@@ -119,6 +123,39 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
           </div>
           <SubmitButton>Lưu mức phạt</SubmitButton>
         </form>
+      </Card>
+
+      <Card className="space-y-4">
+        <h2 className="text-xl font-bold">Yêu cầu cấp lá chờ duyệt</h2>
+        <p className="text-base text-ink-soft">
+          Thành viên hết lá sẽ gửi yêu cầu xin cấp ngay tại phòng chơi. Bạn duyệt thì tiền vào ví của họ ngay để đặt cược;
+          mỗi người chỉ có một yêu cầu chờ tại một thời điểm.
+        </p>
+        {grantRequests.length === 0 ? (
+          <p className="text-base">Hiện không có yêu cầu nào đang chờ.</p>
+        ) : (
+          <ul className="space-y-3">
+            {grantRequests.map((g) => (
+              <li key={g.id} className="flex flex-wrap items-center gap-3 border-t border-champagne/60 pt-3">
+                <span className="text-lg">
+                  <strong>{grantNames.get(g.user_id) ?? "Thành viên"}</strong> xin cấp{" "}
+                  <strong>{g.amount.toLocaleString("vi-VN")} {coinLower}</strong>{" "}
+                  <span className="text-ink-soft">· {formatDateTime(g.created_at, session.timezone)}</span>
+                </span>
+                <form action={decideGrant}>
+                  <input type="hidden" name="requestId" value={g.id} />
+                  <input type="hidden" name="approve" value="1" />
+                  <SubmitButton>Duyệt — cấp tiền</SubmitButton>
+                </form>
+                <form action={decideGrant}>
+                  <input type="hidden" name="requestId" value={g.id} />
+                  <input type="hidden" name="approve" value="0" />
+                  <button className={dangerBtn}>Từ chối</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       <Card className="space-y-4">

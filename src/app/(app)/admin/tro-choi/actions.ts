@@ -153,3 +153,16 @@ export async function saveLotoAudio(fd: FormData) {
   if (error) return backTo(BASE, "error", rpcMessage(error));
   return done("Đã lưu cấu hình giọng hô & nhạc nền lô tô.");
 }
+
+/** Duyet / tu choi yeu cau cap la cua thanh vien (RPC cong tien vao vi khi duyet). */
+export async function decideGrant(fd: FormData) {
+  await requireAdmin(BASE);
+  const requestId = String(fd.get("requestId") ?? "");
+  if (!/^[0-9a-f-]{36}$/.test(requestId)) return backTo(BASE, "error", "Yêu cầu không hợp lệ.");
+  const approve = fd.get("approve") === "1";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("points_decide_grant", { p_request: requestId, p_approve: approve });
+  if (error) return backTo(BASE, "error", rpcMessage(error));
+  revalidatePath(BASE);
+  return done(approve ? "Đã duyệt — tiền đã vào ví của thành viên." : "Đã từ chối yêu cầu cấp lá.");
+}
