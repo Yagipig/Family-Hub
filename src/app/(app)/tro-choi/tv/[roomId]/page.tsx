@@ -17,7 +17,7 @@ import { WinCelebration } from "@/components/WinCelebration";
 export const metadata = { title: "Trình chiếu TV" };
 
 type Top = Array<{ name: string; balance: number; rank: number }> | null;
-type LotoTv = { kind: "loto"; title: string; code: string; status: string; prize_points: number; called_count: number; called: number[]; last: number | null; players: number; winner: { name: string } | null; winners?: Array<{ name: string; province: string | null; share: number }>; top: Top };
+type LotoTv = { kind: "loto"; title: string; code: string; status: string; prize_points: number; pot?: number; called_count: number; called: number[]; last: number | null; players: number; winner: { name: string } | null; winners?: Array<{ name: string; province: string | null; share: number }>; top: Top };
 type LotteryTv = {
   kind: "lottery"; title: string; status: string; draw_at: string; ticket_count: number; commit: string; seed: string | null;
   prizes: Array<{ rank: number; label: string; points: number | null; kind: string }>;
@@ -157,7 +157,7 @@ function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId }: {
     <div className="space-y-8">
       {tv.status === "finished" && winnerNames.length > 0 && <WinCelebration fireKey={`${roomId}:tv-win`} big />}
       <h1 className="text-center text-5xl font-bold text-champagne">{tv.title}</h1>
-      <p className="text-center text-3xl">Mã phòng <strong className="tracking-[0.3em] text-champagne">{tv.code}</strong> · {tv.players} người chơi · Giải kinh {tv.prize_points} {coinLower}</p>
+      <p className="text-center text-3xl">Mã phòng <strong className="tracking-[0.3em] text-champagne">{tv.code}</strong> · {tv.players} người chơi · Giải kinh {tv.prize_points} {coinLower}{(tv.pot ?? 0) > 0 ? ` + cược ${(tv.pot ?? 0).toLocaleString("vi-VN")}` : ""}</p>
       {winnerNames.length > 0 ? (
         <div className="space-y-4" role="status" aria-live="polite">
           <p className="text-center text-7xl font-bold text-champagne">🎉 KINH RỒI NHÉ!</p>
