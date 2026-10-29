@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { gamesAccess, profileNames } from "@/lib/games/server";
+import { resolveCoin } from "@/lib/coins";
 import { SYMBOLS, payout } from "@/lib/games/baucua";
 import { Alert, Card, SelectField, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -27,7 +28,7 @@ export default async function BauCuaPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Bầu cua tôm cá</h1>
-      <GamesBanner />
+      <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {access.state !== "ok" ? (
@@ -36,13 +37,14 @@ export default async function BauCuaPage({ searchParams }: { searchParams: Promi
           <Link href="/tro-choi" className={buttonGhostClass}>Về trang trò chơi</Link>
         </Card>
       ) : (
-        <Body familyId={session.familyId} isAdmin={access.isAdmin} />
+        <Body familyId={session.familyId} isAdmin={access.isAdmin} coin={resolveCoin(access.settings)} />
       )}
     </>
   );
 }
 
-async function Body({ familyId, isAdmin }: { familyId: string; isAdmin: boolean }) {
+async function Body({ familyId, isAdmin, coin }: { familyId: string; isAdmin: boolean; coin: ReturnType<typeof resolveCoin> }) {
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
   let { data, error } = await supabase.rpc("bc_my_state", { p_family: familyId });
   if (error || !data) return <Alert kind="error">Không tải được trạng thái trò chơi. Vui lòng thử lại.</Alert>;
@@ -91,12 +93,12 @@ async function Body({ familyId, isAdmin }: { familyId: string; isAdmin: boolean 
       <GamesAutoRefresh seconds={3} />
       <Card className="space-y-2">
         <h2 className="text-2xl font-bold">{room.title}</h2>
-        <p className="text-lg">Điểm của bạn: <strong className="text-wine">{st.balance}</strong> điểm vui</p>
+        <p className="text-lg">{coin.name} của bạn: <strong className="text-wine">{st.balance}</strong> {coinLower}</p>
         <p className="text-base text-ink-soft">
-          Mỗi ô cược từ {limits.min_bet} đến {limits.max_bet} điểm · tổng mỗi ván tối đa {limits.round_total} điểm ·
-          hôm nay chơi tối đa thua {limits.loss_cap} điểm. Hôm nay bạn đang {st.net_today >= 0 ? "hòa/lời" : "thua"} {Math.abs(st.net_today)} điểm.
+          Mỗi ô cược từ {limits.min_bet} đến {limits.max_bet} {coinLower} · tổng mỗi ván tối đa {limits.round_total} {coinLower} ·
+          hôm nay chơi tối đa thua {limits.loss_cap} {coinLower}. Hôm nay bạn đang {st.net_today >= 0 ? "hòa/lời" : "thua"} {Math.abs(st.net_today)} {coinLower}.
         </p>
-        <p className="text-sm text-ink-soft">Luật cổ điển: đặt n điểm vào một ô, ô đó ra k lần thì nhận lại n + k × n điểm; không ra thì mất n.</p>
+        <p className="text-sm text-ink-soft">Luật cổ điển: đặt n {coinLower} vào một ô, ô đó ra k lần thì nhận lại n + k × n {coinLower}; không ra thì mất n.</p>
       </Card>
 
       {st.locked && (
@@ -130,12 +132,12 @@ async function Body({ familyId, isAdmin }: { familyId: string; isAdmin: boolean 
               </div>
               {st.bets.length > 0 && (
                 <p className="text-lg font-semibold">
-                  Bạn đặt {myTotal} điểm, nhận lại {st.bets.reduce((a, b) => a + (b.payout ?? payout(b.amount, b.symbol, round.dice!)), 0)} điểm.
+                  Bạn đặt {myTotal} {coinLower}, nhận lại {st.bets.reduce((a, b) => a + (b.payout ?? payout(b.amount, b.symbol, round.dice!)), 0)} {coinLower}.
                 </p>
               )}
               {results.length > 0 && (
                 <ul className="text-base">
-                  {results.map((r) => <li key={r.user_id}>{names.get(r.user_id) ?? "Thành viên"}: {r.pay - r.bet >= 0 ? "+" : ""}{r.pay - r.bet} điểm</li>)}
+                  {results.map((r) => <li key={r.user_id}>{names.get(r.user_id) ?? "Thành viên"}: {r.pay - r.bet >= 0 ? "+" : ""}{r.pay - r.bet} {coinLower}</li>)}
                 </ul>
               )}
             </div>
@@ -154,7 +156,7 @@ async function Body({ familyId, isAdmin }: { familyId: string; isAdmin: boolean 
                     <p className="text-center text-sm text-ink-soft">{mine > 0 ? `Bạn đã cược ${mine}` : "Chưa cược"}</p>
                     <SelectField label="Thêm" name="amount" defaultValue={String(limits.min_bet)}>
                       {amounts.filter((a) => a <= Math.max(limits.min_bet, Math.min(limits.max_bet - mine, limits.round_total - myTotal, budget))).map((a) => (
-                        <option key={a} value={a}>{a} điểm</option>
+                        <option key={a} value={a}>{a} {coinLower}</option>
                       ))}
                     </SelectField>
                     <SubmitButton>Đặt</SubmitButton>
