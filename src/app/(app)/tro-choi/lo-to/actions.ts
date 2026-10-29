@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { backTo, rpcMessage } from "@/lib/games/server";
-import { lotoBoardClaimSchema, lotoClaimSchema, lotoCodeSchema, lotoEnterCodeSchema, lotoInviteSchema, lotoJoinSchema, lotoProvinceCreateSchema, idSchema } from "@/lib/games/schemas";
+import { grantRequestSchema, lotoBoardClaimSchema, lotoBotsSchema, lotoClaimSchema, lotoCodeSchema, lotoEnterCodeSchema, lotoInviteSchema, lotoJoinSchema, lotoProvinceCreateSchema, idSchema } from "@/lib/games/schemas";
 
 const BASE = "/tro-choi/lo-to";
 const roomUrl = (id: string) => `${BASE}/${id}`;
@@ -29,16 +29,17 @@ export async function findRoomByCode(formData: FormData) {
 
 export async function joinRoom(formData: FormData) {
   await requireSession();
-  const parsed = lotoJoinSchema.safeParse({ roomId: formData.get("roomId"), cards: formData.get("cards") });
+  const parsed = lotoJoinSchema.safeParse({ roomId: formData.get("roomId"), cards: formData.get("cards"), stake: formData.get("stake") });
   if (!parsed.success) return backTo(BASE, "error", parsed.error.issues[0]?.message ?? "Thông tin chưa hợp lệ.");
   const supabase = await createClient();
   const { error } = await supabase.rpc("loto_join", {
     p_room: parsed.data.roomId, p_cards: parsed.data.cards,
     p_room_code: await roomCodeFromCookie(parsed.data.roomId),
+    p_stake: parsed.data.stake,
   });
   if (error) return backTo(roomUrl(parsed.data.roomId), "error", rpcMessage(error));
   revalidatePath(roomUrl(parsed.data.roomId));
-  return backTo(roomUrl(parsed.data.roomId), "ok", `Bạn đã nhận ${parsed.data.cards} tờ lô tô. Chờ người hô số bắt đầu nhé!`);
+  return backTo(roomUrl(parsed.data.roomId), "ok", `Bạn đã nhận ${parsed.data.cards} tờ lô tô với mức cược ${parsed.data.stake.toLocaleString("vi-VN")}. Chờ người hô số bắt đầu nhé!`);
 }
 
 /** Nhap ma phong: may chu kiem tra; dung thi nho bang cookie de cac buoc tham gia sau khoi nhap lai. */
@@ -114,20 +115,21 @@ export async function createProvinceRoom(formData: FormData) {
   return redirect(roomUrl(data as string));
 }
 
-/** Chon bang tinh (khoa o may chu). */
+/** Chon bang tinh (khoa o may chu) kem muc cuoc tru vao vi. */
 export async function claimBoard(formData: FormData) {
   await requireSession();
-  const parsed = lotoBoardClaimSchema.safeParse({ roomId: formData.get("roomId"), code: formData.get("code") });
-  if (!parsed.success) return backTo(BASE, "error", "Bảng chưa hợp lệ.");
+  const parsed = lotoBoardClaimSchema.safeParse({ roomId: formData.get("roomId"), code: formData.get("code"), stake: formData.get("stake") });
+  if (!parsed.success) return backTo(BASE, "error", parsed.error.issues[0]?.message ?? "Bảng hoặc mức cược chưa hợp lệ.");
   const url = roomUrl(parsed.data.roomId);
   const supabase = await createClient();
   const { error } = await supabase.rpc("loto_claim_board", {
     p_room: parsed.data.roomId, p_code: parsed.data.code,
     p_room_code: await roomCodeFromCookie(parsed.data.roomId),
+    p_stake: parsed.data.stake,
   });
   if (error) return backTo(url, "error", rpcMessage(error));
   revalidatePath(url);
-  return backTo(url, "ok", "Đã chọn bảng! Bảng đã khóa cho bạn, chờ chủ phòng bắt đầu ván nhé.");
+  return backTo(url, "ok", `Đã chọn bảng với mức cược ${parsed.data.stake.toLocaleString("vi-VN")}! Bảng đã khóa cho bạn, chờ chủ phòng bắt đầu ván nhé.`);
 }
 
 /** Nha bang (chi khi chu phong cho phep doi bang va van chua bat dau). */
@@ -207,4 +209,66 @@ export async function setCodeRequired(formData: FormData) {
   return backTo(url, "ok", required
     ? "Đã BẬT yêu cầu mã phòng: người chưa được mời phải nhập mã mới tham gia được."
     : "Đã TẮT mã phòng: ai trong gia đình cũng tham gia được, không cần mã.");
+}
+
+// ---- Bot choi thay nguoi (chu phong quan ly khi phong dang cho) ----
+
+/** Them bot vao phong: moi bot chon 1 bang tinh con trong (hoac 1 to ngau nhien o phong co dien). */
+export async function addBots(formData: FormData) {
+  await requireSession();
+  const parsed = lotoBotsSchema.safeParse({ roomId: formData.get("roomId"), count: formData.get("count") });
+  if (!parsed.success) return backTo(BASE, "error", parsed.error.issues[0]?.message ?? "Số bot chưa hợp lệ.");
+  const url = roomUrl(parsed.data.roomId);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("loto_add_bots", { p_room: parsed.data.roomId, p_count: parsed.data.count });
+  if (error) return backTo(url, "error", rpcMessage(error));
+  revalidatePath(url);
+  const n = typeof data === "number" ? data : 0;
+  return backTo(url, "ok", n > 0
+    ? `Đã thêm ${n} bot vào phòng. Bot sẽ tự dò số và kinh như người thật.`
+    : "Không thêm được bot nào (có thể đã hết bảng trống).");
+}
+
+/** Xoa mot bot khoi phong (khi phong dang cho). */
+export async function removeBot(formData: FormData) {
+  await requireSession();
+  const roomId = String(formData.get("roomId") ?? "");
+  const cardId = String(formData.get("cardId") ?? "");
+  if (!/^[0-9a-f-]{36}$/.test(roomId) || !/^[0-9a-f-]{36}$/.test(cardId)) return backTo(BASE, "error", "Thông tin chưa hợp lệ.");
+  const url = roomUrl(roomId);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("loto_remove_bot", { p_room: roomId, p_card: cardId });
+  if (error) return backTo(url, "error", rpcMessage(error));
+  revalidatePath(url);
+  return backTo(url, "ok", "Đã xóa bot khỏi phòng.");
+}
+
+// ---- Xin cap la (admin duyet thi tien vao vi) ----
+
+/** Gui yeu cau xin cap theo menh gia; quay lai phong dang xem. */
+export async function requestGrant(formData: FormData) {
+  const session = await requireSession();
+  const roomId = String(formData.get("roomId") ?? "");
+  const back = /^[0-9a-f-]{36}$/.test(roomId) ? roomUrl(roomId) : BASE;
+  const parsed = grantRequestSchema.safeParse({ amount: formData.get("amount") });
+  if (!parsed.success) return backTo(back, "error", parsed.error.issues[0]?.message ?? "Mệnh giá chưa hợp lệ.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("points_request_grant", { p_family: session.familyId, p_amount: parsed.data.amount });
+  if (error) return backTo(back, "error", rpcMessage(error));
+  revalidatePath(back);
+  return backTo(back, "ok", `Đã gửi yêu cầu cấp ${parsed.data.amount.toLocaleString("vi-VN")} lá. Admin duyệt xong tiền sẽ vào ví của bạn.`);
+}
+
+/** Huy yeu cau cap dang cho duyet cua chinh minh. */
+export async function cancelGrant(formData: FormData) {
+  await requireSession();
+  const requestId = String(formData.get("requestId") ?? "");
+  const roomId = String(formData.get("roomId") ?? "");
+  const back = /^[0-9a-f-]{36}$/.test(roomId) ? roomUrl(roomId) : BASE;
+  if (!/^[0-9a-f-]{36}$/.test(requestId)) return backTo(back, "error", "Yêu cầu không hợp lệ.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("points_cancel_grant", { p_request: requestId });
+  if (error) return backTo(back, "error", rpcMessage(error));
+  revalidatePath(back);
+  return backTo(back, "ok", "Đã hủy yêu cầu cấp lá.");
 }
