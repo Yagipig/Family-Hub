@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Các đường dẫn công khai (không cần đăng nhập). Mọi đường dẫn khác bị chặn.
 // /api/cron/ không có phiên người dùng: từng route tự xác thực bằng Bearer CRON_SECRET (so sánh thời gian hằng) và từ chối khi thiếu bí mật.
-const PUBLIC_PREFIXES = ["/dang-nhap", "/moi/", "/manifest.webmanifest", "/icon", "/icons/", "/sw.js", "/offline", "/robots.txt", "/api/cron/"];
+const PUBLIC_PREFIXES = ["/dang-nhap", "/quen-mat-khau", "/dat-lai-mat-khau", "/moi/", "/manifest.webmanifest", "/icon", "/icons/", "/sw.js", "/offline", "/robots.txt", "/api/cron/"];
 
 // Cookie phiên của @supabase/ssr: sb-<project-ref>-auth-token (có thể chia nhỏ thành .0, .1...).
 // Không có cookie này thì chắc chắn chưa đăng nhập — khỏi cần hỏi máy chủ Supabase.

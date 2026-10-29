@@ -1,5 +1,6 @@
 "use client";
 import { useActionState } from "react";
+import Link from "next/link";
 import { login } from "./actions";
 import { Alert, Card, Field } from "@/components/ui";
 import { PasswordField } from "@/components/PasswordField";
@@ -14,6 +15,9 @@ export function LoginForm() {
         {state?.error && <Alert kind="error">{state.error}</Alert>}
         <Field label="Email" name="email" type="email" autoComplete="email" required />
         <PasswordField label="Mật khẩu" name="password" autoComplete="current-password" required />
+        <p className="text-right text-sm">
+          <Link href="/quen-mat-khau" className="font-semibold text-wine underline">Quên mật khẩu?</Link>
+        </p>
         <SubmitButton pendingText="Đang đăng nhập…">Đăng nhập</SubmitButton>
         <p className="text-sm text-ink-soft">
           Đây là trang riêng tư của gia đình. Nếu chưa có tài khoản, hãy mở liên kết mời mà

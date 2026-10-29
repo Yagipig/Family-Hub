@@ -5,11 +5,30 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
+// Quy tac mat khau PHAI khop cai dat Supabase Auth cua du an (min 6 + chu thuong/chu HOA/so):
+// form doi >= 10 ky tu va du 3 loai ky tu de nguoi dung khong bi may chu tu choi sau khi bam gui.
+export const PASSWORD_COMPLEXITY_MESSAGE =
+  "Mật khẩu cần ít nhất 1 chữ thường, 1 chữ HOA và 1 chữ số (ví dụ: Matkhau123).";
+export const strongPassword = z
+  .string()
+  .min(10, "Mật khẩu cần ít nhất 10 ký tự")
+  .max(200)
+  .refine((v) => /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v), PASSWORD_COMPLEXITY_MESSAGE);
+
 export const redeemSchema = z.object({
   token: z.string().regex(/^[0-9a-f]{48}$/),
   displayName: z.string().trim().min(1, "Vui lòng nhập tên hiển thị").max(120),
   email: z.email("Email chưa hợp lệ").max(254).transform((v) => v.toLowerCase()),
-  password: z.string().min(10, "Mật khẩu cần ít nhất 10 ký tự").max(200),
+  password: strongPassword,
+  confirmPassword: z.string().min(1, "Vui lòng nhập lại mật khẩu."),
+}).superRefine((v, ctx) => {
+  if (v.password !== v.confirmPassword) {
+    ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Mật khẩu nhập lại không khớp." });
+  }
+});
+
+export const resetPasswordSchema = z.object({
+  password: strongPassword,
   confirmPassword: z.string().min(1, "Vui lòng nhập lại mật khẩu."),
 }).superRefine((v, ctx) => {
   if (v.password !== v.confirmPassword) {
