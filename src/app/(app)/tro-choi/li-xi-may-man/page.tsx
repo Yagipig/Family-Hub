@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { gamesAccess, profileNames } from "@/lib/games/server";
+import { resolveCoin } from "@/lib/coins";
 import { Alert, Card, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
@@ -22,7 +23,7 @@ export default async function LixiPage({ searchParams }: { searchParams: Promise
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Lì xì may mắn</h1>
-      <GamesBanner />
+      <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {access.state !== "ok" ? (
@@ -31,13 +32,14 @@ export default async function LixiPage({ searchParams }: { searchParams: Promise
           <Link href="/tro-choi" className={buttonGhostClass}>Về trang trò chơi</Link>
         </Card>
       ) : (
-        <Body session={session} isAdmin={access.isAdmin} />
+        <Body session={session} isAdmin={access.isAdmin} coin={resolveCoin(access.settings)} />
       )}
     </>
   );
 }
 
-async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof requireSession>>; isAdmin: boolean }) {
+async function Body({ session, isAdmin, coin }: { session: Awaited<ReturnType<typeof requireSession>>; isAdmin: boolean; coin: ReturnType<typeof resolveCoin> }) {
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
   const [{ data: pk }, { data: dr }] = await Promise.all([
     supabase.from("lixi_packets").select("id, title, status, prize_count, closes_at, created_at").order("created_at", { ascending: false }).limit(10),
@@ -74,7 +76,7 @@ async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof r
             </div>
             {p.closes_at && open && <p className="text-sm text-ink-soft">Đóng lúc {formatDateTime(p.closes_at, session.timezone)}</p>}
             {mine ? (
-              <p className="rounded-xl bg-champagne-soft px-4 py-3 text-xl font-bold text-wine-dark">Bạn đã bốc được {mine.points} điểm vui</p>
+              <p className="rounded-xl bg-champagne-soft px-4 py-3 text-xl font-bold text-wine-dark">Bạn đã bốc được {coin.icon ? `${coin.icon} ` : ""}{mine.points} {coinLower}</p>
             ) : open ? (
               <form action={drawLixi}>
                 <input type="hidden" name="id" value={p.id} />
@@ -87,7 +89,7 @@ async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof r
               <details className="text-base">
                 <summary className="min-h-12 cursor-pointer py-2 font-semibold">Ai đã bốc ({list.length})</summary>
                 <ul className="space-y-1 pb-2">
-                  {list.map((d) => <li key={d.user_id}>{names.get(d.user_id) ?? "Thành viên"} — {d.points} điểm</li>)}
+                  {list.map((d) => <li key={d.user_id}>{names.get(d.user_id) ?? "Thành viên"} — {d.points} {coinLower}</li>)}
                 </ul>
               </details>
             )}
