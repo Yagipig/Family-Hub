@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireSession } from "@/lib/auth";
+import { can, requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Alert, buttonGhostClass } from "@/components/ui";
 import { FamilyTreeExplorer } from "@/components/FamilyTreeExplorer";
@@ -8,10 +8,12 @@ import { loadBranches, loadTreeData, UUID_RE } from "@/lib/members-data";
 export const metadata = { title: "Cây gia phả" };
 export const dynamic = "force-dynamic";
 
-export default async function FamilyTreePage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
+export default async function FamilyTreePage({ searchParams }: { searchParams: Promise<{ focus?: string; ok?: string; error?: string }> }) {
   const session = await requireSession();
-  const { focus } = await searchParams;
+  const { focus, ok, error } = await searchParams;
   const supabase = await createClient();
+  // Admin (quyền sửa thành viên) là người sắp xếp thứ tự anh chị em trên cây
+  const canArrange = await can(session, "members", "update");
 
   let data: Awaited<ReturnType<typeof loadTreeData>> | null = null;
   try { data = await loadTreeData(supabase); } catch { data = null; }
@@ -30,11 +32,13 @@ export default async function FamilyTreePage({ searchParams }: { searchParams: P
         <h1 className="mr-auto text-3xl font-bold text-wine">Cây gia phả</h1>
         <Link href="/thanh-vien" className={buttonGhostClass}>Danh sách thành viên</Link>
       </div>
+      {ok && <Alert kind="ok">{ok}</Alert>}
+      {error && <Alert kind="error">{error}</Alert>}
       {!data ? <Alert kind="error">Không tải được dữ liệu gia phả. Vui lòng thử lại sau.</Alert> : (
         <FamilyTreeExplorer
           people={data.people} links={data.links} partners={data.partners} branches={branches}
           initialFocusId={initialFocus && data.people.some((p) => p.id === initialFocus) ? initialFocus : null}
-          selfId={selfId} canEdit={session.role !== "guest"}
+          selfId={selfId} canEdit={session.role !== "guest"} canArrange={canArrange}
         />
       )}
     </>
