@@ -20,17 +20,15 @@ describe("Cau ho lo to", () => {
       expect(callLineFor(n, { chatter: 0, rand: seeded(n) })).toBe(`Số ${n}`);
     }
   });
-  it("chatter = 100 thi cau nao cung chua con so", () => {
+  it("chatter = 100 thi cau nao cung xac dinh duoc con so (cau ve cua chinh so do, hoac cau chung co so)", () => {
     for (let n = 1; n <= 90; n++) {
       const line = callLineFor(n, { chatter: 100, rand: seeded(n * 7) });
-      expect(line).toContain(String(n));
+      // Cau ve ket bang tieng ho cua chinh so n; cau chung thi chua thang chu so n
+      expect(line === NUMBER_LINES[n] || line.includes(String(n))).toBe(true);
       expect(line.length).toBeGreaterThan(4);
     }
   });
-  it("so co cau rieng thi cau rieng cung chua dung so", () => {
-    for (const [k, line] of Object.entries(NUMBER_LINES)) {
-      expect(line).toContain(k);
-    }
+  it("cau chung nao cung co {n} de thay so", () => {
     expect(GENERIC_LINES.every((g) => g.includes("{n}"))).toBe(true);
   });
   it("du ca 90 so deu co cau ve rieng (yeu cau nguoi dung 30/10/2026)", () => {
@@ -38,19 +36,37 @@ describe("Cau ho lo to", () => {
     for (let n = 1; n <= 90; n++) {
       const line = NUMBER_LINES[n];
       expect(line, `thieu cau ve cho so ${n}`).toBeTruthy();
-      expect(line).toContain(String(n));
       expect(line.length).toBeGreaterThan(15);
     }
   });
-  it("moi cau ve la cau hat dai 15-20 giay, ket bang tu goi so + 'la con so N!' (dieu ganh hat)", () => {
+  it("cau hat dai 15-20 giay va TU CUOI CUNG chinh la tieng ho so (dieu ganh hat)", () => {
+    // Tieng ho chot o cuoi moi cau hat — khong co doan "la con so N" phia sau.
+    const ENDINGS: Record<number, string> = {
+      1: "con một!", 2: "anh Hai!", 3: "chị Ba!", 4: "anh Tư!", 5: "chị Năm!",
+      6: "anh Sáu!", 7: "chị Bảy!", 8: "anh Tám!", 9: "anh Chín!", 10: "tròn mười!",
+      11: "con khỉ đột!", 12: "mười hai!", 13: "mười ba!", 14: "mười bốn!", 15: "mười lăm!",
+      16: "mười sáu!", 17: "mười bảy!", 18: "mười tám!", 19: "mười chín!", 20: "hai mươi!",
+      21: "hai mốt!", 22: "hai hai!", 23: "hai ba!", 24: "hai bốn!", 25: "hai lăm!",
+      26: "hai sáu!", 27: "hai bảy!", 28: "hai tám!", 29: "hai chín!", 30: "ba mươi!",
+      31: "ba mốt!", 32: "ba hai!", 33: "ba ba!", 34: "ba bốn!", 35: "ba lăm!",
+      36: "ba sáu!", 37: "ba bảy!", 38: "ba tám!", 39: "ba chín!", 40: "bốn mươi!",
+      41: "bốn mốt!", 42: "bốn hai!", 43: "bốn ba!", 44: "bốn bốn!", 45: "bốn lăm!",
+      46: "bốn sáu!", 47: "bốn bảy!", 48: "bốn tám!", 49: "bốn chín!", 50: "năm mươi!",
+      51: "năm mốt!", 52: "năm hai!", 53: "năm ba!", 54: "năm bốn!", 55: "năm lăm!",
+      56: "năm sáu!", 57: "năm bảy!", 58: "năm tám!", 59: "năm chín!", 60: "sáu mươi!",
+      61: "sáu mốt!", 62: "sáu hai!", 63: "sáu ba!", 64: "sáu bốn!", 65: "sáu lăm!",
+      66: "sáu sáu!", 67: "sáu bảy!", 68: "sáu tám!", 69: "sáu chín!", 70: "bảy mươi!",
+      71: "bảy mốt!", 72: "bảy hai!", 73: "bảy ba!", 74: "bảy bốn!", 75: "bảy lăm!",
+      76: "bảy sáu!", 77: "bảy bảy!", 78: "bảy tám!", 79: "bảy chín!", 80: "tám mươi!",
+      81: "tám mốt!", 82: "tám hai!", 83: "tám ba!", 84: "tám bốn!", 85: "tám lăm!",
+      86: "tám sáu!", 87: "tám bảy!", 88: "tám tám!", 89: "tám chín!", 90: "chín mươi!",
+    };
     for (let n = 1; n <= 90; n++) {
       const line = NUMBER_LINES[n];
-      // Nhieu ve ngan cach bang dau phay, du dai de hat ~15-20 giay,
-      // truoc doan lo so phai co tu goi so o cuoi cau hat ("... <tu goi>... la con so N!")
       expect(line, `cau so ${n} chua dung dieu`).toContain(", ");
-      expect(line.length, `cau so ${n} qua ngan`).toBeGreaterThanOrEqual(150);
-      expect(line.endsWith(`… là con số ${n}!`)).toBe(true);
-      expect(line).toMatch(/… [^…]+… là con số \d+!$/);
+      expect(line.length, `cau so ${n} qua ngan`).toBeGreaterThanOrEqual(130);
+      expect(line.endsWith(ENDINGS[n]), `cau so ${n} phai ket bang tieng ho "${ENDINGS[n]}"`).toBe(true);
+      expect(line).not.toContain("là con số");
     }
   });
   it("cau them cua admin duoc tron vao va thay {n}", () => {
