@@ -8,13 +8,19 @@ import { FamilyCoverBackdrop } from "@/components/FamilyCover";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
-  const visible = [];
-  for (const item of NAV) {
-    if (!item.enabled) continue;
-    if (item.roles && !item.roles.includes(session.role)) continue;
-    if (item.module && !(await can(session, item.module, "view"))) continue;
-    visible.push(item);
-  }
+  // Kiểm tra quyền của mọi mục điều hướng SONG SONG: trước đây vòng lặp await từng
+  // mục một khiến mỗi lần tải trang tốn tới ~9 vòng mạng Supabase nối tiếp chỉ để
+  // dựng menu. Kết quả và thứ tự hiển thị giữ nguyên.
+  const visible = (
+    await Promise.all(
+      NAV.map(async (item) => {
+        if (!item.enabled) return null;
+        if (item.roles && !item.roles.includes(session.role)) return null;
+        if (item.module && !(await can(session, item.module, "view"))) return null;
+        return item;
+      }),
+    )
+  ).filter((item): item is (typeof NAV)[number] => item !== null);
   return (
     <div className="min-h-dvh">
       <FamilyCoverBackdrop />
