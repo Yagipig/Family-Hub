@@ -42,9 +42,10 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
             {invitations!.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold">{i.email ?? "Chỉ liên kết"} · {ROLE_LABELS[i.role_key as Role]}</p>
+                  <p className="text-base font-semibold">{i.email ?? (i.max_uses > 1 ? "Liên kết dùng chung" : "Chỉ liên kết")} · {ROLE_LABELS[i.role_key as Role]}</p>
                   <p className="text-sm text-ink-soft">
-                    {STATUS[i.status] ?? i.status} · Hết hạn {formatDateTime(i.expires_at, session.timezone)}
+                    {(i.status === "accepted" && i.max_uses > 1 ? "Đã đủ lượt" : STATUS[i.status] ?? i.status)} · Hết hạn {formatDateTime(i.expires_at, session.timezone)}
+                    {i.max_uses > 1 ? ` · Đã vào ${i.used_count}/${i.max_uses} người` : ""}
                     {i.branch_id ? ` · Nhánh ${branchName.get(i.branch_id) ?? ""}` : ""}
                   </p>
                 </div>

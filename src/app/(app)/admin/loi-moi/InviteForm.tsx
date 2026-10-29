@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 export function InviteForm({ branches, isSuperAdmin }: { branches: { id: string; name: string }[]; isSuperAdmin: boolean }) {
   const [state, action] = useActionState(createInvitation, null);
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
   return (
     <form action={action} className="space-y-4">
       {state?.error && <Alert kind="error">{state.error}</Alert>}
@@ -21,7 +22,19 @@ export function InviteForm({ branches, isSuperAdmin }: { branches: { id: string;
           <p className="text-sm text-ink-soft">Liên kết này chỉ hiện một lần. Nếu mất, hãy thu hồi và tạo lời mời mới.</p>
         </div>
       )}
-      <Field label="Email người được mời (để trống nếu chỉ dùng liên kết)" name="email" type="email" maxLength={254} />
+      <SelectField label="Loại liên kết" name="maxUses" defaultValue="1"
+        onChange={(e) => setShared(e.target.value !== "1")}>
+        <option value="1">Mời 1 người (liên kết dùng 1 lần)</option>
+        <option value="50">Dùng chung cho cả nhà (tối đa 50 người)</option>
+      </SelectField>
+      {shared ? (
+        <p className="rounded-xl bg-champagne-soft px-4 py-3 text-sm text-ink-soft">
+          Liên kết dùng chung không cần nhập email: ai có liên kết cũng tự đăng ký tham gia được,
+          cho tới khi hết hạn, đủ 50 người hoặc bạn thu hồi ở danh sách bên dưới.
+        </p>
+      ) : (
+        <Field label="Email người được mời (để trống nếu chỉ dùng liên kết)" name="email" type="email" maxLength={254} />
+      )}
       <SelectField label="Vai trò" name="role" defaultValue="member">
         <option value="member">Thành viên</option>
         <option value="guest">Khách (chỉ xem)</option>

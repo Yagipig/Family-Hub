@@ -14,6 +14,7 @@ export async function createInvitation(_: FormState, formData: FormData): Promis
     role: formData.get("role"),
     branchId: formData.get("branchId") ?? "",
     ttlHours: formData.get("ttlHours"),
+    maxUses: formData.get("maxUses") ?? 1,
   });
   if (!parsed.success) return { error: "Thông tin chưa hợp lệ. Vui lòng kiểm tra lại." };
 
@@ -25,10 +26,16 @@ export async function createInvitation(_: FormState, formData: FormData): Promis
     p_branch: parsed.data.branchId,
     p_member_id: null,
     p_ttl_hours: parsed.data.ttlHours,
+    p_max_uses: parsed.data.maxUses,
   });
   if (error || typeof token !== "string") return { error: friendlyError(error) };
   revalidatePath("/admin/loi-moi");
-  return { ok: "Đã tạo lời mời. Hãy sao chép liên kết dưới đây và gửi riêng cho người nhận (Zalo, LINE…).", link: `${siteUrl()}/moi/${token}` };
+  return {
+    ok: parsed.data.maxUses > 1
+      ? "Đã tạo liên kết mời dùng chung. Gửi liên kết này cho cả nhà — ai mở ra cũng đăng ký tham gia được."
+      : "Đã tạo lời mời. Hãy sao chép liên kết dưới đây và gửi riêng cho người nhận (Zalo, LINE…).",
+    link: `${siteUrl()}/moi/${token}`,
+  };
 }
 
 export async function revokeInvitation(formData: FormData) {
