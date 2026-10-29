@@ -2,9 +2,9 @@
 import dagre from "@dagrejs/dagre";
 import type { GraphEdge, GraphNode } from "./family-graph";
 
-export type Direction = "TB" | "LR";
-export const PERSON_W = 210;
-export const PERSON_H = 76;
+export type Direction = "TB" | "BT" | "LR";
+export const PERSON_W = 184;
+export const PERSON_H = 140;
 export const UNION_SIZE = 18;
 
 export type Placed = { x: number; y: number; w: number; h: number };
@@ -14,8 +14,8 @@ export function layoutGraph(nodes: GraphNode[], edges: GraphEdge[], direction: D
   const g = new dagre.graphlib.Graph();
   g.setGraph({
     rankdir: direction,
-    nodesep: direction === "TB" ? 36 : 22,
-    ranksep: direction === "TB" ? 70 : 110,
+    nodesep: direction === "LR" ? 22 : 36,
+    ranksep: direction === "LR" ? 110 : 70,
     marginx: 20,
     marginy: 20,
     ranker: "network-simplex",

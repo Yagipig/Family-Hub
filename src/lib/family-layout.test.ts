@@ -49,8 +49,12 @@ describe("layoutGraph", () => {
     const pos = layoutGraph(el.nodes, el.edges, "LR");
     for (const e of el.edges) expect(pos.get(e.source)!.x).toBeLessThan(pos.get(e.target)!.x);
   });
+  it("kiểu phả đồ BT: cha mẹ nằm DƯỚI con (tổ ở gốc cây phía dưới)", () => {
+    const pos = layoutGraph(el.nodes, el.edges, "BT");
+    for (const e of el.edges) expect(pos.get(e.source)!.y).toBeGreaterThan(pos.get(e.target)!.y);
+  });
   it("các nút người không chồng lên nhau", () => {
-    for (const dir of ["TB", "LR"] as const) {
+    for (const dir of ["TB", "BT", "LR"] as const) {
       const pos = layoutGraph(el.nodes, el.edges, dir);
       const boxes = el.nodes.filter((n) => n.type === "person").map((n) => pos.get(n.id)!);
       for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {

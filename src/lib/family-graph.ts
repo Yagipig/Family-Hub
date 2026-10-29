@@ -92,7 +92,11 @@ export function buildUnions(ix: FamilyIndex): Union[] {
       ensure([p.a, p.b]).partnership = p;
     }
   }
-  return [...map.values()];
+  const unions = [...map.values()];
+  // Con trong mỗi gia đình xếp lớn -> nhỏ (ưu tiên thứ tự admin xếp tay, rồi năm sinh, rồi tên)
+  const order = byBirth(ix);
+  for (const u of unions) u.children.sort((x, y) => order({ id: x }, { id: y }));
+  return unions;
 }
 
 // ---------- Phần tử đồ thị ----------
@@ -102,7 +106,14 @@ export type GraphEdge = { id: string; source: string; target: string; role: "spo
 export function buildElements(ix: FamilyIndex): { nodes: GraphNode[]; edges: GraphEdge[]; unions: Union[] } {
   const unions = buildUnions(ix);
   const nodes: GraphNode[] = [];
-  for (const id of ix.people.keys()) nodes.push({ id, type: "person" });
+  // Đưa nút người vào theo đúng thứ tự duyệt cây (lớn -> nhỏ) để dagre khởi đầu
+  // đã gần với thứ tự mong muốn, hạn chế việc nó tự đảo anh chị em.
+  const seen = new Set<string>();
+  for (const item of buildOutline(ix)) {
+    if (ix.people.has(item.id) && !seen.has(item.id)) { seen.add(item.id); nodes.push({ id: item.id, type: "person" }); }
+    for (const s of item.spouses) if (ix.people.has(s.id) && !seen.has(s.id)) { seen.add(s.id); nodes.push({ id: s.id, type: "person" }); }
+  }
+  for (const id of ix.people.keys()) if (!seen.has(id)) nodes.push({ id, type: "person" });
   const edges: GraphEdge[] = [];
   for (const u of unions) {
     nodes.push({ id: u.id, type: "union" });
@@ -180,6 +191,12 @@ export function siblingsOf(ix: FamilyIndex, id: string): { id: string; full: boo
 // ---------- Sắp xếp ----------
 const collator = new Intl.Collator("vi");
 function cmp(a: TreePerson, b: TreePerson): number {
+  // Thứ tự admin xếp tay (display_order) là cao nhất: ai đã được xếp thì theo số đó,
+  // người chưa xếp (mới thêm) đứng sau; chưa ai xếp thì theo năm sinh rồi tên như trước.
+  const ao = a.ord ?? null, bo = b.ord ?? null;
+  if (ao != null && bo != null && ao !== bo) return ao - bo;
+  if (ao != null && bo == null) return -1;
+  if (ao == null && bo != null) return 1;
   if (a.by != null && b.by != null && a.by !== b.by) return a.by - b.by;
   if (a.by != null && b.by == null) return -1;
   if (a.by == null && b.by != null) return 1;
