@@ -4,6 +4,7 @@ import { NAV } from "@/lib/nav";
 import { getViewer, upcomingBirthdays } from "@/lib/events-server";
 import { createClient } from "@/lib/supabase/server";
 import { Card, buttonGhostClass } from "@/components/ui";
+import { NavIcon } from "@/components/NavIcons";
 
 export const metadata = { title: "Trang chủ" };
 
@@ -76,11 +77,14 @@ export default async function HomePage() {
         </Card>
       )}
 
-      <section aria-label="Lối tắt" className="grid gap-4 sm:grid-cols-2">
+      <section aria-label="Lối tắt" className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {shortcuts.map((item) => (
           <Link key={item.href} href={item.href} className="block focus-visible:outline-none">
-            <Card className="h-full hover:border-wine">
-              <h2 className="text-xl font-bold text-wine">{item.label}</h2>
+            <Card className="flex h-full flex-col items-center gap-2 py-5 text-center hover:border-wine">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-champagne-soft text-wine">
+                <NavIcon href={item.href} />
+              </span>
+              <span className="text-base font-bold text-wine">{item.label}</span>
             </Card>
           </Link>
         ))}
