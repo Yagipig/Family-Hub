@@ -2,18 +2,21 @@ import Link from "next/link";
 import { requireSession, ROLE_LABELS } from "@/lib/auth";
 import { Card, buttonGhostClass } from "@/components/ui";
 import { ProfileForm } from "./ProfileForm";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Cài đặt" };
 
 export default async function SettingsPage() {
   const session = await requireSession();
+  const supabase = await createClient();
+  const { data: profile } = await supabase.from("user_profiles").select("alias_name").eq("id", session.userId).maybeSingle();
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Cài đặt</h1>
       <Card className="space-y-4">
         <h2 className="text-xl font-bold">Hồ sơ của tôi</h2>
         <p className="text-base text-ink-soft">Email: {session.email} · Vai trò: {ROLE_LABELS[session.role]}</p>
-        <ProfileForm displayName={session.displayName} />
+        <ProfileForm displayName={session.displayName} aliasName={(profile as { alias_name: string | null } | null)?.alias_name ?? null} />
       </Card>
       <Card className="space-y-3">
         <h2 className="text-xl font-bold">Bảo mật</h2>
