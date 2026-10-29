@@ -55,7 +55,7 @@ describe("schemas: chi nhan diem ao nguyen, trong gioi han", () => {
 describe("gamesError", () => {
   it("doi thong diep ky thuat sang tieng Viet", () => {
     expect(gamesError({ code: "P0001", message: "daily_limit_loss" })).toMatch(/ngày mai/);
-    expect(gamesError({ code: "P0001", message: "insufficient_points" })).toMatch(/không đủ điểm/);
+    expect(gamesError({ code: "P0001", message: "insufficient_points" })).toMatch(/không đủ/);
     expect(gamesError({ code: "P0001", message: "games_disabled" })).toMatch(/tắt/);
     expect(gamesError({ code: "P0002", message: "not_found" })).toMatch(/Không tìm thấy/);
     expect(gamesError({ code: "XX000", message: "relation foo does not exist" })).toBeNull();

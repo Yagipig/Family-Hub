@@ -1,5 +1,19 @@
 // Kiem tra dau vao (zod) cho module tro choi. Chi nhan SO NGUYEN diem ao; khong co truong tien te.
 import { z } from "zod";
+import { CUSTOM_COIN_ICONS, isCoinUnitKey } from "@/lib/coins";
+
+/** Loai xu hien thi (quan tri chon): key trong danh muc, hoac "custom" kem ten + bieu tuong. */
+export const coinSchema = z
+  .object({
+    unit: z.string().refine(isCoinUnitKey, "Loại xu không hợp lệ"),
+    customName: z.string().trim().max(30, "Tên xu tối đa 30 ký tự").optional().default(""),
+    customIcon: z.string().optional().default(""),
+  })
+  .refine((v) => v.unit !== "custom" || v.customName.length >= 1, "Hãy đặt tên cho loại xu tự đặt")
+  .refine(
+    (v) => v.unit !== "custom" || (CUSTOM_COIN_ICONS as readonly string[]).includes(v.customIcon),
+    "Hãy chọn biểu tượng cho loại xu tự đặt",
+  );
 
 const int = (min: number, max: number, msg: string) =>
   z.coerce.number().int(msg).min(min, msg).max(max, msg);

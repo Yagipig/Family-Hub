@@ -15,6 +15,10 @@ export type GameSettings = {
   bc_max_round_total: number;
   bc_daily_loss_cap: number;
   bc_daily_win_cap: number;
+  /** Loại xu hiển thị thay cho "điểm" (cột có từ migration 20261104000002; thiếu → mặc định Điểm). */
+  coin_unit?: string | null;
+  coin_custom_name?: string | null;
+  coin_custom_icon?: string | null;
 };
 
 export type GamesAccess =
@@ -59,11 +63,11 @@ export function rpcMessage(error: { code?: string; message?: string }): string {
 }
 
 export const REASON_LABELS: Record<string, string> = {
-  start: "Điểm khởi đầu",
+  start: "Khởi đầu",
   daily_gift: "Quà hằng ngày",
   lixi: "Lì xì may mắn",
   lottery_ticket: "Mua vé xổ số",
-  lottery_refund: "Hoàn điểm vé xổ số",
+  lottery_refund: "Hoàn vé xổ số",
   lottery_prize: "Trúng giải xổ số",
   loto_prize: "Thắng lô tô",
   baucua_bet: "Đặt cược bầu cua",
