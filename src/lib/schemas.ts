@@ -17,6 +17,8 @@ export const inviteSchema = z.object({
   role: z.enum(["family_admin", "branch_admin", "member", "guest"]),
   branchId: z.union([z.literal(""), z.uuid()]).transform((v) => v || null),
   ttlHours: z.coerce.number().int().min(1).max(720),
+  // 1 = moi rieng 1 nguoi nhu cu; 50 = lien ket dung chung cho ca nha.
+  maxUses: z.coerce.number().int().min(1).max(50).default(1),
 });
 
 export const familySettingsSchema = z.object({
