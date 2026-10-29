@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { gamesAccess, REASON_LABELS } from "@/lib/games/server";
+import { resolveCoin } from "@/lib/coins";
 import { Alert, Card, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
@@ -25,7 +26,7 @@ export default async function GamesHome({ searchParams }: { searchParams: Promis
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Trò chơi gia đình</h1>
-      <GamesBanner />
+      <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
 
@@ -51,6 +52,8 @@ async function Home({ session, settings, isAdmin }: {
   isAdmin: boolean;
 }) {
   const supabase = await createClient();
+  const coin = resolveCoin(settings);
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const { data: balance } = await supabase.rpc("points_my_balance", { p_family: session.familyId });
   const [{ data: board }, { data: history }] = await Promise.all([
     settings.leaderboard_enabled
@@ -65,11 +68,11 @@ async function Home({ session, settings, isAdmin }: {
   return (
     <>
       <Card className="space-y-4">
-        <p className="text-base text-ink-soft">Điểm vui của bạn</p>
-        <p className="text-5xl font-bold text-wine" aria-live="polite">{typeof balance === "number" ? balance : "—"} <span className="text-2xl">điểm</span></p>
+        <p className="text-base text-ink-soft">{coin.name} của bạn</p>
+        <p className="text-5xl font-bold text-wine" aria-live="polite">{typeof balance === "number" ? balance : "—"} <span className="text-2xl">{coin.icon ? `${coin.icon} ` : ""}{coinLower}</span></p>
         {settings.daily_gift > 0 && (
           <form action={claimDailyGift} className="flex flex-wrap items-center gap-3">
-            <SubmitButton>Nhận quà hằng ngày (+{settings.daily_gift} điểm)</SubmitButton>
+            <SubmitButton>Nhận quà hằng ngày (+{settings.daily_gift} {coinLower})</SubmitButton>
             <span className="text-sm text-ink-soft">Mỗi ngày nhận một lần, tính theo ngày ở nơi bạn đang sống.</span>
           </form>
         )}
@@ -80,29 +83,29 @@ async function Home({ session, settings, isAdmin }: {
           <Link key={t.href} href={t.href}
             className="block min-h-28 rounded-2xl border-2 border-champagne bg-ivory p-5 hover:border-wine hover:bg-champagne-soft">
             <span className="block text-2xl font-bold text-wine">{t.title}</span>
-            <span className="mt-1 block text-base text-ink-soft">{t.desc}</span>
+            <span className="mt-1 block text-base text-ink-soft">{t.href === "/tro-choi/bau-cua" ? `Đặt vài ${coinLower} vui, lắc xúc xắc cùng cả nhà.` : t.desc}</span>
           </Link>
         ))}
       </nav>
 
       {settings.leaderboard_enabled && (
         <Card className="space-y-3">
-          <h2 className="text-xl font-bold">Bảng điểm gia đình</h2>
-          {rows.length === 0 ? <p className="text-base text-ink-soft">Chưa có ai trong bảng điểm.</p> : (
+          <h2 className="text-xl font-bold">Bảng {coinLower} gia đình</h2>
+          {rows.length === 0 ? <p className="text-base text-ink-soft">Chưa có ai trong bảng {coinLower}.</p> : (
             <ol className="space-y-1 text-lg">
               {rows.slice(0, 10).map((r) => (
                 <li key={r.user_id} className={r.user_id === session.userId ? "font-bold text-wine" : ""}>
-                  {r.rnk}. {r.display_name} — {r.balance} điểm
+                  {r.rnk}. {r.display_name} — {r.balance} {coinLower}
                 </li>
               ))}
             </ol>
           )}
-          <Link href="/tro-choi/tv/bang-diem" className={buttonGhostClass}>Chiếu bảng điểm lên TV</Link>
+          <Link href="/tro-choi/tv/bang-diem" className={buttonGhostClass}>Chiếu bảng {coinLower} lên TV</Link>
         </Card>
       )}
 
       <Card className="space-y-3">
-        <h2 className="text-xl font-bold">Lịch sử điểm gần đây</h2>
+        <h2 className="text-xl font-bold">Lịch sử {coinLower} gần đây</h2>
         {hist.length === 0 ? <p className="text-base text-ink-soft">Chưa có thay đổi nào.</p> : (
           <ul className="divide-y divide-champagne/50 text-base">
             {hist.map((h) => (
