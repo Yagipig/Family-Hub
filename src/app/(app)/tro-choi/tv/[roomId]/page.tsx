@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
-import { gamesAccess, NOTICE } from "@/lib/games/server";
+import { gamesAccess } from "@/lib/games/server";
+import { noticeFor } from "@/lib/games/notice";
+import { resolveCoin } from "@/lib/coins";
 import { SYMBOLS } from "@/lib/games/baucua";
 import { GamesAutoRefresh } from "@/components/GamesAutoRefresh";
 import { Countdown } from "@/components/Countdown";
@@ -43,14 +45,16 @@ export default async function TvPage({ params }: { params: Promise<{ roomId: str
     );
   }
   const supabase = await createClient();
+  const coin = resolveCoin(access.settings);
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
 
   if (roomId === "bang-diem") {
     const { data } = await supabase.rpc("games_leaderboard", { p_family: session.familyId });
     const rows = (data ?? []) as Array<{ user_id: string; display_name: string; balance: number; rnk: number }>;
     return (
-      <Frame notice live>
-        <h1 className="text-center text-6xl font-bold text-champagne">Bảng điểm gia đình</h1>
-        {rows.length === 0 ? <p className="mt-12 text-center text-4xl">Bảng điểm đang tắt hoặc chưa có ai.</p> : (
+      <Frame notice live noticeText={noticeFor(coin.name)}>
+        <h1 className="text-center text-6xl font-bold text-champagne">Bảng {coinLower} gia đình</h1>
+        {rows.length === 0 ? <p className="mt-12 text-center text-4xl">Bảng {coinLower} đang tắt hoặc chưa có ai.</p> : (
           <ol className="mx-auto mt-10 max-w-4xl space-y-4 text-5xl">
             {rows.slice(0, 10).map((r) => (
               <li key={r.user_id} className="flex justify-between gap-6 rounded-2xl bg-wine-dark px-8 py-4">
@@ -94,11 +98,11 @@ export default async function TvPage({ params }: { params: Promise<{ roomId: str
   }
 
   return (
-    <Frame notice live>
-      {tv.kind === "loto" && <LotoView tv={tv} />}
-      {tv.kind === "lottery" && <LotteryView tv={tv} tz={session.timezone} />}
+    <Frame notice live noticeText={noticeFor(coin.name)}>
+      {tv.kind === "loto" && <LotoView tv={tv} coinLower={coinLower} />}
+      {tv.kind === "lottery" && <LotteryView tv={tv} tz={session.timezone} coinLower={coinLower} />}
       {tv.kind === "baucua" && <BaucuaView tv={tv} />}
-      {tv.top && tv.top.length > 0 && <TopBar top={tv.top} />}
+      {tv.top && tv.top.length > 0 && <TopBar top={tv.top} coinLower={coinLower} />}
       {isAdmin && (primary || secondary) && (
         <div className="mt-10 border-t border-champagne/40 pt-6"><TvController roomId={roomId} primary={primary} secondary={secondary} /></div>
       )}
@@ -106,14 +110,14 @@ export default async function TvPage({ params }: { params: Promise<{ roomId: str
   );
 }
 
-function Frame({ children, notice, live }: { children: React.ReactNode; notice?: boolean; live?: boolean }) {
+function Frame({ children, notice, live, noticeText }: { children: React.ReactNode; notice?: boolean; live?: boolean; noticeText?: string }) {
   return (
     <div className={`${wrap} p-6 sm:p-10`}>
       <GamesAutoRefresh seconds={3} active={!!live} />
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex items-center justify-between gap-4 text-xl">
           <Link href="/tro-choi" className="rounded-lg border border-champagne/60 px-4 py-2 font-semibold text-champagne hover:bg-wine-dark">Thoát</Link>
-          {notice && <span className="font-semibold text-champagne-soft">{NOTICE}</span>}
+          {notice && <span className="font-semibold text-champagne-soft">{noticeText}</span>}
         </div>
         {children}
       </div>
@@ -121,10 +125,10 @@ function Frame({ children, notice, live }: { children: React.ReactNode; notice?:
   );
 }
 
-function TopBar({ top }: { top: NonNullable<Top> }) {
+function TopBar({ top, coinLower }: { top: NonNullable<Top>; coinLower: string }) {
   return (
     <div className="mt-10 border-t border-champagne/40 pt-6">
-      <p className="mb-3 text-3xl font-bold text-champagne">Bảng điểm</p>
+      <p className="mb-3 text-3xl font-bold text-champagne">Bảng {coinLower}</p>
       <ol className="flex flex-wrap gap-x-10 gap-y-2 text-3xl">
         {top.slice(0, 6).map((r) => <li key={`${r.rank}-${r.name}`}>{r.rank}. {r.name} <strong className="text-champagne">{r.balance}</strong></li>)}
       </ol>
@@ -132,12 +136,12 @@ function TopBar({ top }: { top: NonNullable<Top> }) {
   );
 }
 
-function LotoView({ tv }: { tv: LotoTv }) {
+function LotoView({ tv, coinLower }: { tv: LotoTv; coinLower: string }) {
   const called = new Set(tv.called);
   return (
     <div className="space-y-8">
       <h1 className="text-center text-5xl font-bold text-champagne">{tv.title}</h1>
-      <p className="text-center text-3xl">Mã phòng <strong className="tracking-[0.3em] text-champagne">{tv.code}</strong> · {tv.players} người chơi · Giải kinh {tv.prize_points} điểm</p>
+      <p className="text-center text-3xl">Mã phòng <strong className="tracking-[0.3em] text-champagne">{tv.code}</strong> · {tv.players} người chơi · Giải kinh {tv.prize_points} {coinLower}</p>
       {tv.winner ? (
         <p className="text-center text-7xl font-bold text-champagne">KINH! {tv.winner.name}</p>
       ) : (
@@ -158,7 +162,7 @@ function LotoView({ tv }: { tv: LotoTv }) {
   );
 }
 
-function LotteryView({ tv, tz }: { tv: LotteryTv; tz: string }) {
+function LotteryView({ tv, tz, coinLower }: { tv: LotteryTv; tz: string; coinLower: string }) {
   return (
     <div className="space-y-8">
       <h1 className="text-center text-6xl font-bold text-champagne">{tv.title}</h1>
@@ -183,7 +187,7 @@ function LotteryView({ tv, tz }: { tv: LotteryTv; tz: string }) {
       )}
       {tv.status === "open" && (
         <ul className="mx-auto max-w-4xl space-y-2 text-4xl">
-          {tv.prizes.map((p) => <li key={p.rank}>Giải {p.rank}: {p.label}{p.kind === "points" ? ` (${p.points} điểm)` : ""}</li>)}
+          {tv.prizes.map((p) => <li key={p.rank}>Giải {p.rank}: {p.label}{p.kind === "points" ? ` (${p.points} ${coinLower})` : ""}</li>)}
         </ul>
       )}
       <div className="break-all text-center text-lg text-champagne-soft">
