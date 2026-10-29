@@ -48,8 +48,8 @@ export async function profileNames(ids: string[]): Promise<Map<string, string>> 
   const uniq = [...new Set(ids)].filter(Boolean);
   if (!uniq.length) return map;
   const supabase = await createClient();
-  const { data } = await supabase.from("user_profiles").select("id, display_name").in("id", uniq);
-  for (const r of (data ?? []) as Array<{ id: string; display_name: string }>) map.set(r.id, r.display_name);
+  const { data } = await supabase.from("user_profiles").select("id, display_name, alias_name").in("id", uniq);
+  for (const r of (data ?? []) as Array<{ id: string; display_name: string; alias_name: string | null }>) map.set(r.id, r.alias_name?.trim() ? r.alias_name : r.display_name);
   return map;
 }
 
