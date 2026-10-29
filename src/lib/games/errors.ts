@@ -46,6 +46,9 @@ const MESSAGES: Array<[RegExp, string]> = [
   [/bad_music_url/, "Đường dẫn nhạc chưa hợp lệ (phải bắt đầu bằng http hoặc https)."],
   [/bad_extra_lines/, "Câu hô riêng chưa hợp lệ (tối đa 30 câu, mỗi câu tối đa 200 ký tự)."],
   [/bad_loto_penalty/, "Mức phạt kinh sai phải từ 0 đến 100."],
+  [/room_code_required/, "Phòng này yêu cầu mã phòng để tham gia. Hãy nhập mã chủ phòng đưa, hoặc nhờ chủ phòng mời bạn."],
+  [/room_code_wrong/, "Mã phòng chưa đúng. Bạn kiểm tra lại mã chủ phòng đưa nhé."],
+  [/bad_invite_list/, "Danh sách mời chưa hợp lệ."],
 ];
 
 export function gamesError(error: { code?: string; message?: string } | null | undefined): string | null {
