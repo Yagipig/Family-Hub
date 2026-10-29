@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { LOTO63_VIEWBOX, PROVINCES63, type Province63 } from "@/lib/games/provinces63";
+import { STAKE_DENOMINATIONS, fmtLa } from "@/lib/games/stakes";
 import { LotoGridView } from "@/components/LotoGridView";
 import { SubmitButton } from "@/components/SubmitButton";
 
@@ -99,11 +100,17 @@ export function ProvincePicker({
           ) : (
             <>
               {grids[sel.code] && <LotoGridView grid={grids[sel.code]} compact />}
-              <form action={claimAction} className="flex flex-wrap items-center gap-3">
+              <form action={claimAction} className="flex flex-wrap items-end gap-3">
                 <input type="hidden" name="roomId" value={roomId} />
                 <input type="hidden" name="code" value={sel.code} />
+                <div>
+                  <label className="mb-1 block text-base font-semibold" htmlFor="stakePick">Mức cược của bạn</label>
+                  <select id="stakePick" name="stake" defaultValue="1000" className="min-h-12 rounded-xl border border-ink-soft/40 bg-white px-3 text-lg">
+                    {STAKE_DENOMINATIONS.map((n) => <option key={n} value={n}>{fmtLa(n)} lá</option>)}
+                  </select>
+                </div>
                 <SubmitButton pendingText="Đang khóa bảng…">Chọn bảng này</SubmitButton>
-                <span className="text-sm text-ink-soft">Chọn xong bảng sẽ khóa cho bạn; người khác không chọn lại được.</span>
+                <span className="text-sm text-ink-soft">Mức cược trừ vào ví; tổng cược của cả phòng thành giải. Chọn xong bảng sẽ khóa cho bạn.</span>
               </form>
             </>
           )}
