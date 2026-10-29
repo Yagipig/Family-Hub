@@ -62,10 +62,10 @@ export async function loadTreeData(supabase: Supa): Promise<{ people: TreePerson
 /** Danh sách rút gọn cho ô chọn thành viên. */
 export async function loadPickerMembers(supabase: Supa, branches: BranchRow[]): Promise<PickerMember[]> {
   const nameOf = new Map(branches.map((b) => [b.id, b.name]));
-  const rows = await fetchAll<{ id: string; full_name: string; nickname: string | null; birth_solar_year: number | null; branch_id: string | null }>(
-    (a, b) => supabase.from("members_view").select("id, full_name, nickname, birth_solar_year, branch_id").order("id").range(a, b));
+  const rows = await fetchAll<{ id: string; full_name: string; nickname: string | null; alt_names: string | null; birth_solar_year: number | null; branch_id: string | null }>(
+    (a, b) => supabase.from("members_view").select("id, full_name, nickname, alt_names, birth_solar_year, branch_id").order("id").range(a, b));
   return rows
-    .map((r) => ({ id: r.id, name: r.full_name, nick: r.nickname, by: r.birth_solar_year, branch: r.branch_id ? (nameOf.get(r.branch_id) ?? null) : null }))
+    .map((r) => ({ id: r.id, name: r.full_name, nick: r.nickname, alt: r.alt_names, by: r.birth_solar_year, branch: r.branch_id ? (nameOf.get(r.branch_id) ?? null) : null }))
     .sort((x, y) => x.name.localeCompare(y.name, "vi"));
 }
 

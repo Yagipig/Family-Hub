@@ -2,7 +2,7 @@
 import type { MemberRow } from "./members-types";
 
 export type FormValues = {
-  full_name: string; nickname: string; gender: string; branch_id: string;
+  full_name: string; nickname: string; alt_names: string; gender: string; branch_id: string;
   hometown: string; generation_title: string; generation_no: string; bio: string;
   birth_solar_year: string; birth_solar_month: string; birth_solar_day: string;
   birth_lunar_year: string; birth_lunar_month: string; birth_lunar_day: string; birth_lunar_leap: boolean; birthday_mode: string;
@@ -15,7 +15,7 @@ export type FormValues = {
 
 export function emptyValues(over: Partial<FormValues> = {}): FormValues {
   return {
-    full_name: "", nickname: "", gender: "", branch_id: "",
+    full_name: "", nickname: "", alt_names: "", gender: "", branch_id: "",
     hometown: "", generation_title: "", generation_no: "", bio: "",
     birth_solar_year: "", birth_solar_month: "", birth_solar_day: "",
     birth_lunar_year: "", birth_lunar_month: "", birth_lunar_day: "", birth_lunar_leap: false, birthday_mode: "solar",
@@ -32,7 +32,7 @@ const s = (v: string | number | null | undefined) => (v == null ? "" : String(v)
 
 export function valuesFromRow(m: MemberRow): FormValues {
   return emptyValues({
-    full_name: m.full_name, nickname: s(m.nickname), gender: s(m.gender), branch_id: s(m.branch_id),
+    full_name: m.full_name, nickname: s(m.nickname), alt_names: s(m.alt_names), gender: s(m.gender), branch_id: s(m.branch_id),
     hometown: s(m.hometown), generation_title: s(m.generation_title), generation_no: s(m.generation_no), bio: s(m.bio),
     birth_solar_year: s(m.birth_solar_year), birth_solar_month: s(m.birth_solar_month), birth_solar_day: s(m.birth_solar_day),
     birth_lunar_year: s(m.birth_lunar_year), birth_lunar_month: s(m.birth_lunar_month), birth_lunar_day: s(m.birth_lunar_day),

@@ -5,7 +5,7 @@ import {
 import type { ChangeRequestRow } from "./members-types";
 
 export const FIELD_LABELS: Record<string, string> = {
-  full_name: "Họ và tên", nickname: "Tên thường gọi", gender: "Giới tính", branch_id: "Nhánh họ",
+  full_name: "Họ và tên", nickname: "Tên thường gọi", alt_names: "Tên gọi khác", gender: "Giới tính", branch_id: "Nhánh họ",
   hometown: "Quê quán", generation_title: "Tên đời / bối", generation_no: "Đời (số thứ tự)", bio: "Tiểu sử",
   birth_solar_year: "Năm sinh (dương)", birth_solar_month: "Tháng sinh (dương)", birth_solar_day: "Ngày sinh (dương)",
   birth_lunar_year: "Năm sinh (âm)", birth_lunar_month: "Tháng sinh (âm)", birth_lunar_day: "Ngày sinh (âm)",

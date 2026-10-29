@@ -5,7 +5,7 @@ import type { FieldAccess, MemberRow } from "./members-types";
 
 // ---------- Nhóm trường của biểu mẫu ----------
 export const GROUP_FIELDS = {
-  basic: ["full_name", "nickname", "gender", "branch_id"],
+  basic: ["full_name", "nickname", "alt_names", "gender", "branch_id"],
   other: ["hometown", "generation_title", "generation_no", "bio"],
   birth: [
     "birth_solar_year", "birth_solar_month", "birth_solar_day",
@@ -38,6 +38,7 @@ const vis = z.enum(["family", "branch", "admins"], { error: "Mức hiển thị 
 export const memberFieldsSchema = z.object({
   full_name: z.string({ error: "Vui lòng nhập họ tên" }).trim().min(1, "Vui lòng nhập họ tên").max(160, "Họ tên quá dài (tối đa 160 ký tự)").optional(),
   nickname: text(80, "Tên thường gọi"),
+  alt_names: text(160, "Tên gọi khác"),
   gender: z.enum(["male", "female", "other"], { error: "Giới tính không hợp lệ" }).nullable().optional(),
   branch_id: z.uuid({ error: "Nhánh không hợp lệ" }).nullable().optional(),
   hometown: text(200, "Quê quán"),

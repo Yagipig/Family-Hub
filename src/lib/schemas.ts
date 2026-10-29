@@ -33,7 +33,10 @@ export const editingSchema = z.object({
   hours: z.coerce.number().int().min(0).max(24 * 60),
 });
 
-export const displayNameSchema = z.object({ displayName: z.string().trim().min(1).max(120) });
+export const displayNameSchema = z.object({
+  displayName: z.string().trim().min(1).max(120),
+  aliasName: z.string().trim().max(80).optional().default(""),
+});
 export const branchSchema = z.object({ name: z.string().trim().min(1).max(120), parentId: z.union([z.literal(""), z.uuid()]).transform((v) => v || null) });
 
 export type FormState = { error?: string; ok?: string; link?: string } | null;

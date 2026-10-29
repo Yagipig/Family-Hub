@@ -15,6 +15,7 @@ export type MemberRow = {
   branch_id: string | null;
   full_name: string;
   nickname: string | null;
+  alt_names: string | null;
   gender: Gender | null;
   avatar_path: string | null;
   birth_solar_year: number | null;
@@ -79,7 +80,7 @@ export type TreePerson = {
 export type TreeLink = { id: string; child: string; parent: string; kind: ParentKind };
 export type TreePartner = { id: string; a: string; b: string; status: PartnerStatus; start: number | null; end: number | null };
 
-export type PickerMember = { id: string; name: string; nick: string | null; by: number | null; branch: string | null };
+export type PickerMember = { id: string; name: string; nick: string | null; alt: string | null; by: number | null; branch: string | null };
 
 export type ChangeRequestRow = {
   id: string;
