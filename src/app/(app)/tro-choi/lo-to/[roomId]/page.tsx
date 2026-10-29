@@ -11,6 +11,10 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
 import { GamesAutoRefresh } from "@/components/GamesAutoRefresh";
 import { LotoBoard } from "@/components/LotoBoard";
+import { LotoAnnouncer } from "@/components/LotoAnnouncer";
+import { LotoMusic } from "@/components/LotoMusic";
+import { WinCelebration } from "@/components/WinCelebration";
+import { RoomShare } from "@/components/RoomShare";
 import { LotoCards } from "@/components/LotoCards";
 import { LotoHostPanel } from "@/components/LotoHostPanel";
 import { LotoRealtime } from "@/components/LotoRealtime";
@@ -102,6 +106,12 @@ export default async function LotoRoomPage({ params, searchParams }: {
   const myBoard = mine.find((c) => c.board_code);
   const live = room.status === "waiting" || room.status === "playing" || room.status === "paused";
   const coin = resolveCoin(access.settings);
+  const chatter = access.settings.loto_chatter ?? 60;
+  const extraLines = access.settings.loto_extra_lines ?? [];
+  const musicUrl = access.settings.loto_music_url ?? null;
+  const winnerNames = winners.length > 0
+    ? winners.map((w) => nameOf(w.user_id))
+    : room.winner_user ? [nameOf(room.winner_user)] : [];
 
   return (
     <>
@@ -124,7 +134,28 @@ export default async function LotoRoomPage({ params, searchParams }: {
           <Link href={`/tro-choi/tv/${room.id}`} className={buttonGhostClass}>Chiếu lên TV</Link>
           <Link href="/tro-choi/lo-to" className={buttonGhostClass}>Danh sách phòng</Link>
         </div>
+        <LotoAnnouncer
+          status={room.status}
+          last={last}
+          called={called}
+          myGrids={mine.map((c) => c.grid)}
+          winRows={room.win_rows}
+          winnerNames={winnerNames}
+          chatter={chatter}
+          extraLines={extraLines}
+        />
+        <LotoMusic url={musicUrl} />
+        {live && (
+          <details className="rounded-xl border border-champagne/70 px-4 py-2">
+            <summary className="min-h-11 cursor-pointer py-1 text-base font-semibold">Chia sẻ phòng này (mã QR + liên kết)</summary>
+            <div className="pb-3 pt-1"><RoomShare roomId={room.id} code={room.code} /></div>
+          </details>
+        )}
       </Card>
+
+      {room.status === "finished" && winnerNames.length > 0 && (
+        <WinCelebration fireKey={`${room.id}:win`} />
+      )}
 
       {room.status === "finished" && (
         <Card className="space-y-2">
