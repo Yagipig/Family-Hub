@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { callLineFor, randomLine } from "@/lib/games/call-lines";
 import { isNearWin } from "@/lib/games/loto";
-import { setVoicePrefOn, setVoiceRate, speakLines, stopSpeaking, voicePrefOn, voiceRate } from "@/lib/loto-voice";
+import { loadVoicePack, playClip, setVoicePrefOn, setVoiceRate, speakLines, stopSpeaking, voicePrefOn, voiceRate } from "@/lib/loto-voice";
 
 /**
  * "Nguoi ho so" tren may cua tung nguoi choi: doc cau ho vui nhon khi co so moi (neu da bat giong),
@@ -23,6 +23,7 @@ export function LotoAnnouncer({
 }) {
   const [on, setOn] = useState(false);
   const [rate, setRate] = useState(0.95);
+  const [packCount, setPackCount] = useState<number | null>(null);
   const prevLast = useRef<number | null>(null);
   const prevStatus = useRef(status);
   const nearWinSaidFor = useRef<number | null>(null);
@@ -30,36 +31,66 @@ export function LotoAnnouncer({
 
   useEffect(() => { setOn(voicePrefOn()); setRate(voiceRate()); }, []);
 
-  // Van bat dau -> cau mo man
+  // Xem goi giong thu that da co bao nhieu so (de hien trang thai nho duoi nut giong)
   useEffect(() => {
-    if (prevStatus.current === "waiting" && status === "playing" && on) speakLines([randomLine("opening")]);
+    if (!on) return;
+    let live = true;
+    void loadVoicePack().then((p) => { if (live) setPackCount(p.numbers.size); });
+    return () => { live = false; };
+  }, [on]);
+
+  // Van bat dau -> cau mo man (clip thu that neu co, khong thi giong robot)
+  useEffect(() => {
+    if (prevStatus.current === "waiting" && status === "playing" && on) {
+      void (async () => {
+        const clipped = await playClip("opening");
+        if (!clipped) speakLines([randomLine("opening")]);
+      })();
+    }
     prevStatus.current = status;
   }, [status, on]);
 
-  // So moi -> cau ho (+ chen trao phung moi ~7 so, + bao sap kinh cho bang cua minh)
+  // So moi -> clip thu that cua so do neu co; chua co thi doc cau ve bang giong robot
+  // (+ chen trao phung moi ~7 so, + bao sap kinh cho bang cua minh)
   useEffect(() => {
     if (last === null) { prevLast.current = null; return; }
     if (prevLast.current === last) return;
     const isFirstCall = prevLast.current === null;
     prevLast.current = last;
     if (!on || status !== "playing") return;
-    const lines = [callLineFor(last, { chatter, extraLines })];
+    const n = last;
     callCount.current += 1;
-    if (!isFirstCall && callCount.current % 7 === 0) lines.push(randomLine("teasing"));
+    const wantTease = !isFirstCall && callCount.current % 7 === 0;
     const near = myGrids.some((g) => isNearWin(g, called, winRows));
-    if (near && nearWinSaidFor.current !== last) {
-      nearWinSaidFor.current = last;
-      lines.push(randomLine("nearWin"));
-    }
-    speakLines(lines);
+    const wantNear = near && nearWinSaidFor.current !== n;
+    if (wantNear) nearWinSaidFor.current = n;
+    let cancelled = false;
+    void (async () => {
+      const afterClip = () => {
+        if (cancelled) return;
+        if (wantNear) speakLines([randomLine("nearWin")]);
+        else if (wantTease) speakLines([randomLine("teasing")]);
+      };
+      const clipped = await playClip(String(n), afterClip);
+      if (clipped || cancelled) return;
+      const lines = [callLineFor(n, { chatter, extraLines })];
+      if (wantTease) lines.push(randomLine("teasing"));
+      if (wantNear) lines.push(randomLine("nearWin"));
+      speakLines(lines);
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [last, on, status]);
 
-  // Ket thuc co nguoi thang -> chuc mung
+  // Ket thuc co nguoi thang -> chuc mung (clip "kinh" thu that neu co; ten nguoi thang luon doc bang giong)
   const winnersKey = winnerNames.join("|");
   useEffect(() => {
     if (status === "finished" && winnerNames.length > 0 && on) {
-      speakLines([randomLine("kinh"), `Chúc mừng ${winnerNames.join(", ")}!`, randomLine("closing")]);
+      void (async () => {
+        const rest = () => speakLines([`Chúc mừng ${winnerNames.join(", ")}!`, randomLine("closing")]);
+        const clipped = await playClip("kinh", rest);
+        if (!clipped) speakLines([randomLine("kinh"), `Chúc mừng ${winnerNames.join(", ")}!`, randomLine("closing")]);
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, winnersKey, on]);
@@ -93,6 +124,13 @@ export function LotoAnnouncer({
             <option value="1.1">Nhanh</option>
           </select>
         </label>
+      )}
+      {on && packCount !== null && (
+        <p className="w-full text-sm text-ink-soft">
+          {packCount > 0
+            ? `🎙️ Giọng thu thật của nhà mình: đã có ${packCount}/90 số — số nào chưa thu thì tạm đọc bằng giọng máy.`
+            : "🎙️ Chưa có gói giọng thu thật — đang đọc bằng giọng máy. Nhà mình thu theo kịch bản là có giọng người thật ngay."}
+        </p>
       )}
     </div>
   );
