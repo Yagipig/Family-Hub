@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { moveSiblingAction } from "@/app/(app)/gia-pha/actions";
 import { partnerIds, siblingsOf, type FamilyIndex } from "@/lib/family-graph";
-import { ageText, GENDER_LABELS, lifeSpan, PARENT_KIND_LABELS } from "@/lib/members-text";
+import { ageText, formatLunar, formatSolar, GENDER_LABELS, lifeSpan, PARENT_KIND_LABELS } from "@/lib/members-text";
 
 /** Ngăn chi tiết khi chọn một người trên sơ đồ: ngăn kéo ở dưới màn hình điện thoại, cột bên cạnh trên máy tính. */
-export function TreePersonPanel({ id, index, gens, branchName, canEdit, open, onToggle, onClose, onFocus }: {
-  id: string; index: FamilyIndex; gens: Map<string, number>; branchName: string | null; canEdit: boolean;
+export function TreePersonPanel({ id, index, gens, branchName, canEdit, canArrange = false, open, onToggle, onClose, onFocus }: {
+  id: string; index: FamilyIndex; gens: Map<string, number>; branchName: string | null; canEdit: boolean; canArrange?: boolean;
   open: boolean; onToggle: () => void; onClose: () => void; onFocus: (id: string) => void;
 }) {
   const p = index.people.get(id);
@@ -17,6 +18,22 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, open, on
   const siblings = siblingsOf(index, id);
   const gen = p.gen ?? gens.get(id);
   const age = ageText(p.by, p.dy, p.dead);
+
+  // Toàn bộ thông tin đã điền (các trường bị che theo quyền riêng tư đã là null ở dữ liệu nạp vào)
+  const birthSolar = formatSolar(p.by, p.bm ?? null, p.bd ?? null);
+  const birthLunar = formatLunar(p.ly ?? null, p.lm ?? null, p.ld ?? null, p.lleap ?? false);
+  const deathSolar = p.dead || p.dy != null ? formatSolar(p.dy, p.dm ?? null, p.dd ?? null) : null;
+  const deathLunar = p.dead ? formatLunar(null, p.dlm ?? null, p.dld ?? null, p.dleap ?? false) : null;
+  const infoRows: { label: string; value: string }[] = [
+    ...(birthSolar ? [{ label: "Sinh (dương lịch)", value: birthSolar }] : []),
+    ...(birthLunar ? [{ label: "Sinh (âm lịch)", value: birthLunar }] : []),
+    ...(deathSolar ? [{ label: "Mất (dương lịch)", value: deathSolar }] : []),
+    ...(deathLunar ? [{ label: "Mất (âm lịch)", value: deathLunar }] : []),
+    ...(p.hometown ? [{ label: "Quê quán", value: p.hometown }] : []),
+    ...(p.genTitle ? [{ label: "Tên đời / bối", value: p.genTitle }] : []),
+    ...(p.phone ? [{ label: "Điện thoại", value: p.phone }] : []),
+    ...(p.email ? [{ label: "Email", value: p.email }] : []),
+  ];
 
   const group = (title: string, ids: { id: string; note?: string }[]) => ids.length === 0 ? null : (
     <div>
@@ -56,8 +73,45 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, open, on
           {branchName && <span className="rounded-lg bg-champagne-soft px-3 py-1">Nhánh {branchName}</span>}
           {p.dead && <span className="rounded-lg bg-champagne-soft px-3 py-1">Đã mất</span>}
         </p>
+        {infoRows.length > 0 && (
+          <div>
+            <h3 className="text-base font-bold text-ink-soft">Thông tin</h3>
+            <dl className="mt-1 space-y-1 text-base">
+              {infoRows.map((r) => (
+                <div key={r.label} className="flex gap-2">
+                  <dt className="w-32 shrink-0 text-ink-soft">{r.label}</dt>
+                  <dd className="min-w-0 font-medium">{r.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+        {p.bio && (
+          <div>
+            <h3 className="text-base font-bold text-ink-soft">Tiểu sử</h3>
+            <p className="mt-1 whitespace-pre-line text-base">{p.bio}</p>
+          </div>
+        )}
         <Link href={`/thanh-vien/${id}`}
           className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-wine px-5 text-base font-semibold text-white hover:bg-wine-dark">Mở hồ sơ đầy đủ</Link>
+        {canArrange && siblings.length > 0 && (
+          <div className="border-t border-champagne/60 pt-3">
+            <h3 className="text-base font-bold text-ink-soft">Thứ tự anh chị em (admin sắp xếp)</h3>
+            <p className="mt-0.5 text-sm text-ink-soft">Dời người này trong nhóm anh chị em cùng cha mẹ — cây sẽ xếp lại từ lớn đến nhỏ theo thứ tự này.</p>
+            <div className="mt-2 flex gap-2">
+              <form action={moveSiblingAction} className="flex-1">
+                <input type="hidden" name="memberId" value={id} />
+                <input type="hidden" name="dir" value="-1" />
+                <button type="submit" className="min-h-12 w-full rounded-xl border border-wine px-3 font-semibold text-wine hover:bg-champagne-soft">◀ Lên trước</button>
+              </form>
+              <form action={moveSiblingAction} className="flex-1">
+                <input type="hidden" name="memberId" value={id} />
+                <input type="hidden" name="dir" value="1" />
+                <button type="submit" className="min-h-12 w-full rounded-xl border border-wine px-3 font-semibold text-wine hover:bg-champagne-soft">Xuống sau ▶</button>
+              </form>
+            </div>
+          </div>
+        )}
         {group("Cha mẹ", parents.map((x) => ({ id: x.id, note: x.kind === "biological" ? undefined : PARENT_KIND_LABELS[x.kind] })))}
         {group("Vợ / chồng", partners.map((x) => ({ id: x })))}
         {group("Con", children.map((x) => ({ id: x.id, note: x.kind === "biological" ? undefined : PARENT_KIND_LABELS[x.kind] })))}

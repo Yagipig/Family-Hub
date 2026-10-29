@@ -21,12 +21,12 @@ type Mode = "diagram" | "list";
 const seg = (active: boolean) =>
   `min-h-12 px-5 text-base font-semibold first:rounded-l-xl last:rounded-r-xl border border-wine ${active ? "bg-wine text-white" : "bg-ivory text-wine hover:bg-champagne-soft"}`;
 
-export function FamilyTreeExplorer({ people, links, partners, branches, initialFocusId, selfId, canEdit }: {
+export function FamilyTreeExplorer({ people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
   people: TreePerson[]; links: TreeLink[]; partners: TreePartner[]; branches: BranchRow[];
-  initialFocusId: string | null; selfId: string | null; canEdit: boolean;
+  initialFocusId: string | null; selfId: string | null; canEdit: boolean; canArrange?: boolean;
 }) {
   const [mode, setMode] = useState<Mode>("diagram");
-  const [direction, setDirection] = useState<Direction>("TB");
+  const [direction, setDirection] = useState<Direction>("BT");
   const [branch, setBranch] = useState("");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(initialFocusId);
@@ -136,7 +136,8 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
             <label className="block text-sm font-semibold">Hướng
               <select value={direction} onChange={(e) => setDirection(e.target.value as Direction)}
                 className="mt-1 block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-3 text-base font-normal text-ink">
-                <option value="TB">Từ trên xuống</option>
+                <option value="BT">Kiểu cây phả đồ (tổ ở gốc, con cháu lên trên)</option>
+                <option value="TB">Từ trên xuống (tổ ở trên)</option>
                 <option value="LR">Từ trái sang phải</option>
               </select>
             </label>
@@ -152,7 +153,8 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
 
       {mode === "diagram" ? (
         <div className="flex flex-col gap-4 md:flex-row">
-          <div className="relative h-[68dvh] min-h-[420px] flex-1 overflow-hidden rounded-2xl border border-champagne/60 bg-white">
+          <div className="relative h-[68dvh] min-h-[420px] flex-1 overflow-hidden rounded-2xl border-4 border-double border-[#c9a96b] shadow-inner"
+            style={{ background: "linear-gradient(180deg, #fdf8ec 0%, #f9efdb 55%, #f3e5c6 100%)" }}>
             {elements.nodes.length === 0 ? (
               <p className="p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
             ) : placed && (
@@ -164,7 +166,7 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
           {selectedPerson && selectedId && (
             <TreePersonPanel id={selectedId} index={fullIndex} gens={gens}
               branchName={selectedPerson.branchId ? (branchName.get(selectedPerson.branchId) ?? null) : null}
-              canEdit={canEdit} open={panelOpen} onToggle={() => setPanelOpen((v) => !v)} onClose={() => setSelectedId(null)} onFocus={focusPerson} />
+              canEdit={canEdit} canArrange={canArrange} open={panelOpen} onToggle={() => setPanelOpen((v) => !v)} onClose={() => setSelectedId(null)} onFocus={focusPerson} />
           )}
         </div>
       ) : (
@@ -174,10 +176,11 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
       <details className="rounded-xl border border-champagne/60 bg-ivory px-4">
         <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-wine">Chú giải</summary>
         <ul className="space-y-2 pb-4 text-base">
-          <li><span className="mr-2 inline-block h-4 w-8 rounded border-2 border-[#6f8fb0] bg-[#f3f7fb] align-middle" />Viền xanh: nam · <span className="mr-2 ml-2 inline-block h-4 w-8 rounded border-2 border-[#c9798a] bg-[#fdf3f5] align-middle" />viền hồng: nữ · <span className="mr-2 ml-2 inline-block h-4 w-8 rounded border-2 border-champagne bg-ivory align-middle" />khác/chưa rõ</li>
-          <li>Chấm tròn vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (chấm trắng: đã ly hôn hoặc góa); các con nối xuống từ chấm đó.</li>
-          <li>Nét liền: con ruột. Nét đứt: con nuôi hoặc con kế. Dấu † và chữ “đã mất”: người đã mất.</li>
-          <li>Dải màu bên trái mỗi ô là màu của nhánh họ:
+          <li>Mỗi người là một <strong>huy hiệu ảnh tròn</strong> với <strong>bảng tên vàng</strong> bên dưới, treo trên cành cây như phả đồ truyền thống. Vòng quanh ảnh: <span className="font-semibold text-[#6f8fb0]">xanh dương: nam</span> · <span className="font-semibold text-[#c9798a]">hồng: nữ</span> · vàng champagne: khác/chưa rõ.</li>
+          <li>Kiểu cây phả đồ: <strong>tổ tiên ở gốc cây phía dưới</strong>, con cháu tỏa dần lên trên; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
+          <li>Chấm tròn vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (chấm trắng: đã ly hôn hoặc góa); các con nối từ chấm đó bằng cành cây màu nâu.</li>
+          <li>Cành liền: con ruột. Cành đứt nét: con nuôi hoặc con kế. Dấu † và ảnh xám: người đã mất.</li>
+          <li>Chấm màu nhỏ cạnh năm sinh là màu của nhánh họ:
             <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
               {legendBranches.map((b) => (
                 <li key={b.id}><span className="mr-1 inline-block h-3 w-3 rounded-sm align-middle" style={{ background: branchColor(b.id) }} />{b.name}</li>
@@ -185,7 +188,7 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
               <li><span className="mr-1 inline-block h-3 w-3 rounded-sm align-middle" style={{ background: branchColor(null) }} />Chưa xếp nhánh</li>
             </ul>
           </li>
-          <li>Mẹo: bấm vào một người để xem chi tiết; trên điện thoại dùng hai ngón để phóng to, thu nhỏ. Cần đọc bằng bàn phím hoặc trình đọc màn hình: chọn “Danh sách theo đời”.</li>
+          <li>Mẹo: bấm vào ảnh một người để xem đầy đủ thông tin; trên điện thoại dùng hai ngón để phóng to, thu nhỏ. Cần đọc bằng bàn phím hoặc trình đọc màn hình: chọn “Danh sách theo đời”.</li>
         </ul>
       </details>
     </div>

@@ -19,26 +19,32 @@ type UnionNodeT = Node<UnionData, "union">;
 
 const hiddenHandle = { opacity: 0, pointerEvents: "none", width: 1, height: 1, minWidth: 1, minHeight: 1 } as const;
 
-const TONE: Record<string, string> = {
-  male: "border-[#6f8fb0] bg-[#f3f7fb]",
-  female: "border-[#c9798a] bg-[#fdf3f5]",
-  other: "border-champagne bg-ivory",
+/** Màu vòng quanh ảnh: xanh = nam, hồng = nữ, vàng champagne = khác/chưa rõ. */
+const RING: Record<string, string> = {
+  male: "border-[#6f8fb0]",
+  female: "border-[#c9798a]",
+  other: "border-champagne",
 };
 
+/** Ô người kiểu phả đồ truyền thống: huy hiệu ảnh tròn ở trên, bảng tên vàng ở dưới. */
 const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, targetPosition }: NodeProps<PersonNodeT>) {
   const { person: p, gen, dim, color } = data;
   const span = lifeSpan(p.by, p.dy, p.dead);
   return (
     <div
       style={{ width: PERSON_W, height: PERSON_H }}
-      className={`relative flex items-center gap-2 overflow-hidden rounded-xl border-2 pl-3.5 pr-2 shadow-sm ${TONE[p.gender ?? "other"]} ${selected ? "ring-4 ring-champagne" : ""} ${dim ? "opacity-40" : ""}`}>
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-2" style={{ background: color }} />
-      <Avatar name={p.name} src={p.avatar} gender={p.gender} size={40} />
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[15px] font-bold leading-tight text-ink">{p.name}</p>
-        <p className="truncate text-[13px] text-ink-soft">{[p.nick ? `“${p.nick}”` : null, span, gen ? `Đời ${gen}` : null].filter(Boolean).join(" · ")}</p>
+      className={`relative flex flex-col items-center px-2 pt-1.5 ${dim ? "opacity-40" : ""}`}>
+      <div className={`relative rounded-full border-[3px] shadow-md ${RING[p.gender ?? "other"]} ${p.dead ? "grayscale" : ""} ${selected ? "ring-4 ring-wine" : ""}`}>
+        <Avatar name={p.name} src={p.avatar} gender={p.gender} size={60} />
+        {p.dead && <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 rounded-full bg-ivory px-1 text-sm leading-tight text-ink-soft shadow">†</span>}
       </div>
-      {p.dead && <span aria-hidden="true" className="absolute right-1.5 top-0.5 text-sm text-ink-soft">†</span>}
+      <div className="mt-1.5 w-full rounded-lg border border-[#b8912f] bg-gradient-to-b from-[#f9e28d] to-[#efc95e] px-2 py-1 shadow-sm">
+        <p className="line-clamp-2 text-center text-[14px] font-bold leading-tight text-[#571c10]">{p.name}</p>
+      </div>
+      <p className="mt-1 flex max-w-full items-center gap-1.5 text-[12px] leading-tight text-ink-soft">
+        <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-black/10" style={{ background: color }} />
+        <span className="truncate">{[p.nick ? `“${p.nick}”` : null, span, gen ? `Đời ${gen}` : null].filter(Boolean).join(" · ")}</span>
+      </p>
       <Handle type="target" position={targetPosition ?? Position.Top} isConnectable={false} style={hiddenHandle} />
       <Handle type="source" position={sourcePosition ?? Position.Bottom} isConnectable={false} style={hiddenHandle} />
     </div>
@@ -48,7 +54,7 @@ const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, ta
 const UnionDot = memo(function UnionDot({ data, sourcePosition, targetPosition }: NodeProps<UnionNodeT>) {
   return (
     <div title="Gia đình (cặp vợ chồng)" style={{ width: UNION_SIZE, height: UNION_SIZE }}
-      className={`rounded-full border-2 border-wine ${data.divorced ? "bg-white" : "bg-champagne"}`}>
+      className={`rounded-full border-2 border-[#b8912f] shadow-sm ${data.divorced ? "bg-white" : "bg-gradient-to-b from-[#f9e28d] to-[#efc95e]"}`}>
       <Handle type="target" position={targetPosition ?? Position.Top} isConnectable={false} style={hiddenHandle} />
       <Handle type="source" position={sourcePosition ?? Position.Bottom} isConnectable={false} style={hiddenHandle} />
     </div>
@@ -59,8 +65,8 @@ const nodeTypes: NodeTypes = { person: PersonCard, union: UnionDot };
 
 const EDGE_STYLE = {
   spouse: { stroke: "#c9a96b", strokeWidth: 2 },
-  child: { stroke: "#7b1e2b", strokeWidth: 1.6 },
-  childDashed: { stroke: "#7b1e2b", strokeWidth: 1.6, strokeDasharray: "7 5" },
+  child: { stroke: "#8a5a33", strokeWidth: 2.2 },
+  childDashed: { stroke: "#8a5a33", strokeWidth: 2.2, strokeDasharray: "7 5" },
 } as const;
 
 export type FlowProps = {
@@ -81,14 +87,19 @@ export type FlowProps = {
 function Inner(p: FlowProps) {
   const rf = useReactFlow();
   const initialSel = useRef(p.initialSelectedId);
-  const vertical = p.direction === "TB";
+  // TB: tổ ở trên, con cháu xuống dưới. BT (kiểu phả đồ): tổ ở gốc dưới, con cháu lên trên. LR: trái -> phải.
+  const handlePos = p.direction === "LR"
+    ? { source: Position.Right, target: Position.Left }
+    : p.direction === "BT"
+      ? { source: Position.Top, target: Position.Bottom }
+      : { source: Position.Bottom, target: Position.Top };
   const [ready, setReady] = useState(false);
 
   const initialNodes = useMemo<Node[]>(() => p.nodes.map((n) => {
     const pos = p.placed.get(n.id)!;
     const base = {
       id: n.id, position: { x: pos.x, y: pos.y }, draggable: false, connectable: false,
-      sourcePosition: vertical ? Position.Bottom : Position.Right, targetPosition: vertical ? Position.Top : Position.Left,
+      sourcePosition: handlePos.source, targetPosition: handlePos.target,
       initialWidth: pos.w, initialHeight: pos.h,
     };
     if (n.type === "union") return { ...base, type: "union", selectable: false, focusable: false, data: { divorced: p.divorcedUnions.has(n.id) } } as UnionNodeT;
@@ -104,7 +115,7 @@ function Inner(p: FlowProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
 
   const edges = useMemo<Edge[]>(() => p.edges.map((e) => ({
-    id: e.id, source: e.source, target: e.target, type: "smoothstep", selectable: false, focusable: false,
+    id: e.id, source: e.source, target: e.target, type: "default", selectable: false, focusable: false,
     style: e.role === "spouse" ? EDGE_STYLE.spouse : e.kind === "biological" ? EDGE_STYLE.child : EDGE_STYLE.childDashed,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   })), []);
