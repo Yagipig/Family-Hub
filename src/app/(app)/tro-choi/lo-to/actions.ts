@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { backTo, rpcMessage } from "@/lib/games/server";
-import { lotoClaimSchema, lotoCodeSchema, lotoJoinSchema, idSchema } from "@/lib/games/schemas";
+import { lotoBoardClaimSchema, lotoClaimSchema, lotoCodeSchema, lotoJoinSchema, lotoProvinceCreateSchema, idSchema } from "@/lib/games/schemas";
 
 const BASE = "/tro-choi/lo-to";
 const roomUrl = (id: string) => `${BASE}/${id}`;
@@ -41,9 +41,14 @@ export async function claimKinh(formData: FormData) {
   const { data, error } = await supabase.rpc("loto_claim_kinh", { p_room: parsed.data.roomId, p_card: parsed.data.cardId });
   if (error) return backTo(url, "error", rpcMessage(error));
   revalidatePath(url);
-  const r = data as { ok: boolean; points?: number; false_claims?: number };
-  if (!r.ok) return backTo(url, "error", `Chưa đủ một hàng 5 số đã hô — chưa phải kinh. Kinh nhầm ${r.false_claims}/3 lần.`);
-  return backTo(url, "ok", `KINH! Máy chủ đã xác nhận. Bạn thắng${r.points ? ` ${r.points} điểm vui` : ""}!`);
+  const r = data as { ok: boolean; points?: number; false_claims?: number; rows?: number; need?: number; penalty?: number; winners?: number };
+  if (!r.ok) {
+    const need = r.need ?? 1;
+    return backTo(url, "error",
+      `Chưa đủ ${need} hàng (mới đủ ${r.rows ?? 0}/${need} hàng) — chưa phải kinh. Kinh nhầm ${r.false_claims}/3 lần.${r.penalty ? ` Bị trừ ${r.penalty} xu phạt kinh sai.` : ""}`);
+  }
+  return backTo(url, "ok",
+    `KINH RỒI NHÉ! Máy chủ đã xác nhận${r.winners && r.winners > 1 ? ` — có ${r.winners} người cùng thắng lượt này, giải được chia đều` : ""}. Bạn nhận ${r.points ?? 0} xu!`);
 }
 
 // ---- Quan tri (nguoi ho so): CSDL kiem tra lai quyen ----
@@ -61,3 +66,65 @@ async function adminCall(fn: string, formData: FormData, okMsg: string) {
 export async function startRoom(fd: FormData) { return adminCall("loto_start", fd, "Đã bắt đầu ván. Bắt đầu hô số!"); }
 export async function callNext(fd: FormData) { return adminCall("loto_call_next", fd, "Đã hô số tiếp theo."); }
 export async function endRoom(fd: FormData) { return adminCall("loto_end", fd, "Đã kết thúc phòng."); }
+
+// ---- Lo to truyen thong: phong tinh, chu phong la nguoi tao ----
+
+/** Tao phong truyen thong (63 bang tinh). Nguoi tao tu dong la chu phong. */
+export async function createProvinceRoom(formData: FormData) {
+  const session = await requireSession();
+  const parsed = lotoProvinceCreateSchema.safeParse({
+    title: formData.get("title"), prize: formData.get("prize"), winRows: formData.get("winRows"),
+    autoWin: formData.get("autoWin") != null, allowChange: formData.get("allowChange") != null,
+  });
+  if (!parsed.success) return backTo(BASE, "error", parsed.error.issues[0]?.message ?? "Thông tin chưa hợp lệ.");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("loto_create_province_room", {
+    p_family: session.familyId, p_title: parsed.data.title, p_prize: parsed.data.prize,
+    p_win_rows: parsed.data.winRows, p_auto_win: parsed.data.autoWin, p_allow_change: parsed.data.allowChange,
+  });
+  if (error) return backTo(BASE, "error", rpcMessage(error));
+  return redirect(roomUrl(data as string));
+}
+
+/** Chon bang tinh (khoa o may chu). */
+export async function claimBoard(formData: FormData) {
+  await requireSession();
+  const parsed = lotoBoardClaimSchema.safeParse({ roomId: formData.get("roomId"), code: formData.get("code") });
+  if (!parsed.success) return backTo(BASE, "error", "Bảng chưa hợp lệ.");
+  const url = roomUrl(parsed.data.roomId);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("loto_claim_board", { p_room: parsed.data.roomId, p_code: parsed.data.code });
+  if (error) return backTo(url, "error", rpcMessage(error));
+  revalidatePath(url);
+  return backTo(url, "ok", "Đã chọn bảng! Bảng đã khóa cho bạn, chờ chủ phòng bắt đầu ván nhé.");
+}
+
+/** Nha bang (chi khi chu phong cho phep doi bang va van chua bat dau). */
+export async function releaseBoard(formData: FormData) {
+  await requireSession();
+  const parsed = idSchema.safeParse({ id: formData.get("roomId") });
+  if (!parsed.success) return backTo(BASE, "error", "Phòng không hợp lệ.");
+  const url = roomUrl(parsed.data.id);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("loto_release_board", { p_room: parsed.data.id });
+  if (error) return backTo(url, "error", rpcMessage(error));
+  revalidatePath(url);
+  return backTo(url, "ok", "Đã nhả bảng. Bạn chọn bảng tỉnh khác nhé!");
+}
+
+// ---- Dieu khien cua chu phong (CSDL kiem tra lai quyen chu phong/admin) ----
+async function hostCall(fn: string, formData: FormData, okMsg: string) {
+  await requireSession();
+  const parsed = idSchema.safeParse({ id: formData.get("id") });
+  if (!parsed.success) return backTo(BASE, "error", "Phòng không hợp lệ.");
+  const url = roomUrl(parsed.data.id);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(fn, { p_room: parsed.data.id });
+  if (error) return backTo(url, "error", rpcMessage(error));
+  revalidatePath(url);
+  return backTo(url, "ok", okMsg);
+}
+export async function pauseRoom(fd: FormData) { return hostCall("loto_pause", fd, "Đã tạm dừng ván."); }
+export async function resumeRoom(fd: FormData) { return hostCall("loto_resume", fd, "Đã tiếp tục ván."); }
+export async function undoCallRoom(fd: FormData) { return hostCall("loto_undo_call", fd, "Đã hoàn tác số vừa hô."); }
+export async function transferHostRandom(fd: FormData) { return hostCall("loto_transfer_host", fd, "Đã chuyển quyền chủ phòng cho một người chơi ngẫu nhiên."); }

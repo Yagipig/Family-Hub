@@ -8,11 +8,11 @@ import { Alert, Card, Field, buttonClass, buttonGhostClass } from "@/components/
 import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
 import { GamesAutoRefresh } from "@/components/GamesAutoRefresh";
-import { findRoomByCode } from "./actions";
+import { createProvinceRoom, findRoomByCode } from "./actions";
 
 export const metadata = { title: "Lô tô" };
 
-const STATUS: Record<string, string> = { waiting: "Đang chờ người chơi", playing: "Đang hô số", finished: "Đã kết thúc", cancelled: "Đã hủy" };
+const STATUS: Record<string, string> = { waiting: "Đang chờ người chơi", playing: "Đang hô số", paused: "Tạm dừng", finished: "Đã kết thúc", cancelled: "Đã hủy" };
 
 export default async function LotoHome({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const session = await requireSession();
@@ -39,12 +39,12 @@ export default async function LotoHome({ searchParams }: { searchParams: Promise
 async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin: ReturnType<typeof resolveCoin> }) {
   const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
-  const { data } = await supabase.from("loto_rooms").select("id, title, code, status, prize_points, created_at")
+  const { data } = await supabase.from("loto_rooms").select("id, title, code, status, prize_points, created_at, mode, win_rows")
     .order("created_at", { ascending: false }).limit(8);
-  const rooms = (data ?? []) as Array<{ id: string; title: string; code: string; status: string; prize_points: number; created_at: string }>;
+  const rooms = (data ?? []) as Array<{ id: string; title: string; code: string; status: string; prize_points: number; created_at: string; mode: string; win_rows: number }>;
   return (
     <>
-      <GamesAutoRefresh seconds={8} active={rooms.some((r) => r.status === "waiting" || r.status === "playing")} />
+      <GamesAutoRefresh seconds={8} active={rooms.some((r) => r.status === "waiting" || r.status === "playing" || r.status === "paused")} />
       <Card className="space-y-3">
         <h2 className="text-xl font-bold">Vào phòng bằng mã</h2>
         <form action={findRoomByCode} className="flex flex-wrap items-end gap-3">
@@ -52,6 +52,34 @@ async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin
             <Field label="Mã phòng (6 ký tự)" name="code" required maxLength={6} autoComplete="off" autoCapitalize="characters" />
           </div>
           <SubmitButton>Vào phòng</SubmitButton>
+        </form>
+      </Card>
+      <Card className="space-y-3">
+        <h2 className="text-xl font-bold">Tạo phòng lô tô truyền thống (63 tỉnh)</h2>
+        <p className="text-base text-ink-soft">
+          Người tạo phòng sẽ là <strong>chủ phòng</strong>: hô số, tạm dừng, hoàn tác, chuyển quyền cho người khác.
+          Mỗi người chơi chọn một bảng cố định theo tỉnh/thành (bản đồ 63 tỉnh cũ), bảng chọn rồi sẽ khóa.
+        </p>
+        <form action={createProvinceRoom} className="grid gap-4 sm:grid-cols-2">
+          <Field label="Tên phòng" name="title" required maxLength={120} placeholder="Ví dụ: Lô tô tối mùng 1 nhà mình" />
+          <Field label={`Giải kinh (tổng, bằng ${coin.name.toLocaleLowerCase("vi-VN")})`} name="prize" type="number" min={0} max={500} defaultValue={50} required />
+          <div>
+            <label className="mb-1 block text-base font-semibold" htmlFor="winRows">Luật thắng (chốt khi tạo phòng)</label>
+            <select id="winRows" name="winRows" defaultValue="1" className="min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-3 text-lg">
+              <option value="1">Đủ 1 hàng ngang</option>
+              <option value="2">Đủ 2 hàng ngang</option>
+              <option value="3">Đủ cả 3 hàng (kinh lớn)</option>
+            </select>
+          </div>
+          <div className="space-y-2 pt-6">
+            <label className="flex min-h-11 items-center gap-3 text-base font-semibold">
+              <input type="checkbox" name="autoWin" defaultChecked className="h-6 w-6" /> Tự động phát hiện người thắng sau mỗi số
+            </label>
+            <label className="flex min-h-11 items-center gap-3 text-base font-semibold">
+              <input type="checkbox" name="allowChange" className="h-6 w-6" /> Cho người chơi đổi bảng trước khi bắt đầu
+            </label>
+          </div>
+          <div><SubmitButton>Tạo phòng — tôi làm chủ phòng</SubmitButton></div>
         </form>
       </Card>
       {rooms.length === 0 && (
@@ -65,7 +93,7 @@ async function Rooms({ tz, isAdmin, coin }: { tz: string; isAdmin: boolean; coin
           <div>
             <h2 className="text-xl font-bold">{r.title}</h2>
             <p className="text-base text-ink-soft">
-              Mã <strong className="tracking-widest">{r.code}</strong> · {STATUS[r.status] ?? r.status} · Giải kinh {r.prize_points} {coinLower} · {formatDateTime(r.created_at, tz)}
+              Mã <strong className="tracking-widest">{r.code}</strong> · {STATUS[r.status] ?? r.status}{r.mode === "province" ? ` · Truyền thống 63 tỉnh · thắng ${r.win_rows} hàng` : ""} · Giải kinh {r.prize_points} {coinLower} · {formatDateTime(r.created_at, tz)}
             </p>
           </div>
           <Link href={`/tro-choi/lo-to/${r.id}`} className={buttonClass}>{r.status === "waiting" || r.status === "playing" ? "Vào phòng" : "Xem lại"}</Link>
