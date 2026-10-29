@@ -25,10 +25,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   const branchName = new Map(branches.map((b) => [b.id, b.name]));
 
   let query = supabase.from("members_view")
-    .select("id, full_name, nickname, gender, avatar_path, branch_id, birth_solar_year, death_solar_year, is_deceased, hometown, generation_no", { count: "exact" });
+    .select("id, full_name, nickname, alt_names, gender, avatar_path, branch_id, birth_solar_year, death_solar_year, is_deceased, hometown, generation_no", { count: "exact" });
   const re = accentInsensitivePattern(params.q);
   // Mẫu đã được làm sạch (chỉ chữ, số, khoảng trắng, gạch ngang và lớp ký tự) nên đặt trong dấu nháy là an toàn
-  if (re) query = query.or(`full_name.imatch."${re}",nickname.imatch."${re}",hometown.imatch."${re}"`);
+  if (re) query = query.or(`full_name.imatch."${re}",nickname.imatch."${re}",alt_names.imatch."${re}",hometown.imatch."${re}"`);
   if (params.branch === "none") query = query.is("branch_id", null);
   else if (params.branch) query = query.in("branch_id", [...branchWithDescendants(branches, params.branch)]);
   if (params.gender) query = query.eq("gender", params.gender);
@@ -43,7 +43,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
     redirect(`/thanh-vien${u.toString() ? `?${u}` : ""}`);
   }
   const rows = (data ?? []) as {
-    id: string; full_name: string; nickname: string | null; gender: MemberCardData["gender"]; avatar_path: string | null;
+    id: string; full_name: string; nickname: string | null; alt_names: string | null; gender: MemberCardData["gender"]; avatar_path: string | null;
     branch_id: string | null; birth_solar_year: number | null; death_solar_year: number | null; is_deceased: boolean;
     hometown: string | null; generation_no: number | null;
   }[];
@@ -111,7 +111,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         {rows.map((r) => (
           <li key={r.id}>
             <MemberCard m={{
-              id: r.id, full_name: r.full_name, nickname: r.nickname, gender: r.gender, avatar: r.avatar_path ? (avatarUrls[r.avatar_path] ?? null) : null,
+              id: r.id, full_name: r.full_name, nickname: r.nickname, alt_names: r.alt_names, gender: r.gender, avatar: r.avatar_path ? (avatarUrls[r.avatar_path] ?? null) : null,
               birth_solar_year: r.birth_solar_year, death_solar_year: r.death_solar_year, is_deceased: r.is_deceased,
               hometown: r.hometown, branchName: r.branch_id ? (branchName.get(r.branch_id) ?? null) : null, generation_no: r.generation_no,
             }} />
