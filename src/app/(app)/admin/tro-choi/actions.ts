@@ -136,3 +136,20 @@ export async function saveLotoPenalty(fd: FormData) {
   if (error) return backTo(BASE, "error", rpcMessage(error));
   return done(raw > 0 ? `Đã đặt mức phạt kinh sai: ${raw} xu mỗi lần.` : "Đã tắt phạt kinh sai.");
 }
+
+/** Giong ho + nhac nen lo to (dot 2): link nhac, tan suat cau vui, cau ho rieng cua gia dinh. */
+export async function saveLotoAudio(fd: FormData) {
+  const session = await requireAdmin(BASE);
+  const musicUrl = String(fd.get("musicUrl") ?? "").trim();
+  const chatter = Number(fd.get("chatter"));
+  if (!Number.isInteger(chatter) || chatter < 0 || chatter > 100) return backTo(BASE, "error", "Tần suất câu hô vui phải là số nguyên từ 0 đến 100.");
+  if (musicUrl && (musicUrl.length > 500 || !/^https?:\/\//i.test(musicUrl))) return backTo(BASE, "error", "Đường dẫn nhạc phải bắt đầu bằng http:// hoặc https:// và tối đa 500 ký tự.");
+  const lines = String(fd.get("extraLines") ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 30);
+  if (lines.some((l) => l.length > 200)) return backTo(BASE, "error", "Mỗi câu hô riêng tối đa 200 ký tự.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("games_set_loto_audio", {
+    p_family: session.familyId, p_music_url: musicUrl || null, p_chatter: chatter, p_extra_lines: lines,
+  });
+  if (error) return backTo(BASE, "error", rpcMessage(error));
+  return done("Đã lưu cấu hình giọng hô & nhạc nền lô tô.");
+}

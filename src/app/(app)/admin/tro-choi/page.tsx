@@ -7,7 +7,7 @@ import { noticeFor } from "@/lib/games/notice";
 import { Alert, Card, Field, SelectField, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton, ConfirmButton } from "@/components/SubmitButton";
 import {
-  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveCoin, saveLotoPenalty, saveSettings,
+  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveCoin, saveLotoAudio, saveLotoPenalty, saveSettings,
 } from "./actions";
 import { COIN_UNITS, CUSTOM_COIN_ICONS, CUSTOM_COIN_KEY, coinLabel, resolveCoin } from "@/lib/coins";
 
@@ -119,6 +119,38 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
           </div>
           <SubmitButton>Lưu mức phạt</SubmitButton>
         </form>
+      </Card>
+
+      <Card className="space-y-4">
+        <h2 className="text-xl font-bold">Lô tô truyền thống — giọng hô & nhạc nền</h2>
+        <p className="text-base text-ink-soft">
+          Giọng hô dùng giọng đọc tiếng Việt có sẵn trong trình duyệt của mỗi người chơi (ai muốn nghe thì bấm bật trong phòng).
+          Câu hô vui sẽ xen kẽ câu &ldquo;Số n&rdquo; theo tần suất bạn đặt. Nhạc nền phát từ một đường dẫn tệp nhạc (mp3...)
+          trên mạng; khi giọng hô đang đọc, nhạc tự nhỏ xuống.
+        </p>
+        <form action={saveLotoAudio} className="grid gap-4 sm:grid-cols-2">
+          <Field label="Đường dẫn nhạc nền (để trống = không dùng nhạc)" name="musicUrl" maxLength={500} defaultValue={s?.loto_music_url ?? ""} placeholder="https://.../nhac-lo-to.mp3" />
+          <Field label="Tần suất câu hô vui (0–100%)" name="chatter" type="number" min={0} max={100} defaultValue={String(s?.loto_chatter ?? 60)} />
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-base font-semibold" htmlFor="extraLines">Câu hô riêng của nhà mình (mỗi câu một dòng, tối đa 30 câu, nhớ để {"{n}"} là chỗ con số)</label>
+            <textarea
+              id="extraLines" name="extraLines" rows={4} maxLength={6000}
+              defaultValue={(s?.loto_extra_lines ?? []).join("\n")}
+              placeholder={"Ví dụ: Nhà mình ơi, ra số {n} rồi nè!"}
+              className="w-full rounded-xl border border-ink-soft/40 bg-white px-3 py-2 text-base"
+            />
+          </div>
+          <div className="sm:col-span-2"><SubmitButton>Lưu giọng hô & nhạc</SubmitButton></div>
+        </form>
+      </Card>
+
+      <Card className="space-y-3">
+        <h2 className="text-xl font-bold">63 bảng tỉnh của lô tô truyền thống</h2>
+        <p className="text-base text-ink-soft">
+          Xem và sửa bộ số của từng bảng tỉnh: đảo bộ số mới, hoặc xếp lại bố cục giữ nguyên 15 số.
+          Mọi thay đổi có lưu lịch sử để khôi phục, và chỉ áp dụng cho các ván sau (bảng người chơi đã chọn không đổi).
+        </p>
+        <Link href="/admin/tro-choi/bang-lo-to" className={buttonClass}>Mở trình sửa 63 bảng tỉnh</Link>
       </Card>
 
       <Card className="space-y-4">
