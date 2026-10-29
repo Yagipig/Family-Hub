@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { gamesAccess, profileNames } from "@/lib/games/server";
+import { resolveCoin } from "@/lib/coins";
 import { verifyLottery } from "@/lib/games/fair";
 import { Alert, Card, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -28,7 +29,7 @@ export default async function LotteryPage({ searchParams }: { searchParams: Prom
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Xổ số gia đình</h1>
-      <GamesBanner />
+      <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {access.state !== "ok" ? (
@@ -37,13 +38,14 @@ export default async function LotteryPage({ searchParams }: { searchParams: Prom
           <Link href="/tro-choi" className={buttonGhostClass}>Về trang trò chơi</Link>
         </Card>
       ) : (
-        <Body session={session} isAdmin={access.isAdmin} />
+        <Body session={session} isAdmin={access.isAdmin} coin={resolveCoin(access.settings)} />
       )}
     </>
   );
 }
 
-async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof requireSession>>; isAdmin: boolean }) {
+async function Body({ session, isAdmin, coin }: { session: Awaited<ReturnType<typeof requireSession>>; isAdmin: boolean; coin: ReturnType<typeof resolveCoin> }) {
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
   const supabase = await createClient();
   const load = async () => {
     const { data } = await supabase.from("lottery_draws")
@@ -107,11 +109,11 @@ async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof r
             </p>
             <ul className="text-base">
               {dPrizes.map((p) => (
-                <li key={p.rank}>Giải {p.rank}: {p.label}{p.kind === "points" ? ` (${p.points} điểm vui)` : ""}</li>
+                <li key={p.rank}>Giải {p.rank}: {p.label}{p.kind === "points" ? ` (${p.points} ${coinLower})` : ""}</li>
               ))}
             </ul>
             <p className="text-base text-ink-soft">
-              Vé đầu tiên miễn phí ({d.free_tickets} vé), các vé sau {d.ticket_price} điểm vui/vé, tối đa {d.max_tickets} vé mỗi người. Đã phát {d.ticket_count} vé.
+              Vé đầu tiên miễn phí ({d.free_tickets} vé), các vé sau {d.ticket_price} {coinLower}/vé, tối đa {d.max_tickets} vé mỗi người. Đã phát {d.ticket_count} vé.
             </p>
 
             {d.status === "open" && (
@@ -123,7 +125,7 @@ async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof r
                   {!due && myTickets.length < d.max_tickets && (
                     <form action={getTicket}>
                       <input type="hidden" name="id" value={d.id} />
-                      <SubmitButton>{nextPaid && d.ticket_price > 0 ? `Đổi ${d.ticket_price} điểm lấy 1 vé` : "Nhận vé miễn phí"}</SubmitButton>
+                      <SubmitButton>{nextPaid && d.ticket_price > 0 ? `Đổi ${d.ticket_price} ${coinLower} lấy 1 vé` : "Nhận vé miễn phí"}</SubmitButton>
                     </form>
                   )}
                   {(due || isAdmin) && (
@@ -144,7 +146,7 @@ async function Body({ session, isAdmin }: { session: Awaited<ReturnType<typeof r
                   {dResults.map((r) => (
                     <li key={r.rank} className={r.user_id === session.userId ? "font-bold text-wine" : ""}>
                       Giải {r.rank} ({r.label}): vé #{r.ticket_no} — {names.get(r.user_id) ?? "Thành viên"}
-                      {r.points_awarded > 0 ? ` · +${r.points_awarded} điểm` : ""}
+                      {r.points_awarded > 0 ? ` · +${r.points_awarded} ${coinLower}` : ""}
                     </li>
                   ))}
                   {dResults.length === 0 && <li>Không có vé nào nên chưa trao giải.</li>}
