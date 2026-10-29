@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 
@@ -14,7 +16,7 @@ export const viewport: Viewport = { themeColor: "#7b1e2b", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body className="min-h-dvh antialiased">{children}<RegisterServiceWorker /></body>
+      <body className="min-h-dvh antialiased">{children}<RegisterServiceWorker /><Analytics /><SpeedInsights /></body>
     </html>
   );
 }
