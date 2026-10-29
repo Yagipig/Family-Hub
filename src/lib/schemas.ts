@@ -10,6 +10,11 @@ export const redeemSchema = z.object({
   displayName: z.string().trim().min(1, "Vui lòng nhập tên hiển thị").max(120),
   email: z.email("Email chưa hợp lệ").max(254).transform((v) => v.toLowerCase()),
   password: z.string().min(10, "Mật khẩu cần ít nhất 10 ký tự").max(200),
+  confirmPassword: z.string().min(1, "Vui lòng nhập lại mật khẩu."),
+}).superRefine((v, ctx) => {
+  if (v.password !== v.confirmPassword) {
+    ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Mật khẩu nhập lại không khớp." });
+  }
 });
 
 export const inviteSchema = z.object({
