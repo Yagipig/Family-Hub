@@ -7,6 +7,7 @@ import { gamesAccess, profileNames } from "@/lib/games/server";
 import { resolveCoin } from "@/lib/coins";
 import { verifyLoto } from "@/lib/games/fair";
 import { PROVINCE63_BY_CODE } from "@/lib/games/provinces63";
+import { MIN_STAKE, STAKE_DENOMINATIONS, fmtLa } from "@/lib/games/stakes";
 import { Alert, Card, SelectField, buttonGhostClass } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
@@ -21,7 +22,7 @@ import { LotoHostPanel } from "@/components/LotoHostPanel";
 import { LotoRealtime } from "@/components/LotoRealtime";
 import { ProvincePicker } from "@/components/ProvincePicker";
 import {
-  callNext, claimBoard, claimKinh, endRoom, enterRoomCode, inviteMembers, joinRoom, pauseRoom, releaseBoard, resumeRoom, setCodeRequired, startRoom, transferHostRandom, undoCallRoom, uninviteMember,
+  addBots, callNext, cancelGrant, claimBoard, claimKinh, endRoom, enterRoomCode, inviteMembers, joinRoom, pauseRoom, releaseBoard, removeBot, requestGrant, resumeRoom, setCodeRequired, startRoom, transferHostRandom, undoCallRoom, uninviteMember,
 } from "../actions";
 
 export const metadata = { title: "Phòng lô tô" };
@@ -67,15 +68,19 @@ export default async function LotoRoomPage({ params, searchParams }: {
   const room = rd as Room;
   const province = room.mode === "province";
 
-  const [{ data: cd }, { data: calls }, { data: sd }, { data: bd }, { data: vd }, { data: wd }, { data: inv }] = await Promise.all([
+  const [{ data: cd }, { data: calls }, { data: sd }, { data: bd }, { data: vd }, { data: wd }, { data: inv }, { data: bal }, { data: pg }] = await Promise.all([
     supabase.from("loto_cards").select("id, card_no, grid, user_id, board_code").eq("room_id", roomId).order("card_no"),
     supabase.from("loto_calls").select("seq, number").eq("room_id", roomId).order("seq"),
     supabase.from("game_seeds").select("seed").eq("kind", "loto").eq("ref_id", roomId).maybeSingle(),
     province ? supabase.from("loto_boards").select("code, province_name, grid") : Promise.resolve({ data: null }),
-    supabase.from("loto_room_cards_v").select("board_code, user_id").eq("room_id", roomId),
-    supabase.from("loto_winners").select("user_id, card_id, board_code, share_points").eq("room_id", roomId),
+    supabase.from("loto_room_cards_v").select("board_code, user_id, bot_name, card_id, card_no, stake_points").eq("room_id", roomId),
+    supabase.from("loto_winners").select("user_id, bot_name, card_id, board_code, share_points").eq("room_id", roomId),
     supabase.from("loto_invites").select("user_id").eq("room_id", roomId),
+    supabase.rpc("points_my_balance", { p_family: session.familyId }),
+    supabase.from("point_grant_requests").select("id, amount").eq("user_id", session.userId).eq("status", "pending").maybeSingle(),
   ]);
+  const myBalance = typeof bal === "number" ? bal : 0;
+  const pendingGrant = (pg ?? null) as { id: string; amount: number } | null;
   const allCards = (cd ?? []) as Array<{ id: string; card_no: number; grid: number[]; user_id: string; board_code: string | null }>;
   const mine = allCards.filter((c) => c.user_id === session.userId);
   const winnerCard = room.winner_card ? allCards.find((c) => c.id === room.winner_card) : undefined;
@@ -88,18 +93,22 @@ export default async function LotoRoomPage({ params, searchParams }: {
   const grids: Record<string, number[]> = {};
   const boardName: Record<string, string> = {};
   for (const b of boards) { grids[b.code] = b.grid; boardName[b.code] = b.province_name; }
-  const claims = (vd ?? []) as Array<{ board_code: string | null; user_id: string }>;
-  const winners = (wd ?? []) as Array<{ user_id: string; card_id: string; board_code: string | null; share_points: number }>;
+  const claims = (vd ?? []) as Array<{ board_code: string | null; user_id: string | null; bot_name: string | null; card_id: string; card_no: number; stake_points: number }>;
+  const pot = claims.filter((c) => c.card_no === 1).reduce((s, c) => s + (c.stake_points || 0), 0);
+  const winners = (wd ?? []) as Array<{ user_id: string | null; bot_name: string | null; card_id: string; board_code: string | null; share_points: number }>;
 
   const hostId = room.host_user ?? room.created_by;
   const nameIds = [...new Set([
     ...(hostId ? [hostId] : []),
-    ...claims.map((c) => c.user_id),
-    ...winners.map((w) => w.user_id),
+    ...claims.map((c) => c.user_id).filter((x): x is string => !!x),
+    ...winners.map((w) => w.user_id).filter((x): x is string => !!x),
     ...(room.winner_user ? [room.winner_user] : []),
   ])];
   const names = await profileNames(nameIds);
   const nameOf = (id: string | null | undefined) => (id ? names.get(id) ?? "Thành viên" : "Thành viên");
+  const claimName = (c: { user_id: string | null; bot_name: string | null }) =>
+    c.bot_name ? `🤖 ${c.bot_name}` : nameOf(c.user_id);
+  const botCards = claims.filter((c) => c.bot_name);
   const isHost = (hostId === session.userId) || access.isAdmin;
   // Cong ma phong (Cach 2): chu phong/admin + nguoi duoc moi vao thang; nguoi khac phai nhap dung ma (cookie ghi nho).
   const invitedIds = new Set(((inv ?? []) as Array<{ user_id: string }>).map((i) => i.user_id));
@@ -116,10 +125,10 @@ export default async function LotoRoomPage({ params, searchParams }: {
     const extra = await profileNames(memberIds.filter((id) => !names.has(id)));
     for (const [k, v] of extra) names.set(k, v);
   }
-  const joinedIds = new Set(claims.map((c) => c.user_id));
+  const joinedIds = new Set(claims.map((c) => c.user_id).filter((x): x is string => !!x));
   const taken: Record<string, { name: string; mine: boolean }> = {};
   for (const c of claims) {
-    if (c.board_code) taken[c.board_code] = { name: nameOf(c.user_id), mine: c.user_id === session.userId };
+    if (c.board_code) taken[c.board_code] = { name: claimName(c), mine: c.user_id === session.userId };
   }
   const myBoard = mine.find((c) => c.board_code);
   const live = room.status === "waiting" || room.status === "playing" || room.status === "paused";
@@ -128,7 +137,7 @@ export default async function LotoRoomPage({ params, searchParams }: {
   const extraLines = access.settings.loto_extra_lines ?? [];
   const musicUrl = access.settings.loto_music_url ?? null;
   const winnerNames = winners.length > 0
-    ? winners.map((w) => nameOf(w.user_id))
+    ? winners.map((w) => (w.bot_name ? `🤖 ${w.bot_name}` : nameOf(w.user_id)))
     : room.winner_user ? [nameOf(room.winner_user)] : [];
 
   return (
@@ -153,7 +162,8 @@ export default async function LotoRoomPage({ params, searchParams }: {
           {iAmInvited && room.status === "waiting" && <> · <strong className="text-wine">Bạn được chủ phòng mời</strong></>}
           {province && <> · Lô tô truyền thống 63 tỉnh · Thắng: đủ <strong>{room.win_rows} hàng ngang</strong>{room.auto_win ? " · Tự động báo người thắng" : ""}</>}
           <br />
-          Giải kinh {room.prize_points} {coin.name.toLocaleLowerCase("vi-VN")}
+          Giải của chủ phòng {fmtLa(room.prize_points)} {coin.name.toLocaleLowerCase("vi-VN")}
+          {pot > 0 && <> + tổng cược {fmtLa(pot)} (cộng vào giải)</>}
           {winners.length > 1 && room.status === "finished" ? " (chia đều cho những người cùng thắng)" : ""} · Chủ phòng: <strong>{nameOf(hostId)}</strong>
         </p>
         <div className="flex flex-wrap gap-3">
@@ -191,7 +201,7 @@ export default async function LotoRoomPage({ params, searchParams }: {
               <ul className="space-y-1 text-lg">
                 {winners.map((w) => (
                   <li key={w.card_id}>
-                    <strong>{nameOf(w.user_id)}</strong>
+                    <strong>{w.bot_name ? `🤖 ${w.bot_name}` : nameOf(w.user_id)}</strong>
                     {w.board_code && <> — bảng {boardName[w.board_code] ?? PROVINCE63_BY_CODE.get(w.board_code)?.name ?? w.board_code} ({w.board_code})</>}
                     {" "}· nhận {w.share_points} {coin.name.toLocaleLowerCase("vi-VN")}
                   </li>
@@ -269,6 +279,36 @@ export default async function LotoRoomPage({ params, searchParams }: {
               <SubmitButton>Mời những người đã chọn</SubmitButton>
             </form>
           </div>
+          <div className="space-y-3 border-t border-champagne/60 pt-3">
+            <h3 className="text-lg font-bold">Bot chơi thay người 🤖</h3>
+            <p className="text-base text-ink-soft">
+              Thêm bot để phòng đông vui ngay cả khi ít người. Bot tự chọn bảng, tự dò số và tự kinh khi đủ hàng như người thật.
+            </p>
+            {botCards.length > 0 && (
+              <ul className="space-y-1 text-base">
+                {botCards.map((c) => (
+                  <li key={c.card_id} className="flex flex-wrap items-center gap-3">
+                    <span>🤖 {c.bot_name}{province && c.board_code ? ` — bảng ${boardName[c.board_code] ?? c.board_code}` : ""}</span>
+                    <form action={removeBot}>
+                      <input type="hidden" name="roomId" value={room.id} />
+                      <input type="hidden" name="cardId" value={c.card_id} />
+                      <button className="text-sm font-semibold text-danger underline">Xóa bot</button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form action={addBots} className="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="roomId" value={room.id} />
+              <div>
+                <label className="mb-1 block text-base font-semibold" htmlFor="botCount">Số bot thêm vào</label>
+                <select id="botCount" name="count" defaultValue="3" className="min-h-12 rounded-xl border border-ink-soft/40 bg-white px-3 text-lg">
+                  {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => <option key={n} value={n}>{n} bot</option>)}
+                </select>
+              </div>
+              <SubmitButton>Thêm bot</SubmitButton>
+            </form>
+          </div>
         </Card>
       )}
 
@@ -330,9 +370,44 @@ export default async function LotoRoomPage({ params, searchParams }: {
         </Card>
       )}
 
+      {room.status === "waiting" && mine.length === 0 && !needsCode && pendingGrant && (
+        <Card className="space-y-3">
+          <h2 className="text-xl font-bold">Đang chờ cấp lá ⏳</h2>
+          <p className="text-base text-ink-soft">
+            Bạn đã xin cấp <strong>{fmtLa(pendingGrant.amount)} lá</strong>. Admin duyệt xong, tiền vào ví là bạn quay lại chọn bảng và đặt cược được ngay.
+          </p>
+          <form action={cancelGrant}>
+            <input type="hidden" name="requestId" value={pendingGrant.id} />
+            <input type="hidden" name="roomId" value={room.id} />
+            <button className="text-base font-semibold text-danger underline">Hủy yêu cầu này</button>
+          </form>
+        </Card>
+      )}
+
+      {room.status === "waiting" && mine.length === 0 && !needsCode && !pendingGrant && myBalance < MIN_STAKE && (
+        <Card className="space-y-3">
+          <h2 className="text-xl font-bold">Xin cấp lá để chơi</h2>
+          <p className="text-base text-ink-soft">
+            Ví của bạn còn <strong>{fmtLa(myBalance)} lá</strong> — chưa đủ mức cược nhỏ nhất {fmtLa(MIN_STAKE)} lá.
+            Chọn mệnh giá gửi cho admin; admin duyệt thì tiền vào ví, bạn dùng tiền đó đặt cược vào phòng.
+          </p>
+          <form action={requestGrant} className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="roomId" value={room.id} />
+            <div>
+              <label className="mb-1 block text-base font-semibold" htmlFor="grantAmount">Mệnh giá xin cấp</label>
+              <select id="grantAmount" name="amount" defaultValue="5000" className="min-h-12 rounded-xl border border-ink-soft/40 bg-white px-3 text-lg">
+                {STAKE_DENOMINATIONS.map((n) => <option key={n} value={n}>{fmtLa(n)} lá</option>)}
+              </select>
+            </div>
+            <SubmitButton>Gửi yêu cầu xin cấp</SubmitButton>
+          </form>
+        </Card>
+      )}
+
       {province && room.status === "waiting" && !myBoard && !needsCode && (
         <Card className="space-y-3">
           <h2 className="text-xl font-bold">Chọn bảng tỉnh của bạn</h2>
+          <p className="text-base text-ink-soft">Ví của bạn: <strong>{fmtLa(myBalance)} lá</strong>. Khi chọn bảng, bạn chọn kèm mức cược (trừ vào ví); thắng thì nhận phần chia của tổng giải.</p>
           {iAmInvited && <p className="text-base font-semibold text-wine">Bạn được chủ phòng mời — cứ chọn bảng, không cần nhập mã.</p>}
           <p className="text-base text-ink-soft">Mỗi tỉnh là một bảng lô tô cố định. Bấm vào tỉnh trên bản đồ (hoặc thẻ tỉnh bên dưới) để xem bảng rồi bấm &ldquo;Chọn bảng này&rdquo;. Bảng đã chọn sẽ khóa cho bạn.</p>
           <ProvincePicker roomId={room.id} grids={grids} taken={taken} claimAction={claimBoard} />
@@ -345,7 +420,7 @@ export default async function LotoRoomPage({ params, searchParams }: {
           <ul className="grid gap-1 text-lg sm:grid-cols-2">
             {claims.filter((c) => c.board_code).map((c) => (
               <li key={c.board_code ?? c.user_id}>
-                <strong>{boardName[c.board_code!] ?? c.board_code}</strong> — {nameOf(c.user_id)}{c.user_id === session.userId ? " (bạn)" : ""}
+                <strong>{boardName[c.board_code!] ?? c.board_code}</strong> — {claimName(c)}{c.user_id === session.userId ? " (bạn)" : ""}{c.stake_points > 0 ? ` · cược ${fmtLa(c.stake_points)}` : ""}
               </li>
             ))}
           </ul>
@@ -356,11 +431,17 @@ export default async function LotoRoomPage({ params, searchParams }: {
         <Card className="space-y-3">
           <h2 className="text-xl font-bold">Nhận tờ lô tô</h2>
           {iAmInvited && <p className="text-base font-semibold text-wine">Bạn được chủ phòng mời — cứ tham gia, không cần nhập mã.</p>}
+          <p className="text-base text-ink-soft">Ví của bạn: <strong>{fmtLa(myBalance)} lá</strong>. Mức cược trừ vào ví; tổng cược của cả phòng thành giải.</p>
           <form action={joinRoom} className="flex flex-wrap items-end gap-3">
             <input type="hidden" name="roomId" value={room.id} />
             <div className="min-w-48">
               <SelectField label="Số tờ muốn chơi" name="cards" defaultValue="1">
                 <option value="1">1 tờ</option><option value="2">2 tờ</option><option value="3">3 tờ</option>
+              </SelectField>
+            </div>
+            <div className="min-w-48">
+              <SelectField label="Mức cược của bạn" name="stake" defaultValue="1000">
+                {STAKE_DENOMINATIONS.map((n) => <option key={n} value={n}>{fmtLa(n)} lá</option>)}
               </SelectField>
             </div>
             <SubmitButton>Tham gia</SubmitButton>
