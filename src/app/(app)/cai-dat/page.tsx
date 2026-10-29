@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { requireSession, ROLE_LABELS } from "@/lib/auth";
-import { Card, buttonGhostClass } from "@/components/ui";
+import { Card, buttonClass, buttonGhostClass } from "@/components/ui";
+import { signOut } from "@/app/actions/auth";
 import { ProfileForm } from "./ProfileForm";
+import { InstallApp } from "@/components/InstallApp";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Cài đặt" };
@@ -17,6 +19,11 @@ export default async function SettingsPage() {
         <h2 className="text-xl font-bold">Hồ sơ của tôi</h2>
         <p className="text-base text-ink-soft">Email: {session.email} · Vai trò: {ROLE_LABELS[session.role]}</p>
         <ProfileForm displayName={session.displayName} aliasName={(profile as { alias_name: string | null } | null)?.alias_name ?? null} />
+      </Card>
+      <Card className="space-y-3">
+        <h2 className="text-xl font-bold">Ghim app ra màn hình chính</h2>
+        <p className="text-base text-ink-soft">Ghim My Family ra màn hình chính điện thoại để mở nhanh như một ứng dụng, không cần mở trình duyệt gõ địa chỉ.</p>
+        <InstallApp />
       </Card>
       <Card className="space-y-3">
         <h2 className="text-xl font-bold">Bảo mật</h2>
@@ -40,6 +47,13 @@ export default async function SettingsPage() {
         <h2 className="text-xl font-bold">Thông tin nhận lì xì</h2>
         <p className="text-base text-ink-soft">Tùy chọn. Thông tin được mã hóa, mặc định ẩn và chỉ chia sẻ cho người bạn chọn. Family Hub không chuyển tiền.</p>
         <Link href="/cai-dat/nhan-tien" className={buttonGhostClass}>Quản lý thông tin nhận tiền</Link>
+      </Card>
+      <Card className="space-y-3">
+        <h2 className="text-xl font-bold">Tài khoản</h2>
+        <p className="text-base text-ink-soft">Đang đăng nhập bằng {session.email}. Đăng xuất khi dùng máy chung để bảo vệ tài khoản của bạn.</p>
+        <form action={signOut}>
+          <button className={buttonClass}>Đăng xuất</button>
+        </form>
       </Card>
     </>
   );
