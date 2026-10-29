@@ -16,7 +16,7 @@ export default async function AdminHome() {
     { href: "/admin/bao-cao", title: "Báo cáo tin nhắn", text: "Xử lý báo cáo tin nhắn: ẩn tin, gỡ thành viên khỏi nhóm." },
     { href: "/admin/kiem-duyet", title: "Kiểm duyệt bảng tin", text: "Xem báo cáo bài viết, ẩn hoặc xóa bài vi phạm." },
     { href: "/admin/anh-bia", title: "Ảnh bìa và dung lượng ảnh", text: "Chọn ảnh nền cho cả gia đình, xem mức dùng kho ảnh." },
-    { href: "/admin/tro-choi", title: "Quản trị trò chơi", text: "Bật hoặc tắt trò chơi điểm ảo, tạo bao lì xì may mắn, kỳ xổ số, phòng lô tô, bầu cua." },
+    { href: "/admin/tro-choi", title: "Quản trị trò chơi", text: "Bật hoặc tắt trò chơi xu ảo, tạo bao lì xì may mắn, kỳ xổ số, phòng lô tô, bầu cua." },
     { href: "/admin/yeu-cau-du-lieu", title: "Yêu cầu về dữ liệu cá nhân", text: "Thành viên xin bản sao, sửa, hạn chế hoặc xóa dữ liệu của họ." },
     { href: "/admin/nhat-ky", title: "Nhật ký hoạt động", text: "Xem ai đã làm gì và khi nào (chỉ thêm, không sửa được)." },
   ];
