@@ -10,11 +10,14 @@ import { SYMBOLS } from "@/lib/games/baucua";
 import { GamesAutoRefresh } from "@/components/GamesAutoRefresh";
 import { Countdown } from "@/components/Countdown";
 import { TvController, type TvAction } from "@/components/TvController";
+import { LotoAnnouncer } from "@/components/LotoAnnouncer";
+import { LotoMusic } from "@/components/LotoMusic";
+import { WinCelebration } from "@/components/WinCelebration";
 
 export const metadata = { title: "Trình chiếu TV" };
 
 type Top = Array<{ name: string; balance: number; rank: number }> | null;
-type LotoTv = { kind: "loto"; title: string; code: string; status: string; prize_points: number; called_count: number; called: number[]; last: number | null; players: number; winner: { name: string } | null; top: Top };
+type LotoTv = { kind: "loto"; title: string; code: string; status: string; prize_points: number; called_count: number; called: number[]; last: number | null; players: number; winner: { name: string } | null; winners?: Array<{ name: string; province: string | null; share: number }>; top: Top };
 type LotteryTv = {
   kind: "lottery"; title: string; status: string; draw_at: string; ticket_count: number; commit: string; seed: string | null;
   prizes: Array<{ rank: number; label: string; points: number | null; kind: string }>;
@@ -99,7 +102,15 @@ export default async function TvPage({ params }: { params: Promise<{ roomId: str
 
   return (
     <Frame notice live noticeText={noticeFor(coin.name)}>
-      {tv.kind === "loto" && <LotoView tv={tv} coinLower={coinLower} />}
+      {tv.kind === "loto" && (
+        <LotoView
+          tv={tv} coinLower={coinLower}
+          chatter={access.settings.loto_chatter ?? 60}
+          extraLines={access.settings.loto_extra_lines ?? []}
+          musicUrl={access.settings.loto_music_url ?? null}
+          roomId={roomId}
+        />
+      )}
       {tv.kind === "lottery" && <LotteryView tv={tv} tz={session.timezone} coinLower={coinLower} />}
       {tv.kind === "baucua" && <BaucuaView tv={tv} />}
       {tv.top && tv.top.length > 0 && <TopBar top={tv.top} coinLower={coinLower} />}
@@ -136,22 +147,52 @@ function TopBar({ top, coinLower }: { top: NonNullable<Top>; coinLower: string }
   );
 }
 
-function LotoView({ tv, coinLower }: { tv: LotoTv; coinLower: string }) {
+function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId }: {
+  tv: LotoTv; coinLower: string; chatter: number; extraLines: string[]; musicUrl: string | null; roomId: string;
+}) {
   const called = new Set(tv.called);
+  const winners = tv.winners ?? [];
+  const winnerNames = winners.length > 0 ? winners.map((w) => w.name) : tv.winner ? [tv.winner.name] : [];
   return (
     <div className="space-y-8">
+      {tv.status === "finished" && winnerNames.length > 0 && <WinCelebration fireKey={`${roomId}:tv-win`} big />}
       <h1 className="text-center text-5xl font-bold text-champagne">{tv.title}</h1>
       <p className="text-center text-3xl">Mã phòng <strong className="tracking-[0.3em] text-champagne">{tv.code}</strong> · {tv.players} người chơi · Giải kinh {tv.prize_points} {coinLower}</p>
-      {tv.winner ? (
-        <p className="text-center text-7xl font-bold text-champagne">KINH! {tv.winner.name}</p>
+      {winnerNames.length > 0 ? (
+        <div className="space-y-4" role="status" aria-live="polite">
+          <p className="text-center text-7xl font-bold text-champagne">🎉 KINH RỒI NHÉ!</p>
+          <ul className="mx-auto max-w-4xl space-y-3">
+            {winners.length > 0 ? winners.map((w, i) => (
+              <li key={i} className="flex flex-wrap justify-between gap-4 rounded-2xl bg-wine-dark px-8 py-4 text-4xl">
+                <span>{w.name}{w.province ? ` · bảng ${w.province}` : ""}</span>
+                <strong className="text-champagne">+{w.share} {coinLower}</strong>
+              </li>
+            )) : (
+              <li className="text-center text-6xl font-bold">{winnerNames[0]}</li>
+            )}
+          </ul>
+        </div>
       ) : (
         <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
-          <p className="text-3xl">{tv.status === "waiting" ? "Chờ bắt đầu" : tv.status === "playing" ? "Số vừa hô" : "Ván đã kết thúc"}</p>
+          <p className="text-3xl">{tv.status === "waiting" ? "Chờ bắt đầu" : tv.status === "playing" ? "Số vừa hô" : tv.status === "paused" ? "Đang tạm dừng" : "Ván đã kết thúc"}</p>
           <div className="flex h-72 w-72 items-center justify-center rounded-full bg-champagne text-[10rem] font-bold leading-none text-wine-dark sm:h-96 sm:w-96 sm:text-[14rem]">
             {tv.last ?? "–"}
           </div>
         </div>
       )}
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 rounded-2xl bg-white p-4">
+        <LotoAnnouncer
+          status={tv.status as "waiting" | "playing" | "paused" | "finished" | "cancelled"}
+          last={tv.last}
+          called={tv.called}
+          myGrids={[]}
+          winRows={1}
+          winnerNames={winnerNames}
+          chatter={chatter}
+          extraLines={extraLines}
+        />
+        <LotoMusic url={musicUrl} />
+      </div>
       <ol className="grid grid-cols-10 gap-2 text-2xl sm:text-4xl" aria-label="Bảng 90 số">
         {Array.from({ length: 90 }, (_, i) => i + 1).map((n) => (
           <li key={n} className={`flex aspect-square items-center justify-center rounded-lg font-bold ${
