@@ -2,14 +2,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { lotoRows } from "@/lib/games/loto";
 
-type Card = { id: string; cardNo: number; grid: number[] };
+type Card = { id: string; cardNo: number; grid: number[]; boardLabel?: string };
 
 /**
  * Cac to lo to cua toi. Danh dau o chi la tien ich hien thi: "kinh" do MAY CHU kiem tra bang cac so da ho that.
  * Che do tu dong danh dau (mac dinh BAT) hoac tu bam vao tung o.
  */
 export function LotoCards({
-  roomId, cards, called, playing, winnerCardId, claimAction,
+  roomId, cards, called, playing, winnerCardId, claimAction, winRows = 1,
 }: {
   roomId: string;
   cards: Card[];
@@ -17,6 +17,7 @@ export function LotoCards({
   playing: boolean;
   winnerCardId?: string | null;
   claimAction: (fd: FormData) => Promise<void>;
+  winRows?: number;
 }) {
   const storeKey = `fh-loto-marks-${roomId}`;
   const [auto, setAuto] = useState(true);
@@ -47,10 +48,12 @@ export function LotoCards({
       {cards.map((c) => {
         const rows = lotoRows(c.grid);
         const full = rows.map((r) => r.every((v) => shown.has(v)));
+        const fullCount = full.filter(Boolean).length;
+        const ready = fullCount >= winRows;
         const isWinner = winnerCardId === c.id;
         return (
           <div key={c.id} className={`rounded-2xl border-2 p-3 ${isWinner ? "border-wine bg-champagne-soft" : "border-champagne/70 bg-ivory"}`}>
-            <p className="mb-2 text-base font-bold">Tờ {c.cardNo}{isWinner ? " — tờ chiến thắng" : ""}</p>
+            <p className="mb-2 text-base font-bold">{c.boardLabel ?? `Tờ ${c.cardNo}`}{isWinner ? " — tờ chiến thắng" : ""}</p>
             <div role="grid" aria-label={`Tờ lô tô số ${c.cardNo}`} className="grid grid-cols-9 gap-1">
               {[0, 1, 2].flatMap((r) =>
                 Array.from({ length: 9 }, (_, col) => {
@@ -82,13 +85,15 @@ export function LotoCards({
                 <input type="hidden" name="cardId" value={c.id} />
                 <button
                   className={`inline-flex min-h-14 items-center justify-center rounded-xl px-8 py-2 text-xl font-bold text-white ${
-                    full.some(Boolean) ? "bg-wine hover:bg-wine-dark motion-safe:animate-pulse" : "bg-ink-soft hover:bg-ink"
+                    ready ? "bg-wine hover:bg-wine-dark motion-safe:animate-pulse" : "bg-ink-soft hover:bg-ink"
                   }`}
                 >
-                  KINH!
+                  KINH RỒI NHÉ!
                 </button>
                 <span className="text-sm text-ink-soft">
-                  {full.some(Boolean) ? "Có hàng đủ 5 số — bấm KINH! để máy chủ kiểm tra." : "Chỉ bấm khi một hàng đã đủ 5 số."}
+                  {ready
+                    ? `Đã đủ ${winRows} hàng — bấm KINH RỒI NHÉ! để máy chủ kiểm tra.`
+                    : `Cần đủ ${winRows} hàng ngang (mỗi hàng 5 số đã hô) mới kinh được. Kinh sai có thể bị phạt theo cài đặt của quản trị.`}
                 </span>
               </form>
             )}
