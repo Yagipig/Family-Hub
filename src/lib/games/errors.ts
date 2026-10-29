@@ -31,6 +31,14 @@ const MESSAGES: Array<[RegExp, string]> = [
   [/not_betting/, "Ván này đã được chốt."],
   [/^closed$|\bclosed\b/, "Đã hết thời gian hoặc đã đóng."],
   [/bc_one_open_room|bc_one_betting_round/, "Đang có một phòng/ván mở rồi."],
+  [/board_taken/, "Bảng này vừa có người chọn mất rồi. Bạn chọn bảng tỉnh khác nhé!"],
+  [/change_not_allowed/, "Chủ phòng không cho đổi bảng trong phòng này."],
+  [/no_other_player/, "Chưa có người chơi nào khác để chuyển quyền chủ phòng."],
+  [/already_host/, "Người này đang là chủ phòng rồi."],
+  [/nothing_to_undo/, "Chưa có số nào để hoàn tác."],
+  [/not_paused/, "Ván không ở trạng thái tạm dừng."],
+  [/wrong_mode/, "Phòng này không phải phòng lô tô truyền thống."],
+  [/not_member/, "Người được chuyển không còn là thành viên gia đình."],
 ];
 
 export function gamesError(error: { code?: string; message?: string } | null | undefined): string | null {

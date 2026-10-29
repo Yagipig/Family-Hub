@@ -86,6 +86,15 @@ export const lotoRoomSchema = z.object({ title, prize: int(0, 500, "Giải kinh 
 export const lotoJoinSchema = z.object({ roomId: z.uuid(), cards: int(1, 3, "Chọn từ 1 đến 3 tờ") });
 export const lotoCodeSchema = z.object({ code: z.string().trim().toUpperCase().regex(/^[A-HJ-NP-Z2-9]{6}$/, "Mã phòng gồm 6 ký tự") });
 export const lotoClaimSchema = z.object({ roomId: z.uuid(), cardId: z.uuid() });
+export const lotoProvinceCreateSchema = z.object({
+  title, prize: int(0, 500, "Giải kinh từ 0 đến 500"),
+  winRows: int(1, 3, "Số hàng cần đủ để thắng từ 1 đến 3"),
+  autoWin: z.boolean(), allowChange: z.boolean(),
+});
+export const lotoBoardClaimSchema = z.object({
+  roomId: z.uuid(),
+  code: z.string().regex(/^VN63-\d{3}$/, "Mã bảng chưa đúng"),
+});
 
 export const bcRoomSchema = z.object({ title });
 export const bcRoundSchema = z.object({ roomId: z.uuid(), seconds: int(10, 600, "Thời gian đặt cược từ 10 đến 600 giây") });

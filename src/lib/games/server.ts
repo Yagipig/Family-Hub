@@ -15,6 +15,7 @@ export type GameSettings = {
   bc_max_round_total: number;
   bc_daily_loss_cap: number;
   bc_daily_win_cap: number;
+  loto_false_penalty?: number;
   /** Loại xu hiển thị thay cho "điểm" (cột có từ migration 20261104000002; thiếu → mặc định Điểm). */
   coin_unit?: string | null;
   coin_custom_name?: string | null;
