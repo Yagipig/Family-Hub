@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { chatAllowed, loadUserTimezone } from "@/lib/chat-server";
 import { PAGE_SIZE, type ChatMessage, type ConversationRow, type MemberRow } from "@/lib/chat";
 import { idSchema } from "@/lib/chat-schemas";
+import { Avatar } from "@/components/Avatar";
 import { ChatRoom } from "@/components/ChatRoom";
 
 export const metadata = { title: "Tin nhắn" };
@@ -42,6 +43,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ id: s
         <Link href="/tin-nhan" className="inline-flex min-h-12 items-center rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft">
           ← Danh sách
         </Link>
+        <Avatar name={conv.title} size={48} />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-bold text-wine">{conv.title}</h1>
           <p className="text-base text-ink-soft">

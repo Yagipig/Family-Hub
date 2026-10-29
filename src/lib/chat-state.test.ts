@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ChatMessage, LocalMessage, RawMessageRow } from "./chat";
 import {
-  addPending, applyDelete, applyEdit, confirmSent, fromRaw, latestConfirmedAt, markFailed, markSending,
-  oldestConfirmedAt, removePending, tsKey, upsertMany, upsertServerMessage,
+  addPending, applyDelete, applyEdit, confirmSent, fromRaw, isGroupEnd, isGroupStart, latestConfirmedAt, markFailed, markSending,
+  oldestConfirmedAt, removePending, sameGroup, tsKey, upsertMany, upsertServerMessage,
 } from "./chat-state";
 
 const CONV = "c0000000-0000-4000-8000-000000000001";
@@ -183,6 +183,56 @@ describe("sửa / xoá tại chỗ", () => {
     list = applyDelete(list, "orig");
     expect(list[0]).toMatchObject({ deleted: true, body: "" });
     expect(list[1]).toMatchObject({ reply_deleted: true, reply_body: null });
+  });
+});
+
+describe("cụm tin liên tiếp (kiểu Messenger)", () => {
+  const dayOf = (iso: string) => iso.slice(0, 10); // test dùng ngày UTC cho gọn
+  const at = (id: string, sender: string | null, time: string, over: Partial<ChatMessage> = {}) =>
+    msg({ id, sender_id: sender, created_at: `2026-10-28T${time}.000000+00:00`, ...over });
+
+  it("cùng người gửi, cùng ngày: cùng một cụm, chỉ đầu cụm mở đầu và cuối cụm kết thúc", () => {
+    const a = at("a", OTHER, "10:00:00");
+    const b = at("b", OTHER, "10:01:00");
+    const c = at("c", OTHER, "10:02:00");
+    expect(sameGroup(a, b, dayOf)).toBe(true);
+    expect(isGroupStart(undefined, a, dayOf)).toBe(true);
+    expect(isGroupStart(a, b, dayOf)).toBe(false);
+    expect(isGroupEnd(a, b, dayOf)).toBe(false);
+    expect(isGroupEnd(b, c, dayOf)).toBe(false);
+    expect(isGroupEnd(c, undefined, dayOf)).toBe(true);
+  });
+
+  it("khác người gửi thì cắt cụm", () => {
+    const a = at("a", OTHER, "10:00:00");
+    const b = at("b", ME, "10:01:00");
+    expect(sameGroup(a, b, dayOf)).toBe(false);
+    expect(isGroupStart(a, b, dayOf)).toBe(true);
+    expect(isGroupEnd(a, b, dayOf)).toBe(true);
+  });
+
+  it("tin hệ thống chen giữa thì cắt cụm; bản thân tin hệ thống không thuộc cụm nào", () => {
+    const a = at("a", OTHER, "10:00:00");
+    const sys = at("s", null, "10:01:00", { kind: "system", sender_name: null });
+    const b = at("b", OTHER, "10:02:00");
+    expect(sameGroup(a, sys, dayOf)).toBe(false);
+    expect(sameGroup(sys, b, dayOf)).toBe(false);
+    expect(isGroupStart(a, sys, dayOf)).toBe(false);
+    expect(isGroupEnd(sys, b, dayOf)).toBe(false);
+    expect(isGroupStart(sys, b, dayOf)).toBe(true);
+  });
+
+  it("sang ngày mới thì cắt cụm dù cùng người gửi", () => {
+    const a = msg({ id: "a", sender_id: OTHER, created_at: "2026-10-28T23:59:00.000000+00:00" });
+    const b = msg({ id: "b", sender_id: OTHER, created_at: "2026-10-29T00:01:00.000000+00:00" });
+    expect(sameGroup(a, b, dayOf)).toBe(false);
+  });
+
+  it("người gửi không xác định (sender null) không gộp cụm với ai", () => {
+    const a = at("a", null, "10:00:00", { sender_name: null });
+    const b = at("b", null, "10:01:00", { sender_name: null });
+    expect(sameGroup(a, b, dayOf)).toBe(false);
+    expect(isGroupStart(a, b, dayOf)).toBe(true);
   });
 });
 

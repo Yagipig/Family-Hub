@@ -8,9 +8,10 @@ import {
   type ChatMessage, type ConversationKind, type LocalMessage, type RawMessageRow, type ReasonKind,
 } from "@/lib/chat";
 import {
-  addPending, applyDelete, applyEdit, confirmSent, fromRaw, latestConfirmedAt, markFailed, markSending,
+  addPending, applyDelete, applyEdit, confirmSent, fromRaw, isGroupEnd, isGroupStart, latestConfirmedAt, markFailed, markSending,
   oldestConfirmedAt, removePending, startsNewDay, upsertMany, upsertServerMessage,
 } from "@/lib/chat-state";
+import { Avatar } from "@/components/Avatar";
 import { ChatMessageText } from "@/components/ChatMessageText";
 import { buttonClass, buttonGhostClass } from "@/components/ui";
 
@@ -354,6 +355,14 @@ export function ChatRoom({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doSend]);
 
+  // Ô soạn tin tự giãn chiều cao theo nội dung (từ 1 dòng tới tối đa ~6 dòng rồi cuộn trong ô)
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 168)}px`;
+  }, [draft]);
+
   function onComposerKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing || e.keyCode === 229) return;
     // Màn hình cảm ứng: Enter xuống dòng (đã có nút Gửi to). Máy tính: Enter gửi, Shift+Enter xuống dòng.
@@ -443,25 +452,37 @@ export function ChatRoom({
             <p className="py-10 text-center text-lg text-ink-soft">Chưa có tin nhắn nào. Hãy gửi lời chào đầu tiên!</p>
           )}
 
-          <ul className="space-y-1">
+          <ul>
             {messages.map((m, idx) => {
               const prev = messages[idx - 1];
+              const next = messages[idx + 1];
               const newDay = startsNewDay(prev, m, fmtDay);
               const own = m.sender_id === me.userId;
-              const showName = !own && m.kind === "text" && kind !== "direct" && (newDay || !prev || prev.sender_id !== m.sender_id || prev.kind === "system");
+              // Cụm tin liên tiếp cùng người gửi: chỉ đầu cụm hiện tên + ảnh, chỉ cuối cụm hiện giờ gửi
+              const groupStart = isGroupStart(prev, m, fmtDay);
+              const groupEnd = isGroupEnd(m, next, fmtDay);
+              const showName = !own && m.kind === "text" && kind !== "direct" && groupStart;
+              const showMeta = groupEnd || activeId === m.id || editing?.id === m.id || reporting?.id === m.id || m.status != null;
               const rowKey = m.client_id ?? m.id;
               return (
-                <li key={rowKey}>
+                <li key={rowKey} className={m.kind === "text" && !newDay ? (groupStart ? "mt-4" : "mt-0.5") : undefined}>
                   {newDay && (
-                    <div className="my-4 text-center text-base font-medium text-ink-soft" suppressHydrationWarning>{formatDay(m.created_at, timeZone)}</div>
+                    <div className="my-4 text-center" suppressHydrationWarning>
+                      <span className="inline-block rounded-full bg-champagne-soft px-4 py-1 text-sm font-semibold text-ink-soft">{formatDay(m.created_at, timeZone)}</span>
+                    </div>
                   )}
                   {m.kind === "system" ? (
-                    <p className="my-2 text-center text-base text-ink-soft">{m.body}</p>
+                    <p className="my-2 text-center">
+                      <span className="inline-block rounded-full bg-champagne-soft/70 px-4 py-1 text-sm font-medium text-ink-soft">{m.body}</span>
+                    </p>
                   ) : (
                     <MessageRow
                       m={m}
                       own={own}
                       showName={showName}
+                      groupStart={groupStart}
+                      groupEnd={groupEnd}
+                      showMeta={showMeta}
                       timeZone={timeZone}
                       active={activeId === m.id}
                       editing={editing?.id === m.id ? editing : null}
@@ -507,7 +528,7 @@ export function ChatRoom({
         </p>
       )}
 
-      <div className="border-t border-champagne/60 bg-cream p-3">
+      <div className="border-t border-champagne/60 bg-cream p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {!canSend || sendBlockedNote ? (
           <p className="px-1 py-2 text-base text-ink-soft">{sendBlockedNote ?? "Tài khoản của bạn chưa được gửi tin nhắn."}</p>
         ) : (
@@ -530,12 +551,12 @@ export function ChatRoom({
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={onComposerKeyDown}
                   maxLength={MAX_BODY}
-                  rows={2}
+                  rows={1}
                   placeholder="Nhập tin nhắn…"
-                  className="block max-h-44 min-h-14 w-full resize-y rounded-xl border border-ink-soft/40 bg-white px-4 py-3 text-lg text-ink"
+                  className="block max-h-[168px] min-h-[52px] w-full resize-none overflow-y-auto rounded-[26px] border border-ink-soft/40 bg-white px-5 py-3 text-lg text-ink"
                 />
               </label>
-              <button type="submit" className={`${buttonClass} !min-h-14 px-7 text-lg`} disabled={draft.trim().length === 0}>
+              <button type="submit" className={`${buttonClass} !min-h-[52px] shrink-0 !rounded-full px-6 text-lg`} disabled={draft.trim().length === 0}>
                 Gửi
               </button>
             </form>
@@ -555,6 +576,12 @@ type RowProps = {
   m: LocalMessage;
   own: boolean;
   showName: boolean;
+  /** Đầu cụm tin liên tiếp: hiện ảnh người gửi (và tên, do showName quyết định theo loại cuộc trò chuyện). */
+  groupStart: boolean;
+  /** Cuối cụm tin liên tiếp: bong bóng có góc “đuôi” nhỏ và hiện giờ gửi. */
+  groupEnd: boolean;
+  /** Hiện hàng giờ gửi/trạng thái/tuỳ chọn (cuối cụm, hoặc khi tin đang được thao tác). */
+  showMeta: boolean;
   timeZone: string;
   active: boolean;
   editing: { id: string; text: string; busy: boolean } | null;
@@ -581,15 +608,24 @@ function MessageRow(p: RowProps) {
   const canEdit = own && !pending && !m.deleted && Date.now() - Date.parse(m.created_at) < EDIT_WINDOW_MS;
   const canDelete = !pending && !m.deleted && (own || p.canModerate);
   const canReport = !pending && !m.deleted && !own;
+  const senderName = m.sender_name ?? "Thành viên";
   const bubble = own
     ? "bg-wine text-white"
     : "border border-champagne/70 bg-white text-ink";
+  // Góc “đuôi” nhỏ ở cuối cụm tin (phía dưới, hướng về phía người gửi) như Messenger
+  const tail = p.groupEnd ? (own ? "rounded-br-md" : "rounded-bl-md") : "";
   const quote = own ? "border-white/70 bg-white/15 text-white" : "border-wine bg-champagne-soft text-ink";
 
-  return (
-    <article className={`flex flex-col ${own ? "items-end" : "items-start"}`} aria-label={`Tin nhắn của ${own ? "bạn" : (m.sender_name ?? "thành viên")}`}>
-      {p.showName && <span className="mb-1 ml-1 text-base font-semibold text-wine">{m.sender_name ?? "Thành viên"}</span>}
-      <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-lg leading-snug sm:max-w-[75%] ${bubble}`}>
+  // Chạm vào bong bóng để mở/đóng tuỳ chọn của chính tin đó (tin giữa cụm không có hàng tuỳ chọn riêng).
+  // Bỏ qua khi đang sửa tin, khi bấm trúng liên kết, hoặc khi người đọc đang bôi đen để sao chép.
+  const onBubbleClick = p.editing ? undefined : (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("a")) return;
+    if (typeof window !== "undefined" && window.getSelection()?.toString()) return;
+    p.onToggle();
+  };
+
+  const bubbleBox = (
+      <div onClick={onBubbleClick} className={`max-w-[88%] rounded-2xl px-4 py-3 text-lg leading-snug sm:max-w-[75%] ${tail} ${bubble} ${p.editing ? "" : "cursor-pointer"}`}>
         {m.reply_to && (
           <div className={`mb-2 rounded-lg border-l-4 px-3 py-1 text-base ${quote}`}>
             <div className="font-semibold">{m.reply_sender_name ?? "Tin nhắn"}</div>
@@ -621,7 +657,10 @@ function MessageRow(p: RowProps) {
           <ChatMessageText body={m.body} linkClass={own ? "text-white" : "text-wine"} />
         )}
       </div>
+  );
 
+  // Hàng giờ gửi + trạng thái + nút tuỳ chọn: chỉ hiện ở cuối cụm (hoặc khi tin đang được thao tác/gửi lỗi)
+  const meta = p.showMeta ? (
       <div className="mt-1 flex flex-wrap items-center gap-x-3 px-1 text-sm text-ink-soft">
         <time dateTime={m.created_at} suppressHydrationWarning>{formatClock(m.created_at, p.timeZone)}</time>
         {m.edited_at && !m.deleted && <span>(đã sửa)</span>}
@@ -638,8 +677,9 @@ function MessageRow(p: RowProps) {
           </button>
         )}
       </div>
+  ) : null;
 
-      {m.status === "failed" && (
+  const failedBox = m.status === "failed" ? (
         <div role="alert" className="mt-1 max-w-[88%] rounded-xl border border-danger bg-red-50 px-3 py-2 text-base text-danger sm:max-w-[75%]">
           <p className="font-medium">{m.failText ?? "Chưa gửi được tin nhắn này."}</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -647,18 +687,18 @@ function MessageRow(p: RowProps) {
             <button type="button" className={smallBtn} onClick={p.onDiscard}>Bỏ tin này</button>
           </div>
         </div>
-      )}
+  ) : null;
 
-      {p.active && !p.editing && !p.reporting && (
+  const options = p.active && !p.editing && !p.reporting ? (
         <div className="mt-1 flex flex-wrap gap-2" role="group" aria-label="Tuỳ chọn cho tin nhắn">
           <button type="button" className={smallBtn} onClick={p.onReply}>Trả lời</button>
           {canEdit && <button type="button" className={smallBtn} onClick={p.onStartEdit}>Sửa</button>}
           {canDelete && <button type="button" className={`${smallBtn} !border-danger !text-danger`} onClick={p.onDelete}>Xoá</button>}
           {canReport && <button type="button" className={smallBtn} onClick={p.onStartReport}>Báo cáo</button>}
         </div>
-      )}
+  ) : null;
 
-      {p.reporting && (
+  const reportForm = p.reporting ? (
         <div className="mt-2 w-full max-w-md space-y-3 rounded-xl border border-champagne bg-white p-4 text-ink">
           <p className="text-base font-semibold">Báo cáo tin nhắn này cho quản trị viên</p>
           <p className="text-sm text-ink-soft">Quản trị viên chỉ nhìn thấy nội dung tin này, không đọc được cả cuộc trò chuyện.</p>
@@ -689,7 +729,37 @@ function MessageRow(p: RowProps) {
             <button type="button" className={buttonGhostClass} onClick={p.onCancelReport}>Huỷ</button>
           </div>
         </div>
-      )}
+  ) : null;
+
+  if (own) {
+    return (
+      <article className="flex flex-col items-end" aria-label={`Tin nhắn của bạn`}>
+        {bubbleBox}
+        {meta}
+        {failedBox}
+        {options}
+        {reportForm}
+      </article>
+    );
+  }
+
+  // Tin của người khác: cột ảnh đại diện bên trái (chỉ hiện ở đầu cụm, các tin sau chừa chỗ trống
+  // để bong bóng thẳng hàng), tên người nhắn hiện trên bong bóng đầu cụm trong nhóm.
+  return (
+    <article aria-label={`Tin nhắn của ${senderName}`}>
+      <div className="flex items-start gap-2">
+        <div className="w-9 shrink-0">
+          {p.groupStart && <Avatar name={senderName} size={36} />}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col items-start">
+          {p.showName && <span className="mb-1 pl-1 text-sm font-semibold text-ink-soft">{senderName}</span>}
+          {bubbleBox}
+          {meta}
+          {failedBox}
+          {options}
+          {reportForm}
+        </div>
+      </div>
     </article>
   );
 }

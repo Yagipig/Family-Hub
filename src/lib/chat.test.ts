@@ -60,6 +60,12 @@ describe("thời gian theo múi giờ của từng người", () => {
     expect(formatListTime("2026-10-28T03:30:00Z", "Asia/Ho_Chi_Minh", now)).toMatch(/10[:.]30/);
     expect(formatListTime("2026-10-20T03:30:00Z", "Asia/Ho_Chi_Minh", now)).toMatch(/20.10/);
   });
+  it("danh sách: hôm qua hiện “Hôm qua”, trong tuần hiện tên thứ, khác năm kèm năm", () => {
+    const now = new Date("2026-10-28T12:00:00Z"); // 19:00 thứ Tư tại Asia/Ho_Chi_Minh
+    expect(formatListTime("2026-10-27T03:30:00Z", "Asia/Ho_Chi_Minh", now)).toBe("Hôm qua");
+    expect(formatListTime("2026-10-26T03:30:00Z", "Asia/Ho_Chi_Minh", now)).toBe("Thứ Hai");
+    expect(formatListTime("2025-10-20T03:30:00Z", "Asia/Ho_Chi_Minh", now)).toMatch(/20.10.2025/);
+  });
 });
 
 describe("schema máy chủ", () => {

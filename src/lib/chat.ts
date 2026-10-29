@@ -189,9 +189,25 @@ export function formatDay(iso: string, tz?: string): string {
 export function dayKey(iso: string, tz?: string): string {
   return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: safeZone(tz) }).format(new Date(iso));
 }
-/** Giờ nếu là hôm nay, ngược lại ngày/tháng — dùng cho danh sách cuộc trò chuyện. */
+/** Số ngày (theo múi giờ người xem) từ ngày của `iso` tới ngày của `now`; âm nếu `iso` ở tương lai. */
+function dayDiff(iso: string, tz: string | undefined, now: Date): number {
+  const a = dayKey(iso, tz).split("-").map(Number);
+  const b = dayKey(now.toISOString(), tz).split("-").map(Number);
+  return Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86_400_000);
+}
+
+/**
+ * Thời gian tương đối cho danh sách cuộc trò chuyện (kiểu Messenger):
+ * hôm nay hiện giờ, hôm qua hiện “Hôm qua”, trong tuần hiện tên thứ, cũ hơn hiện ngày/tháng (kèm năm nếu khác năm).
+ */
 export function formatListTime(iso: string, tz?: string, now: Date = new Date()): string {
-  return dayKey(iso, tz) === dayKey(now.toISOString(), tz)
-    ? formatClock(iso, tz)
-    : new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", timeZone: safeZone(tz) }).format(new Date(iso));
+  const zone = safeZone(tz);
+  const apart = dayDiff(iso, tz, now);
+  if (apart <= 0) return formatClock(iso, tz);
+  if (apart === 1) return "Hôm qua";
+  if (apart < 7) return new Intl.DateTimeFormat("vi-VN", { weekday: "long", timeZone: zone }).format(new Date(iso));
+  const sameYear = dayKey(iso, tz).slice(0, 4) === dayKey(now.toISOString(), tz).slice(0, 4);
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit", month: "2-digit", ...(sameYear ? {} : { year: "numeric" }), timeZone: zone,
+  }).format(new Date(iso));
 }

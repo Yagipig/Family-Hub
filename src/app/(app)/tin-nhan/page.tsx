@@ -5,6 +5,7 @@ import { chatAllowed, loadUserTimezone } from "@/lib/chat-server";
 import { formatListTime, type ConversationRow } from "@/lib/chat";
 import { normalizeSearch, unreadLabel } from "@/lib/chat-text";
 import { Alert, Card, buttonClass } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
 import { ChatAutoRefresh } from "@/components/ChatAutoRefresh";
 
 export const metadata = { title: "Tin nhắn" };
@@ -33,10 +34,20 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
   // Đảm bảo nhóm cả gia đình / nhóm nhánh đã có (lười, idempotent; trigger ở CSDL đã làm khi quyền thay đổi)
   await supabase.rpc("ensure_chat_groups", { p_family: session.familyId });
 
-  const [{ data }, tz] = await Promise.all([
+  const [{ data }, tz, myProfile] = await Promise.all([
     supabase.from("chat_conversations_v").select("*").order("last_activity_at", { ascending: false }).limit(200),
     loadUserTimezone(supabase, session.userId),
+    supabase.from("user_profiles").select("alias_name, display_name").eq("id", session.userId).maybeSingle(),
   ]);
+  // Tên hiển thị của chính tôi trong trò chuyện (ưu tiên tên gọi khác, khớp cách view đặt tên người gửi)
+  // để nhận ra tin cuối là của mình mà hiện tiền tố “Bạn:”. View chưa có mã người gửi cuối nên tạm so theo tên.
+  const myChatName = myProfile.data?.alias_name?.trim() || myProfile.data?.display_name || session.displayName;
+  const previewOf = (c: ConversationRow): string => {
+    if (!c.last_preview) return "Chưa có tin nhắn";
+    if (c.last_sender_name && c.last_sender_name === myChatName) return `Bạn: ${c.last_preview}`;
+    if (c.last_sender_name && c.kind !== "direct") return `${c.last_sender_name}: ${c.last_preview}`;
+    return c.last_preview;
+  };
   const needle = normalizeSearch(q.slice(0, 80));
   const all = ((data ?? []) as ConversationRow[])
     // tin nhắn riêng chưa có tin nào thì chưa hiện
@@ -64,7 +75,7 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
             defaultValue={q}
             maxLength={80}
             placeholder="Tìm theo tên người hoặc nhóm…"
-            className="block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-base font-normal text-ink"
+            className="block min-h-12 w-full rounded-full border border-ink-soft/40 bg-white px-5 py-2 text-base font-normal text-ink"
           />
         </label>
         <button className={buttonClass}>Tìm</button>
@@ -78,39 +89,42 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
           </p>
         </Card>
       ) : (
-        <ul className="space-y-3" aria-label="Các cuộc trò chuyện">
-          {rows.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/tin-nhan/${c.id}`}
-                className="block rounded-2xl border border-champagne/60 bg-ivory p-4 shadow-sm hover:border-wine focus-visible:outline-none"
-              >
-                <div className="flex items-start gap-3">
+        <ul className="divide-y divide-champagne/50 overflow-hidden rounded-2xl border border-champagne/60 bg-ivory shadow-sm" aria-label="Các cuộc trò chuyện">
+          {rows.map((c) => {
+            const unread = c.unread_count > 0;
+            return (
+              <li key={c.id}>
+                <Link
+                  href={`/tin-nhan/${c.id}`}
+                  className={`flex items-center gap-3 px-4 py-3 focus-visible:outline-none ${unread ? "bg-champagne-soft/50 hover:bg-champagne-soft" : "hover:bg-champagne-soft/40"}`}
+                >
+                  <Avatar name={c.title} size={56} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-3">
-                      <span className={`text-xl text-ink ${c.unread_count > 0 ? "font-bold" : "font-semibold"}`}>{c.title}</span>
-                      <span className="text-sm text-ink-soft">{KIND_LABEL[c.kind]}{c.kind !== "direct" ? ` · ${c.member_count} người` : ""}</span>
-                      {c.muted && <span className="text-sm text-ink-soft">· Đã tắt thông báo</span>}
+                    <div className="flex items-baseline gap-x-2">
+                      <span className={`truncate text-lg text-ink ${unread ? "font-bold" : "font-semibold"}`}>{c.title}</span>
+                      <span className="shrink-0 text-sm text-ink-soft">{KIND_LABEL[c.kind]}{c.kind !== "direct" ? ` · ${c.member_count} người` : ""}{c.muted ? " · Đã tắt thông báo" : ""}</span>
                     </div>
-                    <p className={`mt-1 truncate text-base ${c.unread_count > 0 ? "font-semibold text-ink" : "text-ink-soft"}`}>
-                      {c.last_preview ? `${c.last_sender_name ? c.last_sender_name + ": " : ""}${c.last_preview}` : "Chưa có tin nhắn"}
+                    <p className={`mt-0.5 truncate text-base ${unread ? "font-semibold text-ink" : "text-ink-soft"}`}>
+                      {previewOf(c)}
                     </p>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-2">
-                    <span className="text-sm text-ink-soft" suppressHydrationWarning>{c.last_preview ? formatListTime(c.last_activity_at, tz) : ""}</span>
-                    {c.unread_count > 0 && (
+                  <div className="flex shrink-0 flex-col items-end gap-1.5 self-start pt-1">
+                    <span className={`whitespace-nowrap text-sm ${unread ? "font-bold text-wine" : "text-ink-soft"}`} suppressHydrationWarning>
+                      {c.last_preview ? formatListTime(c.last_activity_at, tz) : ""}
+                    </span>
+                    {unread && (
                       <span
-                        className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-wine px-2 text-base font-bold text-white"
+                        className="inline-flex min-h-7 min-w-7 items-center justify-center rounded-full bg-wine px-2 text-sm font-bold text-white"
                         aria-label={`${c.unread_count >= 100 ? "Hơn 99" : c.unread_count} tin chưa đọc`}
                       >
                         {unreadLabel(c.unread_count)}
                       </span>
                     )}
                   </div>
-                </div>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </>
