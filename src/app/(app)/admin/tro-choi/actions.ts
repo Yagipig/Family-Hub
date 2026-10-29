@@ -125,3 +125,14 @@ export async function openBcRoom(fd: FormData) {
   if (error) return backTo(BASE, "error", error.code === "23505" ? "Đang có một phòng bầu cua mở rồi. Hãy đóng phòng cũ trước." : rpcMessage(error));
   return done("Đã mở phòng bầu cua.");
 }
+
+/** Muc phat khi kinh sai trong lo to (0 = khong phat). */
+export async function saveLotoPenalty(fd: FormData) {
+  const session = await requireAdmin(BASE);
+  const raw = Number(fd.get("lotoPenalty"));
+  if (!Number.isInteger(raw) || raw < 0 || raw > 100) return backTo(BASE, "error", "Mức phạt kinh sai phải là số nguyên từ 0 đến 100.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("games_set_loto_penalty", { p_family: session.familyId, p_penalty: raw });
+  if (error) return backTo(BASE, "error", rpcMessage(error));
+  return done(raw > 0 ? `Đã đặt mức phạt kinh sai: ${raw} xu mỗi lần.` : "Đã tắt phạt kinh sai.");
+}

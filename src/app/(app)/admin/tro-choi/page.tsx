@@ -7,7 +7,7 @@ import { noticeFor } from "@/lib/games/notice";
 import { Alert, Card, Field, SelectField, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton, ConfirmButton } from "@/components/SubmitButton";
 import {
-  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveCoin, saveSettings,
+  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveCoin, saveLotoPenalty, saveSettings,
 } from "./actions";
 import { COIN_UNITS, CUSTOM_COIN_ICONS, CUSTOM_COIN_KEY, coinLabel, resolveCoin } from "@/lib/coins";
 
@@ -104,6 +104,20 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
             </SelectField>
           </div>
           <SubmitButton>Lưu loại xu</SubmitButton>
+        </form>
+      </Card>
+
+      <Card className="space-y-4">
+        <h2 className="text-xl font-bold">Lô tô truyền thống — phạt kinh sai</h2>
+        <p className="text-base text-ink-soft">
+          Khi người chơi bấm &ldquo;Kinh rồi nhé!&rdquo; mà bảng chưa đủ điều kiện thắng, có thể trừ một ít xu làm phạt
+          (trừ tối đa bằng số dư hiện có, và mỗi người tối đa 3 lần kinh sai mỗi ván). Đặt 0 để không phạt.
+        </p>
+        <form action={saveLotoPenalty} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-48">
+            <Field label="Mức phạt mỗi lần kinh sai (xu)" name="lotoPenalty" type="number" min={0} max={100} defaultValue={String(s?.loto_false_penalty ?? 0)} />
+          </div>
+          <SubmitButton>Lưu mức phạt</SubmitButton>
         </form>
       </Card>
 
