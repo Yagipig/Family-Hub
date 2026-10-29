@@ -33,7 +33,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <div className="min-w-60 flex-1"><Field label="Lọc theo hành động (ví dụ member, payout, chat)" name="q" defaultValue={q} /></div>
         <button className={buttonClass}>Lọc</button>
       </form>
-      <Card className="overflow-x-auto p-0">
+      <Card className="overflow-x-auto !p-0">
         <table className="w-full text-left text-base">
           <caption className="sr-only">Nhật ký hoạt động</caption>
           <thead className="bg-champagne-soft text-sm">
