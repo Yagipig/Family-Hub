@@ -33,6 +33,15 @@ describe("Cau ho lo to", () => {
     }
     expect(GENERIC_LINES.every((g) => g.includes("{n}"))).toBe(true);
   });
+  it("du ca 90 so deu co cau ve rieng (yeu cau nguoi dung 30/10/2026)", () => {
+    expect(Object.keys(NUMBER_LINES)).toHaveLength(90);
+    for (let n = 1; n <= 90; n++) {
+      const line = NUMBER_LINES[n];
+      expect(line, `thieu cau ve cho so ${n}`).toBeTruthy();
+      expect(line).toContain(String(n));
+      expect(line.length).toBeGreaterThan(15);
+    }
+  });
   it("cau them cua admin duoc tron vao va thay {n}", () => {
     const line = callLineFor(5, { chatter: 100, extraLines: ["Cau rieng cua nha minh: so {n}!"], rand: () => 0.999 });
     // rand cao: bo qua cau rieng cua so (neu co), chon cau o cuoi pool -> co the la cau admin hoac cau chung cuoi
