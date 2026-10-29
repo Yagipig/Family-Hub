@@ -20,7 +20,8 @@ export function RedeemForm({ token, familyName, roleLabel, lockedEmail }: {
         <Field label="Email" name="email" type="email" autoComplete="email" required
           defaultValue={lockedEmail ?? ""} readOnly={!!lockedEmail}
           hint={lockedEmail ? "Lời mời này dành riêng cho email trên." : undefined} />
-        <PasswordField label="Mật khẩu (ít nhất 10 ký tự)" name="password" autoComplete="new-password" required minLength={10} />
+        <PasswordField label="Mật khẩu (ít nhất 10 ký tự)" name="password" autoComplete="new-password" required minLength={10}
+          hint="Cần có chữ thường, chữ HOA và chữ số — ví dụ: Matkhau123. Mỗi người dùng một email riêng; nếu email này đã có tài khoản thì hãy đăng nhập thay vì đăng ký lại." />
         <PasswordField label="Nhập lại mật khẩu" name="confirmPassword" autoComplete="new-password" required minLength={10} />
         <SubmitButton pendingText="Đang tạo tài khoản…">Tham gia gia đình</SubmitButton>
       </form>
