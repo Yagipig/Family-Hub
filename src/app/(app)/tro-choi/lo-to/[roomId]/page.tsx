@@ -457,7 +457,7 @@ export default async function LotoRoomPage({ params, searchParams }: {
       )}
 
       {(room.status === "playing" || room.status === "paused" || room.status === "finished" || called.length > 0) && (
-        <Card><LotoBoard called={called} last={last} /></Card>
+        <LotoBoard called={called} last={last} />
       )}
 
       {mine.length > 0 && (
