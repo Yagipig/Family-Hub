@@ -13,6 +13,7 @@ import { TvController, type TvAction } from "@/components/TvController";
 import { LotoAnnouncer } from "@/components/LotoAnnouncer";
 import { LotoMusic } from "@/components/LotoMusic";
 import { WinCelebration } from "@/components/WinCelebration";
+import { lotoBallStyle } from "@/components/LotoBall";
 
 export const metadata = { title: "Trình chiếu TV" };
 
@@ -31,7 +32,7 @@ type BaucuaTv = {
 };
 type Tv = LotoTv | LotteryTv | BaucuaTv;
 
-const wrap = "fixed inset-0 z-50 overflow-y-auto bg-wine text-white";
+const wrap = "fixed inset-0 z-50 overflow-y-auto bg-[linear-gradient(160deg,#3b0764_0%,#7b1e2b_58%,#4a044e_100%)] text-white";
 
 export default async function TvPage({ params }: { params: Promise<{ roomId: string }> }) {
   const session = await requireSession();
@@ -175,9 +176,17 @@ function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId }: {
       ) : (
         <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
           <p className="text-3xl">{tv.status === "waiting" ? "Chờ bắt đầu" : tv.status === "playing" ? "Số vừa hô" : tv.status === "paused" ? "Đang tạm dừng" : "Ván đã kết thúc"}</p>
-          <div className="flex h-72 w-72 items-center justify-center rounded-full bg-champagne text-[10rem] font-bold leading-none text-wine-dark sm:h-96 sm:w-96 sm:text-[14rem]">
-            {tv.last ?? "–"}
-          </div>
+          {tv.last != null ? (
+            <div
+              key={tv.last}
+              style={lotoBallStyle(tv.last)}
+              className="animate-loto-pop flex h-72 w-72 items-center justify-center rounded-full text-[10rem] font-black leading-none text-white ring-8 ring-yellow-300/80 sm:h-96 sm:w-96 sm:text-[14rem]"
+            >
+              {tv.last}
+            </div>
+          ) : (
+            <div className="flex h-72 w-72 items-center justify-center rounded-full bg-champagne text-[10rem] font-bold leading-none text-wine-dark sm:h-96 sm:w-96 sm:text-[14rem]">–</div>
+          )}
         </div>
       )}
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 rounded-2xl bg-white p-4">
@@ -195,8 +204,8 @@ function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId }: {
       </div>
       <ol className="grid grid-cols-10 gap-2 text-2xl sm:text-4xl" aria-label="Bảng 90 số">
         {Array.from({ length: 90 }, (_, i) => i + 1).map((n) => (
-          <li key={n} className={`flex aspect-square items-center justify-center rounded-lg font-bold ${
-            n === tv.last ? "bg-champagne text-wine-dark" : called.has(n) ? "bg-white text-wine" : "bg-wine-dark text-champagne/50"}`}>{n}</li>
+          <li key={n} style={called.has(n) ? lotoBallStyle(n) : undefined} className={`flex aspect-square items-center justify-center rounded-full font-black ${
+            n === tv.last ? "text-white ring-8 ring-yellow-300" : called.has(n) ? "text-white" : "bg-black/25 text-white/35"}`}>{n}</li>
         ))}
       </ol>
     </div>
