@@ -3,12 +3,13 @@ import { can, requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import type { GameSettings } from "@/lib/games/server";
-import { NOTICE } from "@/lib/games/notice";
+import { noticeFor } from "@/lib/games/notice";
 import { Alert, Card, Field, SelectField, buttonClass, buttonGhostClass } from "@/components/ui";
 import { SubmitButton, ConfirmButton } from "@/components/SubmitButton";
 import {
-  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveSettings,
+  cancelLottery, closeBcRoom, closeLixi, createLixi, createLotoRoom, openBcRoom, openLottery, runLotteryNow, saveCoin, saveSettings,
 } from "./actions";
+import { COIN_UNITS, CUSTOM_COIN_ICONS, CUSTOM_COIN_KEY, coinLabel, resolveCoin } from "@/lib/coins";
 
 export const metadata = { title: "Quản trị trò chơi" };
 
@@ -21,6 +22,8 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   const { data: sd } = await supabase.from("game_settings").select("*").eq("family_id", session.familyId).maybeSingle();
   const s = (sd as GameSettings | null) ?? null;
+  const coin = resolveCoin(s);
+  const coinLower = coin.name.toLocaleLowerCase("vi-VN");
 
   if (!allowed) {
     return (
@@ -49,14 +52,14 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
     <>
       <h1 className="text-3xl font-bold text-wine">Quản trị trò chơi</h1>
       <p role="note" className="rounded-xl border border-champagne bg-champagne-soft px-4 py-3 text-base font-semibold text-wine-dark">
-        {NOTICE}. Mọi trò chơi chỉ dùng điểm ảo, không nạp, không rút, không đổi ra tiền.
+        {noticeFor(coin.name)}. Mọi trò chơi chỉ dùng {coinLower} ảo, không nạp, không rút, không đổi ra tiền.
       </p>
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
 
       <Card className="space-y-4">
         <h2 className="text-xl font-bold">Bật / tắt và giới hạn</h2>
-        <p className="text-base text-ink-soft">Trò chơi mặc định TẮT cho tới khi bạn bật. Tắt lại bất cứ lúc nào: mọi người sẽ không chơi được nữa (điểm vẫn được giữ).</p>
+        <p className="text-base text-ink-soft">Trò chơi mặc định TẮT cho tới khi bạn bật. Tắt lại bất cứ lúc nào: mọi người sẽ không chơi được nữa ({coinLower} vẫn được giữ).</p>
         <form action={saveSettings} className="grid gap-4 sm:grid-cols-2">
           <label className="flex min-h-12 items-center gap-3 text-lg font-semibold">
             <input type="checkbox" name="enabled" className="h-7 w-7" defaultChecked={s?.enabled ?? false} /> Bật trò chơi cho cả gia đình
@@ -64,8 +67,8 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
           <label className="flex min-h-12 items-center gap-3 text-lg font-semibold">
             <input type="checkbox" name="leaderboard" className="h-7 w-7" defaultChecked={s?.leaderboard_enabled ?? true} /> Hiện bảng xếp hạng
           </label>
-          <Field label="Điểm khởi đầu (0–1000)" name="startingPoints" type="number" min={0} max={1000} defaultValue={s?.starting_points ?? 100} required />
-          <Field label="Quà hằng ngày (0–100 điểm, 0 = tắt)" name="dailyGift" type="number" min={0} max={100} defaultValue={s?.daily_gift ?? 10} required />
+          <Field label={`${coin.name} khởi đầu (0–1000)`} name="startingPoints" type="number" min={0} max={1000} defaultValue={s?.starting_points ?? 100} required />
+          <Field label={`Quà hằng ngày (0–100 ${coinLower}, 0 = tắt)`} name="dailyGift" type="number" min={0} max={100} defaultValue={s?.daily_gift ?? 10} required />
           <Field label="Bầu cua: cược tối thiểu" name="bcMin" type="number" min={1} max={100} defaultValue={s?.bc_min_bet ?? 1} required />
           <Field label="Bầu cua: cược tối đa mỗi ô" name="bcMax" type="number" min={1} max={200} defaultValue={s?.bc_max_bet ?? 20} required />
           <Field label="Bầu cua: tổng cược tối đa mỗi ván" name="bcRound" type="number" min={1} max={500} defaultValue={s?.bc_max_round_total ?? 50} required />
@@ -76,10 +79,39 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
       </Card>
 
       <Card className="space-y-4">
+        <h2 className="text-xl font-bold">Loại xu của gia đình</h2>
+        <p className="text-base text-ink-soft">
+          Đang dùng: <strong>{coinLabel(coin)}</strong>. Chọn một loại xu vui để gọi thay cho &ldquo;điểm&rdquo; trong mọi trò chơi
+          (số dư, quà hằng ngày, giải thưởng, bảng xếp hạng...). Chỉ đổi tên gọi — số dư của mọi người giữ nguyên, đổi qua lại lúc nào cũng được.
+        </p>
+        <form action={saveCoin} className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {COIN_UNITS.map((u) => (
+              <label key={u.key} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-champagne/60 px-4 py-2 text-lg font-semibold has-checked:border-wine has-checked:bg-champagne-soft">
+                <input type="radio" name="coinUnit" value={u.key} className="h-6 w-6" defaultChecked={coin.key === u.key} />
+                <span>{u.icon ? `${u.icon} ${u.name}` : u.name}</span>
+              </label>
+            ))}
+            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-champagne/60 px-4 py-2 text-lg font-semibold has-checked:border-wine has-checked:bg-champagne-soft">
+              <input type="radio" name="coinUnit" value={CUSTOM_COIN_KEY} className="h-6 w-6" defaultChecked={coin.key === CUSTOM_COIN_KEY} />
+              <span>✏️ Tự đặt tên</span>
+            </label>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Tên xu tự đặt (khi chọn Tự đặt tên)" name="coinCustomName" maxLength={30} defaultValue={s?.coin_custom_name ?? ""} placeholder="Ví dụ: Bắp, Ốc, Sò..." />
+            <SelectField label="Biểu tượng cho xu tự đặt" name="coinCustomIcon" defaultValue={s?.coin_custom_icon ?? "🪙"}>
+              {CUSTOM_COIN_ICONS.map((i) => <option key={i} value={i}>{i}</option>)}
+            </SelectField>
+          </div>
+          <SubmitButton>Lưu loại xu</SubmitButton>
+        </form>
+      </Card>
+
+      <Card className="space-y-4">
         <h2 className="text-xl font-bold">Lì xì may mắn</h2>
         <form action={createLixi} className="grid gap-4 sm:grid-cols-2">
           <Field label="Tên bao lì xì" name="title" required maxLength={120} placeholder="Lì xì đêm giao thừa" />
-          <Field label="Các phần thưởng (điểm, cách nhau bằng dấu phẩy)" name="prizes" required placeholder="5, 10, 10, 20, 50" hint="Mỗi phần 1–500 điểm ảo, tối đa 50 phần. Mỗi người bốc một lần, kết quả do máy chủ quyết định." />
+          <Field label={`Các phần thưởng (${coinLower}, cách nhau bằng dấu phẩy)`} name="prizes" required placeholder="5, 10, 10, 20, 50" hint={`Mỗi phần 1–500 ${coinLower}, tối đa 50 phần. Mỗi người bốc một lần, kết quả do máy chủ quyết định.`} />
           <Field label="Tự đóng sau (giờ, 0 = không hẹn)" name="closeHours" type="number" min={0} max={1440} defaultValue={0} />
           <div className="self-end"><SubmitButton>Tạo bao lì xì</SubmitButton></div>
         </form>
@@ -100,12 +132,12 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
         <h2 className="text-xl font-bold">Xổ số gia đình (quay số vui)</h2>
         <p className="text-base text-ink-soft">
           Khi mở kỳ quay, hệ thống tạo seed bí mật và công bố mã cam kết (SHA-256). Sau khi quay, seed được tiết lộ để mọi người kiểm chứng.
-          Giờ quay tính theo múi giờ gia đình: <strong>{session.timezone}</strong>. Giải thưởng là điểm ảo, lời chúc hoặc vật phẩm vui — không phải tiền.
+          Giờ quay tính theo múi giờ gia đình: <strong>{session.timezone}</strong>. Giải thưởng là {coinLower}, lời chúc hoặc vật phẩm vui — không phải tiền.
         </p>
         <form action={openLottery} className="grid gap-4 sm:grid-cols-2">
           <Field label="Tên kỳ quay" name="title" required maxLength={120} placeholder="Quay số đầu năm" />
           <Field label="Giờ quay" name="drawAt" type="datetime-local" required />
-          <Field label="Giá vé sau vé miễn phí (0–50 điểm)" name="price" type="number" min={0} max={50} defaultValue={5} required />
+          <Field label={`Giá vé sau vé miễn phí (0–50 ${coinLower})`} name="price" type="number" min={0} max={50} defaultValue={5} required />
           <Field label="Số vé miễn phí mỗi người (0–3)" name="free" type="number" min={0} max={3} defaultValue={1} required />
           <Field label="Tối đa vé mỗi người (1–5)" name="max" type="number" min={1} max={5} defaultValue={3} required />
           <div className="sm:col-span-2 space-y-3">
@@ -113,10 +145,10 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
             {[1, 2, 3, 4, 5].map((n) => (
               <div key={n} className="grid gap-3 sm:grid-cols-3">
                 <SelectField label={`Giải ${n}: loại`} name="prizeKind" defaultValue={n === 1 ? "points" : "wish"}>
-                  <option value="points">Điểm vui</option><option value="wish">Lời chúc</option><option value="item">Vật phẩm vui</option>
+                  <option value="points">{coin.name} vui</option><option value="wish">Lời chúc</option><option value="item">Vật phẩm vui</option>
                 </SelectField>
                 <Field label="Tên giải" name="prizeLabel" maxLength={120} defaultValue={n === 1 ? "Giải nhất" : n === 2 ? "Giải nhì" : n === 3 ? "Giải ba" : ""} />
-                <Field label="Số điểm (nếu là điểm)" name="prizePoints" type="number" min={1} max={500} defaultValue={n === 1 ? 50 : n === 2 ? 20 : n === 3 ? 10 : ""} />
+                <Field label={`Số ${coinLower} (nếu là ${coinLower})`} name="prizePoints" type="number" min={1} max={500} defaultValue={n === 1 ? 50 : n === 2 ? 20 : n === 3 ? 10 : ""} />
               </div>
             ))}
           </div>
@@ -131,7 +163,7 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
                 {d.status === "open" && (
                   <>
                     <form action={runLotteryNow}><input type="hidden" name="id" value={d.id} /><ConfirmButton message="Quay số ngay bây giờ?" className={buttonClass}>Quay số ngay</ConfirmButton></form>
-                    <form action={cancelLottery}><input type="hidden" name="id" value={d.id} /><ConfirmButton message="Hủy kỳ quay và hoàn điểm vé cho mọi người?" className={dangerBtn}>Hủy kỳ</ConfirmButton></form>
+                    <form action={cancelLottery}><input type="hidden" name="id" value={d.id} /><ConfirmButton message={`Hủy kỳ quay và trả lại ${coinLower} mua vé cho mọi người?`} className={dangerBtn}>Hủy kỳ</ConfirmButton></form>
                   </>
                 )}
               </span>
@@ -144,7 +176,7 @@ export default async function GamesAdminPage({ searchParams }: { searchParams: P
         <h2 className="text-xl font-bold">Lô tô (bạn là người hô số)</h2>
         <form action={createLotoRoom} className="grid gap-4 sm:grid-cols-2">
           <Field label="Tên phòng" name="title" required maxLength={120} placeholder="Lô tô tối mùng 1" />
-          <Field label="Giải kinh (0–500 điểm ảo)" name="prize" type="number" min={0} max={500} defaultValue={50} required />
+          <Field label={`Giải kinh (0–500 ${coinLower})`} name="prize" type="number" min={0} max={500} defaultValue={50} required />
           <div className="sm:col-span-2"><SubmitButton>Tạo phòng lô tô</SubmitButton></div>
         </form>
         <ul className="divide-y divide-champagne/50 text-base">

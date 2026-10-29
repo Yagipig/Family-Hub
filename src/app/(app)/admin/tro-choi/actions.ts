@@ -4,8 +4,9 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { backTo, rpcMessage } from "@/lib/games/server";
 import {
-  bcRoomSchema, gameSettingsSchema, idSchema, lixiCreateSchema, lotoRoomSchema, lotteryOpenSchema, readLotteryPrizes,
+  bcRoomSchema, coinSchema, gameSettingsSchema, idSchema, lixiCreateSchema, lotoRoomSchema, lotteryOpenSchema, readLotteryPrizes,
 } from "@/lib/games/schemas";
+import { coinLabel, resolveCoin } from "@/lib/coins";
 import { zonedLocalToUtc } from "@/lib/games/time";
 
 const BASE = "/admin/tro-choi";
@@ -29,6 +30,24 @@ export async function saveSettings(fd: FormData) {
   });
   if (error) return backTo(BASE, "error", rpcMessage(error));
   return done(v.enabled ? "Đã lưu. Trò chơi đang BẬT cho cả gia đình." : "Đã lưu. Trò chơi đang TẮT.");
+}
+
+export async function saveCoin(fd: FormData) {
+  const session = await requireAdmin(BASE);
+  const parsed = coinSchema.safeParse({
+    unit: fd.get("coinUnit"), customName: fd.get("coinCustomName") ?? "", customIcon: fd.get("coinCustomIcon") ?? "",
+  });
+  if (!parsed.success) return bad(parsed.error);
+  const v = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("games_set_coin", {
+    p_family: session.familyId, p_unit: v.unit,
+    p_name: v.unit === "custom" ? v.customName : null,
+    p_icon: v.unit === "custom" ? v.customIcon : null,
+  });
+  if (error) return backTo(BASE, "error", rpcMessage(error));
+  const coin = resolveCoin({ coin_unit: v.unit, coin_custom_name: v.customName, coin_custom_icon: v.customIcon });
+  return done(`Đã đổi đơn vị hiển thị trong trò chơi thành ${coinLabel(coin)}. Số dư của mọi người giữ nguyên.`);
 }
 
 export async function createLixi(fd: FormData) {
