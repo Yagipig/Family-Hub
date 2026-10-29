@@ -9,6 +9,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { GamesBanner } from "@/components/GamesBanner";
 import { GamesAutoRefresh } from "@/components/GamesAutoRefresh";
 import { createProvinceRoom, findRoomByCode } from "./actions";
+import { LotoBall } from "@/components/LotoBall";
 
 export const metadata = { title: "Lô tô" };
 
@@ -20,7 +21,14 @@ export default async function LotoHome({ searchParams }: { searchParams: Promise
   const access = await gamesAccess(session);
   return (
     <>
-      <h1 className="text-3xl font-bold text-wine">Lô tô</h1>
+      <h1 className="flex items-center gap-3 text-3xl font-bold text-wine">
+        Lô tô
+        <span className="flex gap-1.5">
+          <LotoBall n={9} size={32} />
+          <LotoBall n={38} size={32} />
+          <LotoBall n={75} size={32} />
+        </span>
+      </h1>
       <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
