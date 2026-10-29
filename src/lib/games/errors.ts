@@ -49,6 +49,13 @@ const MESSAGES: Array<[RegExp, string]> = [
   [/room_code_required/, "Phòng này yêu cầu mã phòng để tham gia. Hãy nhập mã chủ phòng đưa, hoặc nhờ chủ phòng mời bạn."],
   [/room_code_wrong/, "Mã phòng chưa đúng. Bạn kiểm tra lại mã chủ phòng đưa nhé."],
   [/bad_invite_list/, "Danh sách mời chưa hợp lệ."],
+  [/bad_stake/, "Mức cược phải là một mệnh giá: 1.000, 2.000, 5.000, 10.000, 20.000 hoặc 50.000."],
+  [/bad_amount/, "Mệnh giá xin cấp chưa hợp lệ (chỉ có 1.000 đến 50.000)."],
+  [/request_pending/, "Bạn đang có một yêu cầu cấp lá chờ duyệt rồi."],
+  [/not_pending/, "Yêu cầu này đã được xử lý rồi."],
+  [/bad_bot_count/, "Số bot mỗi lần thêm phải từ 1 đến 10."],
+  [/too_many_bots/, "Phòng đã có tối đa 20 bot rồi."],
+  [/not_a_bot/, "Đó không phải là bot của phòng này."],
 ];
 
 export function gamesError(error: { code?: string; message?: string } | null | undefined): string | null {

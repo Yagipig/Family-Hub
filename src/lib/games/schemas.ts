@@ -83,7 +83,11 @@ export function readLotteryPrizes(fd: FormData): Array<{ kind: string; label: st
 }
 
 export const lotoRoomSchema = z.object({ title, prize: int(0, 500, "Giải kinh từ 0 đến 500 điểm") });
-export const lotoJoinSchema = z.object({ roomId: z.uuid(), cards: int(1, 3, "Chọn từ 1 đến 3 tờ") });
+const stakeField = z.coerce.number().int().refine(
+  (n) => [1000, 2000, 5000, 10000, 20000, 50000].includes(n),
+  "Mức cược phải là một mệnh giá: 1.000, 2.000, 5.000, 10.000, 20.000 hoặc 50.000",
+);
+export const lotoJoinSchema = z.object({ roomId: z.uuid(), cards: int(1, 3, "Chọn từ 1 đến 3 tờ"), stake: stakeField });
 export const lotoCodeSchema = z.object({ code: z.string().trim().toUpperCase().regex(/^[A-HJ-NP-Z2-9]{6}$/, "Mã phòng gồm 6 ký tự") });
 export const lotoClaimSchema = z.object({ roomId: z.uuid(), cardId: z.uuid() });
 export const lotoProvinceCreateSchema = z.object({
@@ -94,7 +98,10 @@ export const lotoProvinceCreateSchema = z.object({
 export const lotoBoardClaimSchema = z.object({
   roomId: z.uuid(),
   code: z.string().regex(/^VN63-\d{3}$/, "Mã bảng chưa đúng"),
+  stake: stakeField,
 });
+export const grantRequestSchema = z.object({ amount: stakeField });
+export const grantDecideSchema = z.object({ requestId: z.uuid(), approve: z.boolean() });
 export const lotoInviteSchema = z.object({
   roomId: z.uuid(),
   userIds: z.array(z.uuid()).min(1, "Chọn ít nhất một người để mời").max(50),
@@ -102,6 +109,10 @@ export const lotoInviteSchema = z.object({
 export const lotoEnterCodeSchema = z.object({
   roomId: z.uuid(),
   code: z.string().trim().toUpperCase().regex(/^[A-HJ-NP-Z2-9]{6}$/, "Mã phòng gồm 6 ký tự"),
+});
+export const lotoBotsSchema = z.object({
+  roomId: z.uuid(),
+  count: int(1, 10, "Mỗi lần thêm từ 1 đến 10 bot"),
 });
 
 export const bcRoomSchema = z.object({ title });
