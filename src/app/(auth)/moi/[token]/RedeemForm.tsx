@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import { redeem } from "./actions";
 import { Alert, Card, Field } from "@/components/ui";
+import { PasswordField } from "@/components/PasswordField";
 import { SubmitButton } from "@/components/SubmitButton";
 
 export function RedeemForm({ token, familyName, roleLabel, lockedEmail }: {
@@ -19,7 +20,8 @@ export function RedeemForm({ token, familyName, roleLabel, lockedEmail }: {
         <Field label="Email" name="email" type="email" autoComplete="email" required
           defaultValue={lockedEmail ?? ""} readOnly={!!lockedEmail}
           hint={lockedEmail ? "Lời mời này dành riêng cho email trên." : undefined} />
-        <Field label="Mật khẩu (ít nhất 10 ký tự)" name="password" type="password" autoComplete="new-password" required minLength={10} />
+        <PasswordField label="Mật khẩu (ít nhất 10 ký tự)" name="password" autoComplete="new-password" required minLength={10} />
+        <PasswordField label="Nhập lại mật khẩu" name="confirmPassword" autoComplete="new-password" required minLength={10} />
         <SubmitButton pendingText="Đang tạo tài khoản…">Tham gia gia đình</SubmitButton>
       </form>
     </Card>

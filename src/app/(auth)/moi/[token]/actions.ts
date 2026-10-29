@@ -12,6 +12,7 @@ export async function redeem(_: FormState, formData: FormData): Promise<FormStat
     displayName: formData.get("displayName"),
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Thông tin chưa hợp lệ." };
   const { token, displayName, email, password } = parsed.data;
