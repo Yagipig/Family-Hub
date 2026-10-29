@@ -1,7 +1,7 @@
 import type { ReactNode, InputHTMLAttributes, SelectHTMLAttributes } from "react";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-champagne/60 bg-ivory p-6 shadow-sm ${className}`}>{children}</section>;
+  return <section className={`rounded-2xl border border-champagne/60 bg-ivory p-4 shadow-sm sm:p-6 ${className}`}>{children}</section>;
 }
 
 export function Alert({ kind, children }: { kind: "error" | "ok"; children: ReactNode }) {
