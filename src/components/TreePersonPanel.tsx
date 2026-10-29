@@ -41,6 +41,7 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, open, on
         <Avatar name={p.name} src={p.avatar} gender={p.gender} size={56} />
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-bold leading-tight text-wine">{p.name}</h2>
+          {p.nick && <p className="text-sm text-ink-soft">Thường gọi: {p.nick}</p>}
           <p className="text-sm text-ink-soft">{[lifeSpan(p.by, p.dy, p.dead), age].filter(Boolean).join(" · ")}</p>
         </div>
         <button type="button" onClick={onToggle} aria-expanded={open}

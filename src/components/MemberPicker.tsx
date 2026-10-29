@@ -13,7 +13,7 @@ export function MemberPicker({ name, label, members, excludeIds = [], hint = "GÃ
   const id = useId();
   const [q, setQ] = useState("");
   const [chosen, setChosen] = useState<PickerMember | null>(null);
-  const folded = useMemo(() => members.map((m) => ({ m, key: foldVietnamese(`${m.name} ${m.nick ?? ""}`) })), [members]);
+  const folded = useMemo(() => members.map((m) => ({ m, key: foldVietnamese(`${m.name} ${m.nick ?? ""} ${m.alt ?? ""}`) })), [members]);
   const exclude = useMemo(() => new Set(excludeIds), [excludeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
   const matches = useMemo(() => {
     const needle = foldVietnamese(q);

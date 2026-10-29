@@ -96,6 +96,7 @@ export function MemberForm(p: Props) {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Họ và tên *" required maxLength={160} autoComplete="off" {...bind("full_name")} />
             <Field label="Tên thường gọi" maxLength={80} autoComplete="off" {...bind("nickname")} />
+            <Field label="Tên gọi khác (tên húy, tên khai sinh...)" maxLength={160} autoComplete="off" {...bind("alt_names")} />
             <SelectField label="Giới tính" {...bind("gender")}>
               <option value="">— Chưa rõ —</option>
               {Object.entries(GENDER_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}

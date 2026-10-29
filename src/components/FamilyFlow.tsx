@@ -36,7 +36,7 @@ const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, ta
       <Avatar name={p.name} src={p.avatar} gender={p.gender} size={40} />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[15px] font-bold leading-tight text-ink">{p.name}</p>
-        <p className="truncate text-[13px] text-ink-soft">{[span, gen ? `Đời ${gen}` : null].filter(Boolean).join(" · ")}</p>
+        <p className="truncate text-[13px] text-ink-soft">{[p.nick ? `“${p.nick}”` : null, span, gen ? `Đời ${gen}` : null].filter(Boolean).join(" · ")}</p>
       </div>
       {p.dead && <span aria-hidden="true" className="absolute right-1.5 top-0.5 text-sm text-ink-soft">†</span>}
       <Handle type="target" position={targetPosition ?? Position.Top} isConnectable={false} style={hiddenHandle} />
