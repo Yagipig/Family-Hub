@@ -113,6 +113,7 @@ export default async function MemberProfilePage({
         <div className="min-w-0 flex-1 space-y-2">
           <h1 className="text-3xl font-bold leading-tight text-wine">{member.full_name}</h1>
           {member.nickname && <p className="text-lg text-ink-soft">Thường gọi: {member.nickname}</p>}
+          {member.alt_names && <p className="text-lg text-ink-soft">Tên gọi khác: {member.alt_names}</p>}
           <p className="flex flex-wrap gap-2 text-base">
             {member.gender && <span className="rounded-lg bg-champagne-soft px-3 py-1">{GENDER_LABELS[member.gender]}</span>}
             {member.is_deceased && <span className="rounded-lg bg-champagne-soft px-3 py-1">Đã mất</span>}
