@@ -10,7 +10,7 @@ import { loadVoicePack, playClip, setVoicePrefOn, setVoiceRate, speakLines, stop
  * va chuc mung khi van ket thuc co nguoi thang. Tan suat cau vui + cau rieng do admin cau hinh o may chu.
  */
 export function LotoAnnouncer({
-  status, last, called, myGrids, winRows, winnerNames, chatter, extraLines,
+  status, last, called, myGrids, winRows, winnerNames, chatter, extraLines, compact = false,
 }: {
   status: "waiting" | "playing" | "paused" | "finished" | "cancelled";
   last: number | null;
@@ -20,6 +20,8 @@ export function LotoAnnouncer({
   winnerNames: string[];
   chatter: number;
   extraLines: string[];
+  /** Ban gon cho man hinh TV (nut nho, dong trang thai nho) de ca trang vua mot man hinh. */
+  compact?: boolean;
 }) {
   const [on, setOn] = useState(false);
   const [rate, setRate] = useState(0.95);
@@ -104,20 +106,24 @@ export function LotoAnnouncer({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className={`flex flex-wrap items-center ${compact ? "justify-center gap-2" : "gap-3"}`}>
       <button
         type="button" aria-pressed={on} onClick={toggle}
-        className="inline-flex min-h-12 items-center rounded-xl border border-wine px-4 py-2 text-base font-semibold text-wine hover:bg-champagne-soft"
+        className={compact
+          ? "inline-flex min-h-9 items-center rounded-lg border border-wine px-3 py-1.5 text-sm font-semibold text-wine hover:bg-champagne-soft"
+          : "inline-flex min-h-12 items-center rounded-xl border border-wine px-4 py-2 text-base font-semibold text-wine hover:bg-champagne-soft"}
       >
         {on ? "🔊 Giọng hô: BẬT (bấm để tắt)" : "🔇 Giọng hô: tắt (bấm để bật)"}
       </button>
       {on && (
-        <label className="flex items-center gap-2 text-base font-semibold">
+        <label className={`flex items-center gap-2 font-semibold ${compact ? "text-sm" : "text-base"}`}>
           Tốc độ
           <select
             value={String(rate)}
             onChange={(e) => { const v = Number(e.target.value); setRate(v); setVoiceRate(v); }}
-            className="min-h-12 rounded-xl border border-ink-soft/40 bg-white px-3 text-base"
+            className={compact
+              ? "min-h-9 rounded-lg border border-ink-soft/40 bg-white px-2 text-sm"
+              : "min-h-12 rounded-xl border border-ink-soft/40 bg-white px-3 text-base"}
           >
             <option value="0.8">Chậm rãi</option>
             <option value="0.95">Vừa</option>
@@ -126,7 +132,7 @@ export function LotoAnnouncer({
         </label>
       )}
       {on && packCount !== null && (
-        <p className="w-full text-sm text-ink-soft">
+        <p className={compact ? "w-full text-center text-xs leading-snug text-ink-soft" : "w-full text-sm text-ink-soft"}>
           {packCount > 0
             ? `🎙️ Giọng thu thật của nhà mình: đã có ${packCount}/90 số — số nào chưa thu thì tạm đọc bằng giọng máy.`
             : "🎙️ Chưa có gói giọng thu thật — đang đọc bằng giọng máy. Nhà mình thu theo kịch bản là có giọng người thật ngay."}
