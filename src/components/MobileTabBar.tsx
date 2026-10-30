@@ -18,7 +18,7 @@ export function MobileTabBar({ tabs }: { tabs: TabItem[] }) {
   return (
     <nav
       aria-label="Điều hướng dưới đáy"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-champagne bg-ivory/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(42,26,26,0.08)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-champagne/70 bg-ivory/98 pb-[env(safe-area-inset-bottom)] shadow-[0_-3px_16px_rgba(42,26,26,0.1)] backdrop-blur-md md:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-flow-col">
         {items.map((item) => {
@@ -31,12 +31,14 @@ export function MobileTabBar({ tabs }: { tabs: TabItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[11px] leading-tight ${
-                  active ? "font-bold text-wine" : "font-medium text-ink-soft"
+                className={`flex min-h-[58px] flex-col items-center justify-center gap-0.5 px-0.5 py-1 text-[10.5px] font-medium leading-none transition-colors active:scale-[0.96] ${
+                  active ? "font-semibold text-wine" : "text-ink-soft active:text-ink"
                 }`}
               >
-                <NavIcon href={item.href} className={active ? "text-wine" : "text-ink-soft"} />
-                {item.label}
+                <span className={`flex h-6 w-6 items-center justify-center transition-transform ${active ? "scale-110" : ""}`}>
+                  <NavIcon href={item.href} className={active ? "text-wine" : "text-ink-soft"} />
+                </span>
+                <span className="mt-0.5 tracking-[-0.1px]">{item.label}</span>
               </Link>
             </li>
           );

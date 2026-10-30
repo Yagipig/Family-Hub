@@ -32,9 +32,9 @@ export default async function AlbumIndexPage({ searchParams }: { searchParams: P
   const myId = typeof me === "string" ? me : null;
 
   return (
-    <>
-      <h1 className="text-3xl font-bold text-wine">Album gia đình</h1>
-      <p className="text-lg text-ink-soft">Mỗi thành viên có một album ảnh riêng. Chọn một người để xem ảnh.</p>
+	    <>
+	      <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">Album gia đình</h1>
+	      <p className="text-base text-ink-soft">Mỗi thành viên có album ảnh riêng. Chọn người để xem.</p>
 
       <Card className="space-y-4">
         <form className="flex flex-wrap items-end gap-3" role="search">
@@ -42,7 +42,7 @@ export default async function AlbumIndexPage({ searchParams }: { searchParams: P
             <Field label="Tìm thành viên" name="q" defaultValue={q} placeholder="Gõ một phần tên" maxLength={60} />
           </div>
           <button className={buttonClass}>Tìm</button>
-          {q && <Link href="/album" className="inline-flex min-h-12 items-center px-3 text-base font-semibold text-wine underline">Xóa tìm kiếm</Link>}
+	          {q && <Link href="/album" className="inline-flex min-h-11 items-center px-3 text-sm font-semibold text-wine underline">Xóa</Link>}
         </form>
         {myId && (
           <Link href={`/album/${myId}`} className={buttonClass}>Album của tôi</Link>

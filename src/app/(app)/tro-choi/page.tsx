@@ -24,8 +24,8 @@ export default async function GamesHome({ searchParams }: { searchParams: Promis
   const access = await gamesAccess(session);
 
   return (
-    <>
-      <h1 className="text-3xl font-bold text-wine">Trò chơi gia đình</h1>
+	    <>
+	      <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">Trò chơi gia đình</h1>
       <GamesBanner coinName={resolveCoin(access.settings).name} />
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}

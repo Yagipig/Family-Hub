@@ -66,13 +66,13 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-3xl font-bold text-wine">Thành viên</h1>
-        <Link href="/gia-pha" className={buttonGhostClass}>Xem cây gia phả</Link>
-        {!isGuest && <Link href="/thanh-vien/yeu-cau" className={buttonGhostClass}>Yêu cầu của tôi</Link>}
-        {canTrash && <Link href="/thanh-vien/thung-rac" className={buttonGhostClass}>Thùng rác</Link>}
-        {!isGuest && <Link href="/thanh-vien/moi" className={buttonClass}>Thêm thành viên</Link>}
-      </div>
+	      <div className="flex flex-wrap items-center gap-2">
+	        <h1 className="mr-auto text-2xl font-bold tracking-tight text-wine md:text-3xl">Thành viên</h1>
+	        <Link href="/gia-pha" className={buttonGhostClass + " text-sm"}>Xem cây</Link>
+	        {!isGuest && <Link href="/thanh-vien/yeu-cau" className={buttonGhostClass + " text-sm"}>Yêu cầu</Link>}
+	        {canTrash && <Link href="/thanh-vien/thung-rac" className={buttonGhostClass + " text-sm"}>Thùng rác</Link>}
+	        {!isGuest && <Link href="/thanh-vien/moi" className={buttonClass + " text-sm"}>Thêm</Link>}
+	      </div>
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {qError && <Alert kind="error">Không tải được danh sách. Vui lòng thử lại.</Alert>}
@@ -81,9 +81,9 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         <form method="get" action="/thanh-vien" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="search" aria-label="Tìm thành viên">
           <label className="block text-base font-semibold sm:col-span-2 lg:col-span-4">
             Tìm theo tên, tên thường gọi hoặc quê quán
-            <input type="search" name="q" defaultValue={params.q} maxLength={40} autoComplete="off"
-              placeholder="Có thể gõ không dấu, ví dụ: nguyen van an"
-              className="mt-1 block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-base text-ink" />
+	            <input type="search" name="q" defaultValue={params.q} maxLength={40} autoComplete="off"
+	              placeholder="Gõ không dấu, ví dụ: nguyen van an"
+	              className="mt-1 block min-h-11 w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-[15px] text-ink" />
           </label>
           <SelectField label="Nhánh họ" name="branch" defaultValue={params.branch}>
             <option value="">Tất cả các nhánh</option>

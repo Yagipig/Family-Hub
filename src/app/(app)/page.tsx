@@ -3,7 +3,7 @@ import { can, requireSession, ROLE_LABELS } from "@/lib/auth";
 import { NAV } from "@/lib/nav";
 import { getViewer, upcomingBirthdays } from "@/lib/events-server";
 import { createClient } from "@/lib/supabase/server";
-import { Card, buttonGhostClass } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { NavIcon } from "@/components/NavIcons";
 
 export const metadata = { title: "Trang chủ" };
@@ -41,50 +41,65 @@ export default async function HomePage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-wine">Xin chào, {session.displayName}</h1>
-      <Card>
-        <p className="text-base">
-          Bạn đang ở không gian riêng của <strong>{session.familyName}</strong> với vai trò{" "}
-          <strong>{ROLE_LABELS[session.role]}</strong>.
+      {/* Mobile-first welcome header */}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">
+          Xin chào, {session.displayName.split(" ")[0]} 👋
+        </h1>
+        <p className="text-base text-ink-soft">
+          {session.familyName} · {ROLE_LABELS[session.role]}
         </p>
-        {unreadCount > 0 && (
-          <p className="mt-3 text-base">
-            Bạn có <strong>{unreadCount}</strong> thông báo chưa đọc.{" "}
-            <Link href="/thong-bao" className="font-semibold text-wine underline">Xem thông báo</Link>
-          </p>
-        )}
+      </div>
+
+      {/* Quick status card */}
+      <Card className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-ink-soft">Không gian gia đình</p>
+            <p className="text-lg font-semibold text-wine">{session.familyName}</p>
+          </div>
+          {unreadCount > 0 && (
+            <Link href="/thong-bao" className="rounded-full bg-wine px-3 py-1 text-sm font-bold text-white">
+              {unreadCount} thông báo
+            </Link>
+          )}
+        </div>
       </Card>
 
+      {/* Upcoming events - compact for mobile */}
       {canEvents && (
-        <Card className="space-y-3">
-          <h2 className="text-xl font-bold">Sắp tới trong 30 ngày</h2>
+        <Card className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-wine">Sắp tới (30 ngày)</h2>
+            <Link href="/lich" className="text-sm font-semibold text-wine underline">Xem lịch</Link>
+          </div>
           {upcoming.length === 0 ? (
-            <p className="text-base text-ink-soft">Chưa có sinh nhật hay ngày giỗ nào trong 30 ngày tới (hoặc ngày chưa được chia sẻ với bạn).</p>
+            <p className="text-sm text-ink-soft">Chưa có sự kiện nào trong 30 ngày tới.</p>
           ) : (
-            <ul className="divide-y divide-champagne/50 text-base">
+            <ul className="divide-y divide-champagne/40 text-sm">
               {upcoming.map((o) => (
-                <li key={`${o.memberId}-${o.kind}`} className="flex flex-wrap items-baseline justify-between gap-x-4 py-2">
-                  <span>
+                <li key={`${o.memberId}-${o.kind}`} className="flex items-center justify-between py-2">
+                  <span className="min-w-0 truncate pr-2">
                     <strong>{o.name}</strong> — {o.kind === "birthday" ? "sinh nhật" : "ngày giỗ"}
-                    {o.years !== null ? ` (${o.kind === "birthday" ? `${o.years} tuổi` : `giỗ lần ${o.years}`})` : ""}
+                    {o.years !== null && <span className="text-ink-soft"> ({o.years})</span>}
                   </span>
-                  <span className="font-semibold text-wine">{whenText(o.daysUntil)}</span>
+                  <span className="shrink-0 font-semibold text-wine">{whenText(o.daysUntil)}</span>
                 </li>
               ))}
             </ul>
           )}
-          <Link href="/lich" className={buttonGhostClass}>Mở lịch gia đình</Link>
         </Card>
       )}
 
-      <section aria-label="Lối tắt" className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      {/* Shortcut grid - optimized for phones: 2 columns, large touch targets */}
+      <section aria-label="Lối tắt nhanh" className="grid grid-cols-2 gap-3 sm:gap-4">
         {shortcuts.map((item) => (
-          <Link key={item.href} href={item.href} className="block focus-visible:outline-none">
-            <Card className="flex h-full flex-col items-center gap-2 py-5 text-center hover:border-wine">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-champagne-soft text-wine">
+          <Link key={item.href} href={item.href} className="block active:scale-[0.985] focus-visible:outline-none">
+            <Card className="flex h-full flex-col items-center justify-center gap-2.5 py-5 text-center transition active:bg-champagne-soft/30 hover:border-wine">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-champagne-soft text-wine">
                 <NavIcon href={item.href} />
               </span>
-              <span className="text-base font-bold text-wine">{item.label}</span>
+              <span className="text-sm font-semibold leading-tight text-wine">{item.label}</span>
             </Card>
           </Link>
         ))}

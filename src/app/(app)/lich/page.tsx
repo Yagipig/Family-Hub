@@ -90,13 +90,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold text-wine">Lịch gia đình</h1>
-        <div className="ml-auto flex flex-wrap gap-2">
-          {canCreate && <Link href="/lich/su-kien/moi" className={buttonClass}>+ Thêm sự kiện</Link>}
-          <a href="/lich/xuat.ics" className={buttonGhostClass} download>Tải lịch (.ics)</a>
-        </div>
-      </div>
+	      <div className="flex flex-wrap items-center gap-2">
+	        <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">Lịch gia đình</h1>
+	        <div className="ml-auto flex flex-wrap gap-2">
+	          {canCreate && <Link href="/lich/su-kien/moi" className={buttonClass + " text-sm"}>+ Thêm</Link>}
+	          <a href="/lich/xuat.ics" className={buttonGhostClass + " text-sm"} download>Tải .ics</a>
+	        </div>
+	      </div>
 
       <nav aria-label="Chế độ xem và bộ lọc" className="flex flex-wrap items-center gap-2">
         <Link href={buildCalendarHref(params, { view: "thang" })} aria-current={monthly ? "page" : undefined}

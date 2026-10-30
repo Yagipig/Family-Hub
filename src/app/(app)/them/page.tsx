@@ -26,15 +26,15 @@ export default async function MorePage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-wine">Thêm</h1>
-      <section aria-label="Tất cả chuyên mục" className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">Thêm</h1>
+      <section aria-label="Tất cả chuyên mục" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {visible.map((item) => (
-          <Link key={item.href} href={item.href} className="block focus-visible:outline-none">
-            <Card className="flex h-full flex-col items-center gap-2 py-5 text-center hover:border-wine">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-champagne-soft text-wine">
+          <Link key={item.href} href={item.href} className="block active:scale-[0.985] focus-visible:outline-none">
+            <Card className="flex h-full flex-col items-center justify-center gap-2.5 py-5 text-center transition active:bg-champagne-soft/30 hover:border-wine">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-champagne-soft text-wine">
                 <NavIcon href={item.href} />
               </span>
-              <span className="text-base font-bold text-wine">{item.label}</span>
+              <span className="text-sm font-semibold leading-tight text-wine">{item.label}</span>
             </Card>
           </Link>
         ))}

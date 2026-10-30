@@ -14,12 +14,35 @@
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
 }
 
-html { font-size: 18px; }
-body { background: var(--color-cream); color: var(--color-ink); font-family: var(--font-sans); overflow-x: clip; }
+html { font-size: 17px; }
+@media (min-width: 640px) { html { font-size: 18px; } }
+
+body { background: var(--color-cream); color: var(--color-ink); font-family: var(--font-sans); overflow-x: clip; line-height: 1.5; }
 :focus-visible { outline: 3px solid var(--color-champagne); outline-offset: 2px; }
-/* Dien thoai: bo vet sang khi cham, anh/video khong tran khoi khung */
+/* Mobile-first: no tap highlight, full width images, comfortable touch */
 * { -webkit-tap-highlight-color: transparent; }
-img, video { max-width: 100%; }
+img, video { max-width: 100%; height: auto; }
+
+/* Mobile friendly lists and cards */
+ul, ol { padding-left: 0; }
+a, button, [role="button"] { min-height: 44px; } /* WCAG touch target */
+
+/* Improve scrolling and spacing on phones */
+main { scroll-behavior: smooth; }
+
+/* Better form controls on mobile */
+input, select, textarea, button {
+  font-size: 16px; /* prevent iOS zoom */
+}
+
+/* Desktop nav and larger screens */
+@media (min-width: 768px) {
+  html { font-size: 18px; }
+}
+
+/* Safe area for notched phones (iPhone etc) */
+.safe-area-top { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
 /* In / lưu PDF (ví dụ cây gia phả): bỏ thanh điều hướng và các bảng điều khiển */
 @media print {

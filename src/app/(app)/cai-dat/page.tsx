@@ -13,8 +13,8 @@ export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: profile } = await supabase.from("user_profiles").select("alias_name").eq("id", session.userId).maybeSingle();
   return (
-    <>
-      <h1 className="text-3xl font-bold text-wine">Cài đặt</h1>
+	    <>
+	      <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">Cài đặt</h1>
       <Card className="space-y-4">
         <h2 className="text-xl font-bold">Hồ sơ của tôi</h2>
         <p className="text-base text-ink-soft">Email: {session.email} · Vai trò: {ROLE_LABELS[session.role]}</p>

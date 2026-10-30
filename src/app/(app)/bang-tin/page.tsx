@@ -28,10 +28,10 @@ export default async function FeedPage() {
 
   return (
     <>
-      <FamilyCover>
-        <h1 className="text-3xl font-bold">Bảng tin {session.familyName}</h1>
-        <p className="mt-1 text-lg opacity-90">Nơi cả nhà chia sẻ tin vui, hình ảnh và lời hỏi thăm.</p>
-      </FamilyCover>
+	      <FamilyCover>
+	        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Bảng tin {session.familyName}</h1>
+	        <p className="mt-1 text-base opacity-90">Chia sẻ tin vui, ảnh và lời hỏi thăm.</p>
+	      </FamilyCover>
 
       {canCreate ? (
         <Composer hasBranch={session.branchId !== null} />

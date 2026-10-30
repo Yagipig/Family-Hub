@@ -29,7 +29,7 @@ export default async function FamilyTreePage({ searchParams }: { searchParams: P
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-3xl font-bold text-wine">Cây gia phả</h1>
+        <h1 className="mr-auto text-2xl font-bold tracking-tight text-wine md:text-3xl">Cây gia phả</h1>
         <Link href="/thanh-vien" className={buttonGhostClass}>Danh sách thành viên</Link>
       </div>
       {ok && <Alert kind="ok">{ok}</Alert>}

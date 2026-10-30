@@ -58,28 +58,33 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <ChatAutoRefresh />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold text-wine">
-          Tin nhắn{totalUnread > 0 && <span className="ml-3 rounded-full bg-wine px-3 py-1 align-middle text-base text-white">{unreadLabel(totalUnread)} chưa đọc</span>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold text-wine md:text-3xl">
+          Tin nhắn
+          {totalUnread > 0 && (
+            <span className="ml-2 inline-block rounded-full bg-wine px-2.5 py-0.5 align-middle text-sm font-bold text-white md:ml-3 md:px-3 md:py-1 md:text-base">
+              {unreadLabel(totalUnread)}
+            </span>
+          )}
         </h1>
-        <Link href="/tin-nhan/moi" className={buttonClass}>Tin nhắn mới</Link>
+        <Link href="/tin-nhan/moi" className={buttonClass + " text-sm md:text-base"}>Tin nhắn mới</Link>
       </div>
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
 
-      <form method="get" action="/tin-nhan" role="search" className="flex flex-wrap gap-2">
-        <label className="min-w-0 flex-1 text-base font-semibold">
+      <form method="get" action="/tin-nhan" role="search" className="flex flex-wrap items-center gap-2">
+        <label className="min-w-0 flex-1 text-sm font-semibold">
           <span className="sr-only">Tìm cuộc trò chuyện</span>
           <input
             name="q"
             defaultValue={q}
             maxLength={80}
             placeholder="Tìm theo tên người hoặc nhóm…"
-            className="block min-h-12 w-full rounded-full border border-ink-soft/40 bg-white px-5 py-2 text-base font-normal text-ink"
+            className="block min-h-11 w-full rounded-full border border-ink-soft/40 bg-white px-4 py-2 text-[15px] font-normal text-ink"
           />
         </label>
-        <button className={buttonClass}>Tìm</button>
-        {q && <Link href="/tin-nhan" className="inline-flex min-h-12 items-center px-3 text-base font-semibold text-wine underline">Xoá tìm kiếm</Link>}
+        <button className={buttonClass + " px-4 text-sm"}>Tìm</button>
+        {q && <Link href="/tin-nhan" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-wine underline">Xoá</Link>}
       </form>
 
       {rows.length === 0 ? (

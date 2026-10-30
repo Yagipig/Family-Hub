@@ -19,7 +19,7 @@ const FamilyFlow = dynamic(() => import("@/components/FamilyFlow").then((m) => m
 
 type Mode = "diagram" | "list";
 const seg = (active: boolean) =>
-  `min-h-12 px-5 text-base font-semibold first:rounded-l-xl last:rounded-r-xl border border-wine ${active ? "bg-wine text-white" : "bg-ivory text-wine hover:bg-champagne-soft"}`;
+  `min-h-11 px-4 text-sm md:text-base md:min-h-12 md:px-5 font-semibold first:rounded-l-xl last:rounded-r-xl border border-wine ${active ? "bg-wine text-white" : "bg-ivory text-wine hover:bg-champagne-soft"}`;
 
 export function FamilyTreeExplorer({ people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
   people: TreePerson[]; links: TreeLink[]; partners: TreePartner[]; branches: BranchRow[];

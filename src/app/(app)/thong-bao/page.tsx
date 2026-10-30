@@ -27,15 +27,15 @@ export default async function NotificationsPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold text-wine">Thông báo</h1>
-        <div className="ml-auto flex flex-wrap gap-2">
-          {unread > 0 && (
-            <form action={markAllRead}><button className={buttonGhostClass}>Đánh dấu đã đọc tất cả ({unread})</button></form>
-          )}
-          <Link href="/cai-dat/thong-bao" className={buttonGhostClass}>Tuỳ chọn thông báo</Link>
-        </div>
-      </div>
+	      <div className="flex flex-wrap items-center gap-2">
+	        <h1 className="text-2xl font-bold tracking-tight text-wine md:text-3xl">Thông báo</h1>
+	        <div className="ml-auto flex flex-wrap gap-2">
+	          {unread > 0 && (
+	            <form action={markAllRead}><button className={buttonGhostClass + " text-sm"}>Đã đọc hết</button></form>
+	          )}
+	          <Link href="/cai-dat/thong-bao" className={buttonGhostClass + " text-sm"}>Tuỳ chọn</Link>
+	        </div>
+	      </div>
       {error && <p role="alert" className="text-base text-danger">Không tải được thông báo. Vui lòng thử lại.</p>}
       {!error && rows.length === 0 && <Card><p className="text-base text-ink-soft">Bạn chưa có thông báo nào.</p></Card>}
       <ul className="space-y-3">
