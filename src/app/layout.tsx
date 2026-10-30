@@ -16,7 +16,12 @@ export const viewport: Viewport = { themeColor: "#7b1e2b", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body className="min-h-dvh antialiased">{children}<RegisterServiceWorker /><Analytics /><SpeedInsights /></body>
+      <body className="min-h-dvh antialiased" suppressHydrationWarning>
+        {children}
+        <RegisterServiceWorker />
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }

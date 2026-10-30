@@ -55,6 +55,7 @@ export function ChatRoom({
   const [reporting, setReporting] = useState<{ id: string; reason: ReasonKind; note: string; busy: boolean } | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [newBelow, setNewBelow] = useState(false);
+  const [clientNow, setClientNow] = useState<number | null>(null);
 
   // ---- refs: giá trị mới nhất cho các callback bất đồng bộ ----
   const messagesRef = useRef(messages);
@@ -71,6 +72,11 @@ export function ChatRoom({
   const resyncingRef = useRef(false);
   const lastMarkedRef = useRef<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Client-only "now" for time-sensitive UI (edit window). Prevents Date.now() during SSR/hydration.
+  useEffect(() => {
+    setClientNow(Date.now());
+  }, []);
 
   const fmtDay = useCallback((iso: string) => dayKey(iso, timeZone), [timeZone]);
 
@@ -476,18 +482,19 @@ export function ChatRoom({
                       <span className="inline-block rounded-full bg-champagne-soft/70 px-4 py-1 text-sm font-medium text-ink-soft">{m.body}</span>
                     </p>
                   ) : (
-                    <MessageRow
-                      m={m}
-                      own={own}
-                      showName={showName}
-                      groupStart={groupStart}
-                      groupEnd={groupEnd}
-                      showMeta={showMeta}
-                      timeZone={timeZone}
-                      active={activeId === m.id}
-                      editing={editing?.id === m.id ? editing : null}
-                      reporting={reporting?.id === m.id ? reporting : null}
-                      canModerate={canModerate}
+	                    <MessageRow
+	                      m={m}
+	                      own={own}
+	                      showName={showName}
+	                      groupStart={groupStart}
+	                      groupEnd={groupEnd}
+	                      showMeta={showMeta}
+	                      timeZone={timeZone}
+	                      active={activeId === m.id}
+	                      editing={editing?.id === m.id ? editing : null}
+	                      reporting={reporting?.id === m.id ? reporting : null}
+	                      canModerate={canModerate}
+	                      clientNow={clientNow}
                       onToggle={() => { setActiveId((cur) => (cur === m.id ? null : m.id)); setEditing(null); setReporting(null); }}
                       onReply={() => { setReplyTo(m); setActiveId(null); textareaRef.current?.focus(); }}
                       onStartEdit={() => setEditing({ id: m.id, text: m.body, busy: false })}
@@ -598,14 +605,16 @@ type RowProps = {
   onReportChange: (patch: Partial<{ reason: ReasonKind; note: string }>) => void;
   onSendReport: () => void;
   onCancelReport: () => void;
-  onRetry: () => void;
-  onDiscard: () => void;
-};
+	  onRetry: () => void;
+	  onDiscard: () => void;
+	  clientNow: number | null;
+	};
 
 function MessageRow(p: RowProps) {
   const { m, own } = p;
   const pending = m.status === "sending" || m.status === "failed";
-  const canEdit = own && !pending && !m.deleted && Date.now() - Date.parse(m.created_at) < EDIT_WINDOW_MS;
+  // Use clientNow (set after mount) so server render and first client render match (both treat as not editable yet)
+  const canEdit = own && !pending && !m.deleted && p.clientNow !== null && (p.clientNow - Date.parse(m.created_at) < EDIT_WINDOW_MS);
   const canDelete = !pending && !m.deleted && (own || p.canModerate);
   const canReport = !pending && !m.deleted && !own;
   const senderName = m.sender_name ?? "Thành viên";
