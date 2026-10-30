@@ -10,6 +10,7 @@ import { SYMBOLS } from "@/lib/games/baucua";
 import { GamesAutoRefresh } from "@/components/GamesAutoRefresh";
 import { Countdown } from "@/components/Countdown";
 import { TvController, type TvAction } from "@/components/TvController";
+import { TvBallButton } from "@/components/TvBallButton";
 import { LotoAnnouncer } from "@/components/LotoAnnouncer";
 import { LotoMusic } from "@/components/LotoMusic";
 import { WinCelebration } from "@/components/WinCelebration";
@@ -101,8 +102,9 @@ export default async function TvPage({ params }: { params: Promise<{ roomId: str
     }
   }
 
+  const fit = tv.kind === "loto";
   return (
-    <Frame notice live noticeText={noticeFor(coin.name)}>
+    <Frame notice live noticeText={noticeFor(coin.name)} fit={fit}>
       {tv.kind === "loto" && (
         <LotoView
           tv={tv} coinLower={coinLower}
@@ -110,19 +112,38 @@ export default async function TvPage({ params }: { params: Promise<{ roomId: str
           extraLines={access.settings.loto_extra_lines ?? []}
           musicUrl={access.settings.loto_music_url ?? null}
           roomId={roomId}
+          canCall={isAdmin}
         />
       )}
       {tv.kind === "lottery" && <LotteryView tv={tv} tz={session.timezone} coinLower={coinLower} />}
       {tv.kind === "baucua" && <BaucuaView tv={tv} />}
-      {tv.top && tv.top.length > 0 && <TopBar top={tv.top} coinLower={coinLower} />}
+      {tv.top && tv.top.length > 0 && <TopBar top={tv.top} coinLower={coinLower} compact={fit} />}
       {isAdmin && (primary || secondary) && (
-        <div className="mt-10 border-t border-champagne/40 pt-6"><TvController roomId={roomId} primary={primary} secondary={secondary} /></div>
+        <div className={fit ? "mt-3 shrink-0 border-t border-champagne/40 pt-3" : "mt-10 border-t border-champagne/40 pt-6"}>
+          <TvController roomId={roomId} primary={primary} secondary={secondary} compact={fit} />
+        </div>
       )}
     </Frame>
   );
 }
 
-function Frame({ children, notice, live, noticeText }: { children: React.ReactNode; notice?: boolean; live?: boolean; noticeText?: string }) {
+function Frame({ children, notice, live, noticeText, fit = false }: { children: React.ReactNode; notice?: boolean; live?: boolean; noticeText?: string; fit?: boolean }) {
+  // fit: khung chieu cao dung bang man hinh (100dvh), khong cuon — dung cho TV lo to de thay tron
+  // ca bang 90 so tren dien thoai (nguoi dung yeu cau 30/10/2026). Cac man TV khac giu cuon nhu cu.
+  if (fit) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[linear-gradient(160deg,#3b0764_0%,#7b1e2b_58%,#4a044e_100%)] p-3 text-white sm:p-6">
+        <GamesAutoRefresh seconds={3} active={!!live} />
+        <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
+          <div className="mb-2 flex shrink-0 items-center justify-between gap-3 text-sm sm:mb-3 sm:text-lg">
+            <Link href="/tro-choi" className="rounded-lg border border-champagne/60 px-3 py-1.5 font-semibold text-champagne hover:bg-wine-dark">Thoát</Link>
+            {notice && <span className="truncate font-semibold text-champagne-soft">{noticeText}</span>}
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={`${wrap} p-6 sm:p-10`}>
       <GamesAutoRefresh seconds={3} active={!!live} />
@@ -137,7 +158,17 @@ function Frame({ children, notice, live, noticeText }: { children: React.ReactNo
   );
 }
 
-function TopBar({ top, coinLower }: { top: NonNullable<Top>; coinLower: string }) {
+function TopBar({ top, coinLower, compact = false }: { top: NonNullable<Top>; coinLower: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="mt-3 shrink-0 border-t border-champagne/40 pt-2.5">
+        <ol className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm sm:text-xl">
+          <li className="font-bold text-champagne">Bảng {coinLower}</li>
+          {top.slice(0, 6).map((r) => <li key={`${r.rank}-${r.name}`}>{r.rank}. {r.name} <strong className="text-champagne">{r.balance}</strong></li>)}
+        </ol>
+      </div>
+    );
+  }
   return (
     <div className="mt-10 border-t border-champagne/40 pt-6">
       <p className="mb-3 text-3xl font-bold text-champagne">Bảng {coinLower}</p>
@@ -148,49 +179,59 @@ function TopBar({ top, coinLower }: { top: NonNullable<Top>; coinLower: string }
   );
 }
 
-function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId }: {
-  tv: LotoTv; coinLower: string; chatter: number; extraLines: string[]; musicUrl: string | null; roomId: string;
+function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId, canCall }: {
+  tv: LotoTv; coinLower: string; chatter: number; extraLines: string[]; musicUrl: string | null; roomId: string; canCall: boolean;
 }) {
   const called = new Set(tv.called);
   const winners = tv.winners ?? [];
   const winnerNames = winners.length > 0 ? winners.map((w) => w.name) : tv.winner ? [tv.winner.name] : [];
+  // Bong tinh theo chieu cao man hinh de ca trang vua mot man hinh (ke ca tren dien thoai)
+  const ballSize = { width: "min(30dvh, 56vw, 24rem)", fontSize: "min(15dvh, 28vw, 11rem)" } as const;
+  const ballAction = tv.status === "playing" ? "loto_next" : tv.status === "waiting" ? "loto_start" : null;
   return (
-    <div className="space-y-8">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 sm:gap-3">
       {tv.status === "finished" && winnerNames.length > 0 && <WinCelebration fireKey={`${roomId}:tv-win`} big />}
-      <h1 className="text-center text-5xl font-bold text-champagne">{tv.title}</h1>
-      <p className="text-center text-3xl">Mã phòng <strong className="tracking-[0.3em] text-champagne">{tv.code}</strong> · {tv.players} người chơi · Giải kinh {tv.prize_points} {coinLower}{(tv.pot ?? 0) > 0 ? ` + cược ${(tv.pot ?? 0).toLocaleString("vi-VN")}` : ""}</p>
+      <div className="shrink-0 text-center">
+        <h1 className="truncate text-2xl font-bold text-champagne sm:text-4xl">{tv.title}</h1>
+        <p className="mt-0.5 truncate text-[13px] text-white/90 sm:text-2xl">
+          Mã phòng <strong className="tracking-[0.2em] text-champagne">{tv.code}</strong> · {tv.players} người · Giải {tv.prize_points} {coinLower}{(tv.pot ?? 0) > 0 ? ` + cược ${(tv.pot ?? 0).toLocaleString("vi-VN")}` : ""}
+        </p>
+      </div>
       {winnerNames.length > 0 ? (
-        <div className="space-y-4" role="status" aria-live="polite">
-          <p className="text-center text-7xl font-bold text-champagne">🎉 KINH RỒI NHÉ!</p>
-          <ul className="mx-auto max-w-4xl space-y-3">
+        <div className="shrink-0 space-y-2" role="status" aria-live="polite">
+          <p className="text-center text-4xl font-bold text-champagne sm:text-6xl">🎉 KINH RỒI NHÉ!</p>
+          <ul className="mx-auto max-w-4xl space-y-2">
             {winners.length > 0 ? winners.map((w, i) => (
-              <li key={i} className="flex flex-wrap justify-between gap-4 rounded-2xl bg-wine-dark px-8 py-4 text-4xl">
+              <li key={i} className="flex flex-wrap justify-between gap-3 rounded-2xl bg-wine-dark px-5 py-2.5 text-xl sm:text-3xl">
                 <span>{w.name}{w.province ? ` · bảng ${w.province}` : ""}</span>
                 <strong className="text-champagne">+{w.share} {coinLower}</strong>
               </li>
             )) : (
-              <li className="text-center text-6xl font-bold">{winnerNames[0]}</li>
+              <li className="text-center text-4xl font-bold sm:text-5xl">{winnerNames[0]}</li>
             )}
           </ul>
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
-          <p className="text-3xl">{tv.status === "waiting" ? "Chờ bắt đầu" : tv.status === "playing" ? "Số vừa hô" : tv.status === "paused" ? "Đang tạm dừng" : "Ván đã kết thúc"}</p>
-          {tv.last != null ? (
+        <div className="flex shrink-0 flex-col items-center gap-1.5" role="status" aria-live="polite">
+          <p className="text-base sm:text-2xl">{tv.status === "waiting" ? "Chờ bắt đầu" : tv.status === "playing" ? "Số vừa hô" : tv.status === "paused" ? "Đang tạm dừng" : "Ván đã kết thúc"}</p>
+          {canCall && ballAction ? (
+            <TvBallButton key={tv.last ?? "none"} roomId={roomId} action={ballAction} last={tv.last} />
+          ) : tv.last != null ? (
             <div
               key={tv.last}
-              style={lotoBallStyle(tv.last)}
-              className="animate-loto-pop flex h-72 w-72 items-center justify-center rounded-full text-[10rem] font-black leading-none text-white ring-8 ring-yellow-300/80 sm:h-96 sm:w-96 sm:text-[14rem]"
+              style={{ ...lotoBallStyle(tv.last), ...ballSize }}
+              className="animate-loto-pop flex aspect-square items-center justify-center rounded-full font-black leading-none text-white ring-4 ring-yellow-300/80 sm:ring-8"
             >
               {tv.last}
             </div>
           ) : (
-            <div className="flex h-72 w-72 items-center justify-center rounded-full bg-champagne text-[10rem] font-bold leading-none text-wine-dark sm:h-96 sm:w-96 sm:text-[14rem]">–</div>
+            <div style={ballSize} className="flex aspect-square items-center justify-center rounded-full bg-champagne font-bold leading-none text-wine-dark">–</div>
           )}
         </div>
       )}
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 rounded-2xl bg-white p-4">
+      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-wrap items-center justify-center gap-2 rounded-xl bg-white/95 px-3 py-2">
         <LotoAnnouncer
+          compact
           status={tv.status as "waiting" | "playing" | "paused" | "finished" | "cancelled"}
           last={tv.last}
           called={tv.called}
@@ -202,10 +243,14 @@ function LotoView({ tv, coinLower, chatter, extraLines, musicUrl, roomId }: {
         />
         <LotoMusic url={musicUrl} />
       </div>
-      <ol className="grid grid-cols-10 gap-2 text-2xl sm:text-4xl" aria-label="Bảng 90 số">
+      <ol
+        className="grid min-h-0 flex-1 grid-cols-10 gap-1 sm:gap-1.5"
+        style={{ gridTemplateRows: "repeat(9, minmax(0, 1fr))" }}
+        aria-label="Bảng 90 số"
+      >
         {Array.from({ length: 90 }, (_, i) => i + 1).map((n) => (
-          <li key={n} style={called.has(n) ? lotoBallStyle(n) : undefined} className={`flex aspect-square items-center justify-center rounded-full font-black ${
-            n === tv.last ? "text-white ring-8 ring-yellow-300" : called.has(n) ? "text-white" : "bg-black/25 text-white/35"}`}>{n}</li>
+          <li key={n} style={called.has(n) ? lotoBallStyle(n) : undefined} className={`flex items-center justify-center rounded-full text-[clamp(0.75rem,2.4dvh,1.75rem)] font-black ${
+            n === tv.last ? "text-white ring-4 ring-yellow-300" : called.has(n) ? "text-white" : "bg-black/25 text-white/35"}`}>{n}</li>
         ))}
       </ol>
     </div>
