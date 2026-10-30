@@ -39,24 +39,24 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <Link href="/tin-nhan" className="inline-flex min-h-12 items-center rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        <Link href="/tin-nhan" className="inline-flex min-h-11 items-center rounded-xl border border-wine px-3 text-sm font-semibold text-wine hover:bg-champagne-soft md:min-h-12 md:px-4 md:text-base">
           ← Danh sách
         </Link>
-        <Avatar name={conv.title} size={48} />
+        <Avatar name={conv.title} size={40} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-bold text-wine">{conv.title}</h1>
-          <p className="text-base text-ink-soft">
+          <h1 className="truncate text-xl font-bold text-wine md:text-2xl">{conv.title}</h1>
+          <p className="text-sm text-ink-soft md:text-base">
             {KIND_LABEL[conv.kind]}
             {conv.kind !== "direct" ? ` · ${conv.member_count} người` : ""}
-            {conv.muted ? " · Đã tắt thông báo" : ""}
+            {conv.muted ? " · Đã tắt" : ""}
           </p>
         </div>
         <Link
           href={`/tin-nhan/${id}/thanh-vien`}
-          className="inline-flex min-h-12 items-center rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft"
+          className="inline-flex min-h-11 items-center rounded-xl border border-wine px-3 text-sm font-semibold text-wine hover:bg-champagne-soft md:min-h-12 md:px-4 md:text-base"
         >
-          Thành viên và tuỳ chọn
+          Thành viên
         </Link>
       </div>
 

@@ -91,36 +91,36 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
           <button type="button" className={seg(mode === "diagram")} aria-pressed={mode === "diagram"} onClick={() => setMode("diagram")}>Sơ đồ</button>
           <button type="button" className={seg(mode === "list")} aria-pressed={mode === "list"} onClick={() => setMode("list")}>Danh sách theo đời</button>
         </div>
-        <button type="button" aria-expanded={showOpts} onClick={() => setShowOpts((v) => !v)}
-          className="min-h-12 rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft sm:hidden">
-          {showOpts ? "Ẩn tùy chọn" : "Lọc nhánh, hướng…"}
-        </button>
-        {selfId && fullIndex.people.has(selfId) && (
-          <button type="button" onClick={() => focusPerson(selfId)}
-            className="min-h-12 rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft">Tới hồ sơ của tôi</button>
-        )}
+	        <button type="button" aria-expanded={showOpts} onClick={() => setShowOpts((v) => !v)}
+	          className="min-h-10 rounded-xl border border-wine px-3 text-sm font-semibold text-wine hover:bg-champagne-soft sm:hidden md:min-h-12 md:px-4 md:text-base">
+	          {showOpts ? "Ẩn lọc" : "Lọc nhánh…"}
+	        </button>
+	        {selfId && fullIndex.people.has(selfId) && (
+	          <button type="button" onClick={() => focusPerson(selfId)}
+	            className="min-h-10 rounded-xl border border-wine px-3 text-sm font-semibold text-wine hover:bg-champagne-soft md:min-h-12 md:px-4 md:text-base">Tới tôi</button>
+	        )}
 
-        <div className="relative w-full min-w-56 flex-1 sm:w-auto">
-          <label className="block text-sm font-semibold">Tìm người
-            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" role="combobox"
-              aria-expanded={mode === "diagram" && results.length > 0} aria-controls="tree-search-results"
-              onKeyDown={(e) => { if (e.key === "Enter" && mode === "diagram" && results[0]) { e.preventDefault(); pick(results[0].id); } }}
-              placeholder="Gõ tên, không cần dấu"
-              className="mt-1 block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-base font-normal text-ink" />
-          </label>
-          {mode === "diagram" && query.trim() !== "" && (
-            <ul id="tree-search-results" role="listbox" aria-label="Kết quả tìm kiếm"
-              className="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-champagne bg-ivory shadow-lg">
-              {results.length === 0 ? <li className="px-4 py-3 text-base text-ink-soft">Không tìm thấy ai.</li> : results.map((r) => (
-                <li key={r.id} role="option" aria-selected={false}>
-                  <button type="button" onClick={() => pick(r.id)} className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left text-base hover:bg-champagne-soft">
-                    <Avatar name={r.name} src={r.avatar} gender={r.gender} size={32} />
-                    <span>{r.name}<span className="text-sm text-ink-soft"> {lifeSpan(r.by, r.dy, r.dead)}</span></span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+	        <div className="relative w-full min-w-48 flex-1 sm:w-auto">
+	          <label className="block text-xs font-semibold md:text-sm">Tìm người
+	            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" role="combobox"
+	              aria-expanded={mode === "diagram" && results.length > 0} aria-controls="tree-search-results"
+	              onKeyDown={(e) => { if (e.key === "Enter" && mode === "diagram" && results[0]) { e.preventDefault(); pick(results[0].id); } }}
+	              placeholder="Gõ tên (không dấu)"
+	              className="mt-1 block min-h-10 w-full rounded-xl border border-ink-soft/40 bg-white px-3 py-1.5 text-sm font-normal text-ink md:min-h-12 md:px-4 md:py-2 md:text-base" />
+	          </label>
+	          {mode === "diagram" && query.trim() !== "" && (
+	            <ul id="tree-search-results" role="listbox" aria-label="Kết quả tìm kiếm"
+	              className="absolute inset-x-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-xl border border-champagne bg-ivory shadow-lg">
+	              {results.length === 0 ? <li className="px-3 py-2 text-sm text-ink-soft md:px-4 md:py-3 md:text-base">Không tìm thấy.</li> : results.map((r) => (
+	                <li key={r.id} role="option" aria-selected={false}>
+	                  <button type="button" onClick={() => pick(r.id)} className="flex min-h-10 w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-champagne-soft md:min-h-12 md:gap-3 md:px-4 md:py-2 md:text-base">
+	                    <Avatar name={r.name} src={r.avatar} gender={r.gender} size={28} />
+	                    <span>{r.name}<span className="text-xs text-ink-soft md:text-sm"> {lifeSpan(r.by, r.dy, r.dead)}</span></span>
+	                  </button>
+	                </li>
+	              ))}
+	            </ul>
+	          )}
         </div>
 
         <div className={`${showOpts ? "grid" : "hidden"} w-full grid-cols-2 gap-3 sm:contents`}>
@@ -151,46 +151,37 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
         </p>
       )}
 
-      {mode === "diagram" ? (
-        <div className="flex flex-col gap-4 md:flex-row">
-          <div className="relative h-[68dvh] min-h-[420px] flex-1 overflow-hidden rounded-2xl border-4 border-double border-[#c9a96b] shadow-inner"
-            style={{ background: "linear-gradient(180deg, #fdf8ec 0%, #f9efdb 55%, #f3e5c6 100%)" }}>
-            {elements.nodes.length === 0 ? (
-              <p className="p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
-            ) : placed && (
-              <FamilyFlow key={flowKey} nodes={elements.nodes} edges={elements.edges} placed={placed} index={index} gens={gens}
-                divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
-                onSelect={onSelect} />
-            )}
-          </div>
-          {selectedPerson && selectedId && (
-            <TreePersonPanel id={selectedId} index={fullIndex} gens={gens}
-              branchName={selectedPerson.branchId ? (branchName.get(selectedPerson.branchId) ?? null) : null}
-              canEdit={canEdit} canArrange={canArrange} open={panelOpen} onToggle={() => setPanelOpen((v) => !v)} onClose={() => setSelectedId(null)} onFocus={focusPerson} />
-          )}
-        </div>
-      ) : (
+	      {mode === "diagram" ? (
+	        <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+	          <div className="relative h-[58dvh] min-h-[340px] flex-1 overflow-hidden rounded-2xl border-4 border-double border-[#c9a96b] shadow-inner md:h-[68dvh] md:min-h-[420px]"
+	            style={{ background: "linear-gradient(180deg, #fdf8ec 0%, #f9efdb 55%, #f3e5c6 100%)" }}>
+	            {elements.nodes.length === 0 ? (
+	              <p className="p-4 text-sm text-ink-soft md:p-6 md:text-base">Không có ai thuộc nhánh này.</p>
+	            ) : placed && (
+	              <FamilyFlow key={flowKey} nodes={elements.nodes} edges={elements.edges} placed={placed} index={index} gens={gens}
+	                divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
+	                onSelect={onSelect} />
+	            )}
+	          </div>
+	          {selectedPerson && selectedId && (
+	            <TreePersonPanel id={selectedId} index={fullIndex} gens={gens}
+	              branchName={selectedPerson.branchId ? (branchName.get(selectedPerson.branchId) ?? null) : null}
+	              canEdit={canEdit} canArrange={canArrange} open={panelOpen} onToggle={() => setPanelOpen((v) => !v)} onClose={() => setSelectedId(null)} onFocus={focusPerson} />
+	          )}
+	        </div>
+	      ) : (
         <FamilyOutline index={index} gens={gens} query={query} highlightId={selectedId} onShowInDiagram={focusPerson} />
       )}
 
-      <details className="rounded-xl border border-champagne/60 bg-ivory px-4">
-        <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-wine">Chú giải</summary>
-        <ul className="space-y-2 pb-4 text-base">
-          <li>Mỗi người là một <strong>huy hiệu ảnh tròn</strong> với <strong>bảng tên vàng</strong> bên dưới, treo trên cành cây như phả đồ truyền thống. Vòng quanh ảnh: <span className="font-semibold text-[#6f8fb0]">xanh dương: nam</span> · <span className="font-semibold text-[#c9798a]">hồng: nữ</span> · vàng champagne: khác/chưa rõ.</li>
-          <li>Kiểu cây phả đồ: <strong>tổ tiên ở gốc cây phía dưới</strong>, con cháu tỏa dần lên trên; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
-          <li>Chấm tròn vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (chấm trắng: đã ly hôn hoặc góa); các con nối từ chấm đó bằng cành cây màu nâu.</li>
-          <li>Cành liền: con ruột. Cành đứt nét: con nuôi hoặc con kế. Dấu † và ảnh xám: người đã mất.</li>
-          <li>Chấm màu nhỏ cạnh năm sinh là màu của nhánh họ:
-            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-              {legendBranches.map((b) => (
-                <li key={b.id}><span className="mr-1 inline-block h-3 w-3 rounded-sm align-middle" style={{ background: branchColor(b.id) }} />{b.name}</li>
-              ))}
-              <li><span className="mr-1 inline-block h-3 w-3 rounded-sm align-middle" style={{ background: branchColor(null) }} />Chưa xếp nhánh</li>
-            </ul>
-          </li>
-          <li>Mẹo: bấm vào ảnh một người để xem đầy đủ thông tin; trên điện thoại dùng hai ngón để phóng to, thu nhỏ. Cần đọc bằng bàn phím hoặc trình đọc màn hình: chọn “Danh sách theo đời”.</li>
-        </ul>
-      </details>
+	      <details className="rounded-xl border border-champagne/60 bg-ivory px-3 md:px-4">
+	        <summary className="min-h-10 cursor-pointer py-2 text-sm font-semibold text-wine md:min-h-12 md:py-3 md:text-base">Chú giải</summary>
+	        <ul className="space-y-1.5 pb-3 text-sm md:space-y-2 md:pb-4 md:text-base">
+	          <li>Mỗi người là <strong>huy hiệu ảnh tròn</strong> + <strong>bảng tên vàng</strong>. Vòng quanh: <span className="font-semibold text-[#6f8fb0]">xanh: nam</span> · <span className="font-semibold text-[#c9798a]">hồng: nữ</span>.</li>
+	          <li>Tổ tiên ở dưới, con cháu lên trên. Chấm vàng giữa hai người = cặp vợ/chồng. Cành liền = con ruột.</li>
+	          <li>Chấm màu nhỏ = nhánh họ. Dấu † = đã mất.</li>
+	          <li>Mẹo: chạm 2 ngón để zoom trên điện thoại. Hoặc chọn “Danh sách theo đời”.</li>
+	        </ul>
+	      </details>
     </div>
   );
 }

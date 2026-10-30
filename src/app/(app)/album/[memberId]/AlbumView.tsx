@@ -17,7 +17,7 @@ export type PhotoInfo = {
 };
 
 const VIS: Record<string, string> = { family: "Cả gia đình", branch: "Cùng nhánh họ", owner: "Chỉ mình chủ album" };
-const input = "mt-1 block w-full min-h-12 rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-base text-ink";
+const input = "mt-1 block w-full min-h-11 rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-[15px] text-ink md:min-h-12 md:text-base";
 
 export function AlbumView({
   memberId, albums, currentId, photos, names, roster, canAdd, canEditAlbum, canDeleteAlbum, canTag, total,
@@ -73,10 +73,10 @@ export function AlbumView({
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
 
       {albums.length > 0 && (
-        <nav aria-label="Các album" className="flex flex-wrap gap-2">
+        <nav aria-label="Các album" className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {albums.map((a) => (
             <Link key={a.id} href={`/album/${memberId}?album=${a.id}`} aria-current={a.id === currentId ? "page" : undefined}
-              className={`inline-flex min-h-12 items-center rounded-xl border px-4 text-base font-semibold ${a.id === currentId ? "border-wine bg-wine text-white" : "border-wine text-wine hover:bg-champagne-soft"}`}>
+              className={`inline-flex min-h-10 shrink-0 items-center rounded-xl border px-3 text-sm font-semibold whitespace-nowrap md:min-h-12 md:px-4 md:text-base ${a.id === currentId ? "border-wine bg-wine text-white" : "border-wine text-wine hover:bg-champagne-soft"}`}>
               {a.title} ({a.item_count})
             </Link>
           ))}
@@ -92,24 +92,24 @@ export function AlbumView({
       )}
 
       {canAdd && (
-        <div className="space-y-3 rounded-2xl border border-champagne/60 bg-ivory p-4">
-          <div className="flex flex-wrap gap-3">
-            <label className={`${buttonClass} cursor-pointer ${uploader.busy ? "pointer-events-none opacity-60" : ""}`}>
-              {uploader.busy ? "Đang tải ảnh…" : "Thêm ảnh"}
+        <div className="space-y-2.5 rounded-2xl border border-champagne/60 bg-ivory p-3 md:space-y-3 md:p-4">
+          <div className="flex flex-wrap gap-2">
+            <label className={`${buttonClass} cursor-pointer text-sm md:text-base ${uploader.busy ? "pointer-events-none opacity-60" : ""}`}>
+              {uploader.busy ? "Đang tải…" : "Thêm ảnh"}
               <input ref={fileInput} type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif" className="sr-only"
                 disabled={uploader.busy} onChange={(e) => onFiles(e.target.files)} />
             </label>
-            <button type="button" className={buttonGhostClass} onClick={() => setPanel(panel === "new" ? "none" : "new")}>Tạo album mới</button>
-            {current && canEditAlbum && <button type="button" className={buttonGhostClass} onClick={() => setPanel(panel === "edit" ? "none" : "edit")}>Sửa album</button>}
+            <button type="button" className={buttonGhostClass + " text-sm md:text-base"} onClick={() => setPanel(panel === "new" ? "none" : "new")}>Tạo album</button>
+            {current && canEditAlbum && <button type="button" className={buttonGhostClass + " text-sm md:text-base"} onClick={() => setPanel(panel === "edit" ? "none" : "edit")}>Sửa</button>}
             {current && canDeleteAlbum && (
-              <button type="button" disabled={pending} className={buttonGhostClass}
+              <button type="button" disabled={pending} className={buttonGhostClass + " text-sm md:text-base"}
                 onClick={() => {
-                  if (!window.confirm(`Xóa album "${current.title}" cùng tất cả ảnh trong đó? Không hoàn tác được.`)) return;
+                  if (!window.confirm(`Xóa album "${current.title}" cùng tất cả ảnh?`)) return;
                   deleteAlbumAction(memberId, current.id).then((r) => done(r, () => router.replace(`/album/${memberId}`)));
-                }}>Xóa album</button>
+                }}>Xóa</button>
             )}
           </div>
-          <p className="text-sm text-ink-soft">Chọn được nhiều ảnh một lần (tối đa 30). Ảnh được thu nhỏ trước khi tải; JPG, PNG hoặc WebP.</p>
+          <p className="text-xs text-ink-soft md:text-sm">Chọn nhiều ảnh (tối đa 30). JPG/PNG/WebP.</p>
           <UploadProgress items={uploader.items} />
           {panel !== "none" && (
             <AlbumForm
@@ -128,11 +128,11 @@ export function AlbumView({
       )}
 
       {photos.length === 0 ? (
-        <p className="rounded-2xl border border-champagne/60 bg-ivory p-6 text-lg">
-          {canAdd ? "Album chưa có ảnh. Bấm “Thêm ảnh” để bắt đầu." : "Chưa có ảnh nào bạn được xem trong album này."}
+        <p className="rounded-2xl border border-champagne/60 bg-ivory p-4 text-base md:p-6 md:text-lg">
+          {canAdd ? "Album chưa có ảnh. Bấm “Thêm ảnh”." : "Chưa có ảnh nào bạn được xem."}
         </p>
       ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" aria-label="Ảnh trong album">
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" aria-label="Ảnh trong album">
           {photos.map((p, i) => (
             <li key={p.id}>
               <button type="button" onClick={() => { setOpen(i); setCaption(p.caption ?? ""); }}
@@ -148,15 +148,15 @@ export function AlbumView({
 
       <Lightbox items={lightItems} index={open} onClose={() => setOpen(null)} onChange={(i) => { setOpen(i); setCaption(photos[i]?.caption ?? ""); }}>
         {cur && (
-          <div className="mt-3 space-y-3">
+          <div className="mt-2 space-y-2 md:mt-3 md:space-y-3">
             {cur.people.length > 0 && (
-              <p className="flex flex-wrap items-center gap-2 text-base">
+              <p className="flex flex-wrap items-center gap-1.5 text-sm md:gap-2 md:text-base">
                 <span className="font-semibold">Trong ảnh:</span>
                 {cur.people.map((id) => (
-                  <span key={id} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-champagne-soft px-3">
+                  <span key={id} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-champagne-soft px-2.5 text-sm md:min-h-10 md:gap-2 md:px-3 md:text-base">
                     {names[id] ?? "Thành viên"}
                     {canTag && cur.canManage && (
-                      <button type="button" aria-label={`Bỏ thẻ ${names[id] ?? "thành viên"}`} className="min-h-10 min-w-10 font-bold text-wine"
+                      <button type="button" aria-label={`Bỏ thẻ`} className="min-h-9 min-w-9 font-bold text-wine md:min-h-10 md:min-w-10"
                         onClick={() => tagPersonAction(memberId, cur.mediaId, id, false).then((r) => done(r))}>✕</button>
                     )}
                   </span>
@@ -164,26 +164,26 @@ export function AlbumView({
               </p>
             )}
             {canTag && cur.canManage && roster.length > 0 && (
-              <label className="block text-base font-semibold">Gắn thẻ người trong ảnh
+              <label className="block text-sm font-semibold md:text-base">Gắn thẻ người
                 <select className={input} value="" onChange={(e) => { if (e.target.value) tagPersonAction(memberId, cur.mediaId, e.target.value, true).then((r) => done(r)); }}>
-                  <option value="">Chọn một người…</option>
+                  <option value="">Chọn người…</option>
                   {roster.filter((m) => !cur.people.includes(m.id)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
             )}
             {cur.canManage && (
-              <div className="space-y-2">
-                <label className="block text-base font-semibold">Chú thích
-                  <input className={input} value={caption} maxLength={300} onChange={(e) => setCaption(e.target.value)} placeholder="Ví dụ: Tết 2024 tại nhà ông bà" />
+              <div className="space-y-1.5 md:space-y-2">
+                <label className="block text-sm font-semibold md:text-base">Chú thích
+                  <input className={input} value={caption} maxLength={300} onChange={(e) => setCaption(e.target.value)} placeholder="Ví dụ: Tết 2024" />
                 </label>
-                <div className="flex flex-wrap gap-3">
-                  <button type="button" className={buttonClass} disabled={pending}
-                    onClick={() => updateItemAction(memberId, cur.id, caption).then((r) => done(r))}>Lưu chú thích</button>
-                  <button type="button" className={buttonGhostClass} disabled={pending}
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={buttonClass + " text-sm md:text-base"} disabled={pending}
+                    onClick={() => updateItemAction(memberId, cur.id, caption).then((r) => done(r))}>Lưu</button>
+                  <button type="button" className={buttonGhostClass + " text-sm md:text-base"} disabled={pending}
                     onClick={() => {
-                      if (!window.confirm("Xóa ảnh này khỏi album?")) return;
+                      if (!window.confirm("Xóa ảnh?")) return;
                       removeItemAction(memberId, cur.id).then((r) => done(r, () => setOpen(null)));
-                    }}>Xóa ảnh</button>
+                    }}>Xóa</button>
                 </div>
               </div>
             )}

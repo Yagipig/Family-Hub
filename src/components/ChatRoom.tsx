@@ -38,7 +38,7 @@ const POLL_WHEN_OFFLINE_MS = 20_000;
 const NEAR_BOTTOM_PX = 120;
 
 const smallBtn =
-  "inline-flex min-h-12 items-center justify-center rounded-xl border border-wine/60 px-4 py-2 text-base font-semibold text-wine hover:bg-champagne-soft disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-xl border border-wine/60 px-3 py-1.5 text-sm font-semibold text-wine hover:bg-champagne-soft disabled:opacity-60 md:min-h-12 md:px-4 md:py-2 md:text-base";
 
 export function ChatRoom({
   conversationId, kind, me, timeZone, canSend, sendBlockedNote, canModerate, initialMessages, initialHasMore, members,
@@ -423,9 +423,9 @@ export function ChatRoom({
     : "Đang kết nối…";
 
   return (
-    <div className="flex h-[calc(100dvh-14rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-champagne/60 bg-ivory shadow-sm">
+    <div className="flex h-[calc(100dvh-12rem)] min-h-[320px] flex-col overflow-hidden rounded-2xl border border-champagne/60 bg-ivory shadow-sm md:h-[calc(100dvh-14rem)]">
       {connText && (
-        <p role="status" className="border-b border-champagne/60 bg-champagne-soft px-4 py-2 text-base text-ink">
+        <p role="status" className="border-b border-champagne/60 bg-champagne-soft px-3 py-1.5 text-sm text-ink md:px-4 md:py-2 md:text-base">
           {connText}
         </p>
       )}
@@ -438,7 +438,7 @@ export function ChatRoom({
           aria-live="polite"
           aria-label="Các tin nhắn"
           tabIndex={0}
-          className="h-full overflow-y-auto px-3 py-4 sm:px-5"
+          className="h-full overflow-y-auto px-2 py-3 sm:px-4 md:px-5"
         >
           {hasMore && (
             <div className="mb-4 text-center">
@@ -528,45 +528,45 @@ export function ChatRoom({
         </p>
       )}
 
-      <div className="border-t border-champagne/60 bg-cream p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {!canSend || sendBlockedNote ? (
-          <p className="px-1 py-2 text-base text-ink-soft">{sendBlockedNote ?? "Tài khoản của bạn chưa được gửi tin nhắn."}</p>
-        ) : (
-          <>
-            {replyTo && (
-              <div className="mb-2 flex items-start gap-3 rounded-xl border-l-4 border-wine bg-white px-3 py-2">
-                <div className="min-w-0 flex-1 text-base">
-                  <div className="font-semibold text-wine">Đang trả lời {replyTo.sender_name ?? "thành viên"}</div>
-                  <div className="truncate text-ink-soft">{replyTo.deleted ? "Tin nhắn đã bị xoá" : replyTo.body}</div>
-                </div>
-                <button type="button" className={smallBtn} onClick={() => setReplyTo(null)} aria-label="Bỏ việc trả lời">Bỏ</button>
-              </div>
-            )}
-            <form onSubmit={(e) => { e.preventDefault(); submitDraft(); }} className="flex items-end gap-2">
-              <label className="min-w-0 flex-1">
-                <span className="sr-only">Nội dung tin nhắn</span>
-                <textarea
-                  ref={textareaRef}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={onComposerKeyDown}
-                  maxLength={MAX_BODY}
-                  rows={1}
-                  placeholder="Nhập tin nhắn…"
-                  className="block max-h-[168px] min-h-[52px] w-full resize-none overflow-y-auto rounded-[26px] border border-ink-soft/40 bg-white px-5 py-3 text-lg text-ink"
-                />
-              </label>
-              <button type="submit" className={`${buttonClass} !min-h-[52px] shrink-0 !rounded-full px-6 text-lg`} disabled={draft.trim().length === 0}>
-                Gửi
-              </button>
-            </form>
-            <p className="mt-1 px-1 text-sm text-ink-soft">
-              {draft.length > MAX_BODY - 500 ? `${draft.length}/${MAX_BODY} ký tự. ` : ""}
-              Tin nhắn chỉ là chữ; có thể sửa trong 15 phút sau khi gửi.
-            </p>
-          </>
-        )}
-      </div>
+	      <div className="border-t border-champagne/60 bg-cream p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:p-3">
+	        {!canSend || sendBlockedNote ? (
+	          <p className="px-1 py-1.5 text-sm text-ink-soft md:text-base">{sendBlockedNote ?? "Tài khoản của bạn chưa được gửi tin nhắn."}</p>
+	        ) : (
+	          <>
+	            {replyTo && (
+	              <div className="mb-1.5 flex items-start gap-2 rounded-xl border-l-4 border-wine bg-white px-2 py-1.5 md:mb-2 md:gap-3 md:px-3 md:py-2">
+	                <div className="min-w-0 flex-1 text-sm md:text-base">
+	                  <div className="font-semibold text-wine">Trả lời {replyTo.sender_name ?? "thành viên"}</div>
+	                  <div className="truncate text-ink-soft">{replyTo.deleted ? "Tin đã xoá" : replyTo.body}</div>
+	                </div>
+	                <button type="button" className={smallBtn} onClick={() => setReplyTo(null)} aria-label="Bỏ trả lời">Bỏ</button>
+	              </div>
+	            )}
+	            <form onSubmit={(e) => { e.preventDefault(); submitDraft(); }} className="flex items-end gap-1.5 md:gap-2">
+	              <label className="min-w-0 flex-1">
+	                <span className="sr-only">Nội dung tin nhắn</span>
+	                <textarea
+	                  ref={textareaRef}
+	                  value={draft}
+	                  onChange={(e) => setDraft(e.target.value)}
+	                  onKeyDown={onComposerKeyDown}
+	                  maxLength={MAX_BODY}
+	                  rows={1}
+	                  placeholder="Nhập tin nhắn…"
+	                  className="block max-h-[140px] min-h-[44px] w-full resize-none overflow-y-auto rounded-3xl border border-ink-soft/40 bg-white px-4 py-2.5 text-[15px] text-ink md:min-h-[52px] md:px-5 md:py-3 md:text-base"
+	                />
+	              </label>
+	              <button type="submit" className={`${buttonClass} !min-h-[44px] shrink-0 !rounded-full px-4 text-sm md:!min-h-[52px] md:px-6 md:text-base`} disabled={draft.trim().length === 0}>
+	                Gửi
+	              </button>
+	            </form>
+	            <p className="mt-0.5 px-1 text-xs text-ink-soft md:mt-1 md:text-sm">
+	              {draft.length > MAX_BODY - 500 ? `${draft.length}/${MAX_BODY} ký tự. ` : ""}
+	              Chỉ chữ; sửa được trong 15 phút.
+	            </p>
+	          </>
+	        )}
+	      </div>
     </div>
   );
 }
@@ -624,79 +624,79 @@ function MessageRow(p: RowProps) {
     p.onToggle();
   };
 
-  const bubbleBox = (
-      <div onClick={onBubbleClick} className={`max-w-[88%] rounded-2xl px-4 py-3 text-lg leading-snug sm:max-w-[75%] ${tail} ${bubble} ${p.editing ? "" : "cursor-pointer"}`}>
-        {m.reply_to && (
-          <div className={`mb-2 rounded-lg border-l-4 px-3 py-1 text-base ${quote}`}>
-            <div className="font-semibold">{m.reply_sender_name ?? "Tin nhắn"}</div>
-            <div className="line-clamp-2">{m.reply_deleted ? <em>Tin nhắn đã bị xoá</em> : (m.reply_body ?? "…")}</div>
-          </div>
-        )}
-        {m.deleted ? (
-          <em className={own ? "text-white/85" : "text-ink-soft"}>Tin nhắn đã bị xoá</em>
-        ) : p.editing ? (
-          <div className="space-y-2">
-            <label className="block">
-              <span className="sr-only">Sửa tin nhắn</span>
-              <textarea
-                value={p.editing.text}
-                onChange={(e) => p.onEditText(e.target.value)}
-                maxLength={MAX_BODY}
-                rows={3}
-                className="block w-full rounded-xl border border-ink-soft/40 bg-white px-3 py-2 text-lg text-ink"
-              />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className={`${buttonClass} !bg-white !text-wine hover:!bg-champagne-soft`} onClick={p.onSaveEdit} disabled={p.editing.busy}>
-                {p.editing.busy ? "Đang lưu…" : "Lưu"}
-              </button>
-              <button type="button" className={`${buttonGhostClass} !border-white !text-white hover:!bg-wine-dark`} onClick={p.onCancelEdit}>Huỷ</button>
-            </div>
-          </div>
-        ) : (
-          <ChatMessageText body={m.body} linkClass={own ? "text-white" : "text-wine"} />
-        )}
-      </div>
-  );
+	  const bubbleBox = (
+	      <div onClick={onBubbleClick} className={`max-w-[92%] rounded-2xl px-3 py-2 text-[15px] leading-snug sm:max-w-[78%] md:max-w-[75%] md:px-4 md:py-3 md:text-base ${tail} ${bubble} ${p.editing ? "" : "cursor-pointer"}`}>
+	        {m.reply_to && (
+	          <div className={`mb-1.5 rounded-lg border-l-4 px-2 py-0.5 text-sm md:mb-2 md:px-3 md:py-1 md:text-base ${quote}`}>
+	            <div className="font-semibold">{m.reply_sender_name ?? "Tin nhắn"}</div>
+	            <div className="line-clamp-2">{m.reply_deleted ? <em>Tin nhắn đã bị xoá</em> : (m.reply_body ?? "…")}</div>
+	          </div>
+	        )}
+	        {m.deleted ? (
+	          <em className={own ? "text-white/85" : "text-ink-soft"}>Tin nhắn đã bị xoá</em>
+	        ) : p.editing ? (
+	          <div className="space-y-2">
+	            <label className="block">
+	              <span className="sr-only">Sửa tin nhắn</span>
+	              <textarea
+	                value={p.editing.text}
+	                onChange={(e) => p.onEditText(e.target.value)}
+	                maxLength={MAX_BODY}
+	                rows={3}
+	                className="block w-full rounded-xl border border-ink-soft/40 bg-white px-3 py-2 text-[15px] text-ink md:text-base"
+	              />
+	            </label>
+	            <div className="flex flex-wrap gap-2">
+	              <button type="button" className={`${buttonClass} !bg-white !text-wine hover:!bg-champagne-soft !min-h-10 !text-sm md:!min-h-12 md:!text-base`} onClick={p.onSaveEdit} disabled={p.editing.busy}>
+	                {p.editing.busy ? "Đang lưu…" : "Lưu"}
+	              </button>
+	              <button type="button" className={`${buttonGhostClass} !border-white !text-white hover:!bg-wine-dark !min-h-10 !text-sm md:!min-h-12 md:!text-base`} onClick={p.onCancelEdit}>Huỷ</button>
+	            </div>
+	          </div>
+	        ) : (
+	          <ChatMessageText body={m.body} linkClass={own ? "text-white" : "text-wine"} />
+	        )}
+	      </div>
+	  );
 
-  // Hàng giờ gửi + trạng thái + nút tuỳ chọn: chỉ hiện ở cuối cụm (hoặc khi tin đang được thao tác/gửi lỗi)
-  const meta = p.showMeta ? (
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 px-1 text-sm text-ink-soft">
-        <time dateTime={m.created_at} suppressHydrationWarning>{formatClock(m.created_at, p.timeZone)}</time>
-        {m.edited_at && !m.deleted && <span>(đã sửa)</span>}
-        {own && m.status === "sending" && <span role="status">Đang gửi…</span>}
-        {own && !m.status && !m.deleted && <span>Đã gửi</span>}
-        {!pending && !m.deleted && !p.editing && (
-          <button
-            type="button"
-            onClick={p.onToggle}
-            aria-expanded={p.active}
-            className="inline-flex min-h-12 items-center px-2 text-base font-semibold text-wine underline underline-offset-2"
-          >
-            {p.active ? "Đóng tuỳ chọn" : "Tuỳ chọn"}
-          </button>
-        )}
-      </div>
-  ) : null;
+	  // Hàng giờ gửi + trạng thái + nút tuỳ chọn: chỉ hiện ở cuối cụm (hoặc khi tin đang được thao tác/gửi lỗi)
+	  const meta = p.showMeta ? (
+	      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 px-1 text-xs text-ink-soft md:mt-1 md:gap-x-3 md:text-sm">
+	        <time dateTime={m.created_at} suppressHydrationWarning>{formatClock(m.created_at, p.timeZone)}</time>
+	        {m.edited_at && !m.deleted && <span>(đã sửa)</span>}
+	        {own && m.status === "sending" && <span role="status">Đang gửi…</span>}
+	        {own && !m.status && !m.deleted && <span>Đã gửi</span>}
+	        {!pending && !m.deleted && !p.editing && (
+	          <button
+	            type="button"
+	            onClick={p.onToggle}
+	            aria-expanded={p.active}
+	            className="inline-flex min-h-10 items-center px-1 text-sm font-semibold text-wine underline underline-offset-2 md:min-h-12 md:text-base"
+	          >
+	            {p.active ? "Đóng" : "Tuỳ chọn"}
+	          </button>
+	        )}
+	      </div>
+	  ) : null;
 
-  const failedBox = m.status === "failed" ? (
-        <div role="alert" className="mt-1 max-w-[88%] rounded-xl border border-danger bg-red-50 px-3 py-2 text-base text-danger sm:max-w-[75%]">
-          <p className="font-medium">{m.failText ?? "Chưa gửi được tin nhắn này."}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" className={buttonClass} onClick={p.onRetry}>Gửi lại</button>
-            <button type="button" className={smallBtn} onClick={p.onDiscard}>Bỏ tin này</button>
-          </div>
-        </div>
-  ) : null;
+	  const failedBox = m.status === "failed" ? (
+	        <div role="alert" className="mt-1 max-w-[92%] rounded-xl border border-danger bg-red-50 px-3 py-2 text-sm text-danger sm:max-w-[75%] md:text-base">
+	          <p className="font-medium">{m.failText ?? "Chưa gửi được tin nhắn này."}</p>
+	          <div className="mt-2 flex flex-wrap gap-2">
+	            <button type="button" className={buttonClass} onClick={p.onRetry}>Gửi lại</button>
+	            <button type="button" className={smallBtn} onClick={p.onDiscard}>Bỏ</button>
+	          </div>
+	        </div>
+	  ) : null;
 
-  const options = p.active && !p.editing && !p.reporting ? (
-        <div className="mt-1 flex flex-wrap gap-2" role="group" aria-label="Tuỳ chọn cho tin nhắn">
-          <button type="button" className={smallBtn} onClick={p.onReply}>Trả lời</button>
-          {canEdit && <button type="button" className={smallBtn} onClick={p.onStartEdit}>Sửa</button>}
-          {canDelete && <button type="button" className={`${smallBtn} !border-danger !text-danger`} onClick={p.onDelete}>Xoá</button>}
-          {canReport && <button type="button" className={smallBtn} onClick={p.onStartReport}>Báo cáo</button>}
-        </div>
-  ) : null;
+	  const options = p.active && !p.editing && !p.reporting ? (
+	        <div className="mt-1 flex flex-wrap gap-1.5 md:gap-2" role="group" aria-label="Tuỳ chọn cho tin nhắn">
+	          <button type="button" className={smallBtn} onClick={p.onReply}>Trả lời</button>
+	          {canEdit && <button type="button" className={smallBtn} onClick={p.onStartEdit}>Sửa</button>}
+	          {canDelete && <button type="button" className={`${smallBtn} !border-danger !text-danger`} onClick={p.onDelete}>Xoá</button>}
+	          {canReport && <button type="button" className={smallBtn} onClick={p.onStartReport}>Báo cáo</button>}
+	        </div>
+	  ) : null;
 
   const reportForm = p.reporting ? (
         <div className="mt-2 w-full max-w-md space-y-3 rounded-xl border border-champagne bg-white p-4 text-ink">

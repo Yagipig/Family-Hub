@@ -12,8 +12,8 @@ import {
 } from "./actions";
 import { REACTIONS, type FeedComment, type FeedCursor, type FeedPost } from "./feed-types";
 
-const smallBtn = "inline-flex min-h-12 items-center justify-center rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft disabled:opacity-60";
-const textInput = "block w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-3 text-base text-ink";
+const smallBtn = "inline-flex min-h-10 items-center justify-center rounded-xl border border-wine px-3 text-sm font-semibold text-wine hover:bg-champagne-soft disabled:opacity-60 md:min-h-12 md:px-4 md:text-base";
+const textInput = "block w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2.5 text-[15px] text-ink md:py-3 md:text-base";
 
 export function Feed({
   pinned, initial, initialNext, timezone, canInteract,
@@ -48,18 +48,18 @@ export function Feed({
           {pins.map((p) => <PostCard key={p.id} post={p} timezone={timezone} canInteract={canInteract} onUpdate={update} onRemove={remove} />)}
         </section>
       )}
-      {posts.length === 0 && pins.length === 0 && (
-        <p className="rounded-2xl border border-champagne/60 bg-ivory p-6 text-lg">Chưa có bài viết nào. Hãy là người đầu tiên chia sẻ với gia đình.</p>
-      )}
-      <section aria-label="Bài viết mới" className="space-y-4">
-        {posts.map((p) => <PostCard key={p.id} post={p} timezone={timezone} canInteract={canInteract} onUpdate={update} onRemove={remove} />)}
-      </section>
-      {error && <Alert kind="error">{error}</Alert>}
-      {next && (
-        <div className="text-center">
-          <button type="button" onClick={more} disabled={loading} className={buttonClass}>{loading ? "Đang tải…" : "Xem thêm bài cũ hơn"}</button>
-        </div>
-      )}
+	      {posts.length === 0 && pins.length === 0 && (
+	        <p className="rounded-2xl border border-champagne/60 bg-ivory p-4 text-base md:p-6 md:text-lg">Chưa có bài viết nào. Hãy là người đầu tiên chia sẻ với gia đình.</p>
+	      )}
+	      <section aria-label="Bài viết mới" className="space-y-4">
+	        {posts.map((p) => <PostCard key={p.id} post={p} timezone={timezone} canInteract={canInteract} onUpdate={update} onRemove={remove} />)}
+	      </section>
+	      {error && <Alert kind="error">{error}</Alert>}
+	      {next && (
+	        <div className="text-center">
+	          <button type="button" onClick={more} disabled={loading} className={buttonClass + " text-sm md:text-base"}>{loading ? "Đang tải…" : "Xem thêm bài cũ"}</button>
+	        </div>
+	      )}
     </div>
   );
 }
@@ -99,84 +99,84 @@ function PostCard({
   const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
   const lbItems = post.media.map((m) => ({ id: m.id, src: m.fullUrl }));
 
-  return (
-    <article id={`bai-${post.id}`} className={`space-y-4 rounded-2xl border bg-ivory p-5 shadow-sm ${post.pinned ? "border-wine" : "border-champagne/60"}`}>
-      <header className="flex items-start gap-3">
-        <Avatar src={post.authorAvatarUrl} name={post.authorName} size={56} />
-        <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold">
-            {post.authorMemberId ? <Link href={`/thanh-vien/${post.authorMemberId}`} className="hover:underline">{post.authorName}</Link> : post.authorName}
-          </p>
-          <p className="text-base text-ink-soft">
-            {formatDateTime(post.createdAt, timezone)}{post.editedAt ? " · đã sửa" : ""}
-            {post.visibility === "branch" ? " · Chỉ trong nhánh" : ""}
-          </p>
-          <p className="flex flex-wrap gap-2 text-sm font-semibold">
-            {post.pinned && <span className="rounded-full bg-champagne-soft px-3 py-1 text-wine">Đã ghim</span>}
-            {post.hidden && <span className="rounded-full bg-red-50 px-3 py-1 text-danger">Đang bị ẩn (chỉ bạn và quản trị viên thấy)</span>}
-          </p>
-        </div>
-      </header>
-
-      {post.hidden && post.hideReason && <p className="text-base text-danger">Lý do ẩn: {post.hideReason}</p>}
-
-      {editing ? (
-        <div className="space-y-2">
-          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={5000} rows={4} className={`${textInput} text-lg`} aria-label="Sửa nội dung bài viết" />
-          <div className="flex flex-wrap gap-3">
-            <button type="button" className={buttonClass} disabled={busy}
-              onClick={() => run(() => updatePostAction(post.id, draft), () => { onUpdate(post.id, { body: draft.trim(), editedAt: new Date().toISOString() }); setEditing(false); })}>Lưu</button>
-            <button type="button" className={buttonGhostClass} onClick={() => { setEditing(false); setDraft(post.body); }}>Hủy</button>
-          </div>
-        </div>
-      ) : (
-        post.body && <p className="whitespace-pre-wrap break-words text-lg leading-relaxed">{post.body}</p>
-      )}
-
-      {post.media.length > 0 && (
-        <ul className={`grid gap-2 ${post.media.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3"}`}>
-          {post.media.map((m, i) => (
-            <li key={m.id}>
-              <button type="button" onClick={() => setLightbox(i)} aria-label={`Xem ảnh ${i + 1} trên ${post.media.length}`}
-                className="block w-full overflow-hidden rounded-xl bg-champagne-soft">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={m.thumbUrl} alt={`Ảnh ${i + 1} trong bài của ${post.authorName}`} loading="lazy" decoding="async"
-                  className={`w-full object-cover ${post.media.length === 1 ? "max-h-[28rem]" : "aspect-square"}`} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Lightbox items={lbItems} index={lightbox} onClose={() => setLightbox(null)} onChange={setLightbox} />
-
-      <div>
-        <div role="group" aria-label="Bày tỏ cảm xúc" className="flex flex-wrap gap-2">
-          {REACTIONS.map((r) => {
-            const n = post.reactions[r.kind] ?? 0;
-            const on = post.myReaction === r.kind;
-            return (
-              <button key={r.kind} type="button" disabled={!canInteract} onClick={() => react(r.kind)} aria-pressed={on} aria-label={`${r.label}${n ? `, ${n} người` : ""}`}
-                className={`inline-flex min-h-12 min-w-12 items-center justify-center gap-1 rounded-full border px-3 text-lg ${on ? "border-wine bg-champagne-soft font-bold" : "border-champagne"}`}>
-                <span aria-hidden="true">{r.icon}</span>{n > 0 && <span className="text-base">{n}</span>}
-              </button>
-            );
-          })}
-        </div>
-        {totalReactions > 0 && <p className="mt-1 text-sm text-ink-soft">{totalReactions} lượt cảm xúc</p>}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={smallBtn} aria-expanded={showComments} onClick={() => setShowComments((v) => !v)}>
-          {showComments ? "Ẩn bình luận" : `Bình luận${post.commentCount > 0 ? ` (${post.commentCount})` : ""}`}
-        </button>
-        {post.isMine && !post.hidden && !editing && <button type="button" className={smallBtn} onClick={() => setEditing(true)}>Sửa</button>}
-        {(post.isMine || post.canModerate) && (
-          <button type="button" className={smallBtn} disabled={busy}
-            onClick={() => {
-              if (!window.confirm("Xóa bài viết này? Ảnh và bình luận đi kèm cũng bị xóa.")) return;
-              run(() => deletePostAction(post.id), () => { onRemove(post.id); router.refresh(); });
-            }}>Xóa</button>
-        )}
+	  return (
+	    <article id={`bai-${post.id}`} className={`space-y-3 rounded-2xl border bg-ivory p-4 shadow-sm md:space-y-4 md:p-5 ${post.pinned ? "border-wine" : "border-champagne/60"}`}>
+	      <header className="flex items-start gap-2 md:gap-3">
+	        <Avatar src={post.authorAvatarUrl} name={post.authorName} size={44} />
+	        <div className="min-w-0 flex-1">
+	          <p className="text-base font-bold md:text-lg">
+	            {post.authorMemberId ? <Link href={`/thanh-vien/${post.authorMemberId}`} className="hover:underline">{post.authorName}</Link> : post.authorName}
+	          </p>
+	          <p className="text-xs text-ink-soft md:text-sm">
+	            {formatDateTime(post.createdAt, timezone)}{post.editedAt ? " · đã sửa" : ""}
+	            {post.visibility === "branch" ? " · Nhánh" : ""}
+	          </p>
+	          <p className="flex flex-wrap gap-1.5 text-xs font-semibold md:gap-2 md:text-sm">
+	            {post.pinned && <span className="rounded-full bg-champagne-soft px-2 py-0.5 text-wine">Ghim</span>}
+	            {post.hidden && <span className="rounded-full bg-red-50 px-2 py-0.5 text-danger">Ẩn</span>}
+	          </p>
+	        </div>
+	      </header>
+	
+	      {post.hidden && post.hideReason && <p className="text-sm text-danger md:text-base">Lý do ẩn: {post.hideReason}</p>}
+	
+	      {editing ? (
+	        <div className="space-y-2">
+	          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={5000} rows={3} className={`${textInput}`} aria-label="Sửa nội dung bài viết" />
+	          <div className="flex flex-wrap gap-2">
+	            <button type="button" className={buttonClass + " text-sm md:text-base"} disabled={busy}
+	              onClick={() => run(() => updatePostAction(post.id, draft), () => { onUpdate(post.id, { body: draft.trim(), editedAt: new Date().toISOString() }); setEditing(false); })}>Lưu</button>
+	            <button type="button" className={buttonGhostClass + " text-sm md:text-base"} onClick={() => { setEditing(false); setDraft(post.body); }}>Hủy</button>
+	          </div>
+	        </div>
+	      ) : (
+	        post.body && <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed md:text-base">{post.body}</p>
+	      )}
+	
+	      {post.media.length > 0 && (
+	        <ul className={`grid gap-1.5 ${post.media.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3"}`}>
+	          {post.media.map((m, i) => (
+	            <li key={m.id}>
+	              <button type="button" onClick={() => setLightbox(i)} aria-label={`Xem ảnh ${i + 1}`}
+	                className="block w-full overflow-hidden rounded-xl bg-champagne-soft">
+	                {/* eslint-disable-next-line @next/next/no-img-element */}
+	                <img src={m.thumbUrl} alt={`Ảnh ${i + 1}`} loading="lazy" decoding="async"
+	                  className={`w-full object-cover ${post.media.length === 1 ? "max-h-72 md:max-h-[28rem]" : "aspect-square"}`} />
+	              </button>
+	            </li>
+	          ))}
+	        </ul>
+	      )}
+	      <Lightbox items={lbItems} index={lightbox} onClose={() => setLightbox(null)} onChange={setLightbox} />
+	
+	      <div>
+	        <div role="group" aria-label="Bày tỏ cảm xúc" className="flex flex-wrap gap-1.5 md:gap-2">
+	          {REACTIONS.map((r) => {
+	            const n = post.reactions[r.kind] ?? 0;
+	            const on = post.myReaction === r.kind;
+	            return (
+	              <button key={r.kind} type="button" disabled={!canInteract} onClick={() => react(r.kind)} aria-pressed={on} aria-label={`${r.label}${n ? `, ${n}` : ""}`}
+	                className={`inline-flex min-h-10 min-w-10 items-center justify-center gap-0.5 rounded-full border px-2 text-base md:min-h-12 md:min-w-12 md:gap-1 md:px-3 md:text-lg ${on ? "border-wine bg-champagne-soft font-bold" : "border-champagne"}`}>
+	                <span aria-hidden="true">{r.icon}</span>{n > 0 && <span className="text-xs md:text-base">{n}</span>}
+	              </button>
+	            );
+	          })}
+	        </div>
+	        {totalReactions > 0 && <p className="mt-0.5 text-xs text-ink-soft md:mt-1 md:text-sm">{totalReactions} cảm xúc</p>}
+	      </div>
+	
+	      <div className="flex flex-wrap gap-1.5 md:gap-2">
+	        <button type="button" className={smallBtn} aria-expanded={showComments} onClick={() => setShowComments((v) => !v)}>
+	          {showComments ? "Ẩn" : `Bình luận${post.commentCount > 0 ? ` (${post.commentCount})` : ""}`}
+	        </button>
+	        {post.isMine && !post.hidden && !editing && <button type="button" className={smallBtn} onClick={() => setEditing(true)}>Sửa</button>}
+	        {(post.isMine || post.canModerate) && (
+	          <button type="button" className={smallBtn} disabled={busy}
+	            onClick={() => {
+	              if (!window.confirm("Xóa bài?")) return;
+	              run(() => deletePostAction(post.id), () => { onRemove(post.id); router.refresh(); });
+	            }}>Xóa</button>
+	        )}
         {!post.isMine && canInteract && <button type="button" className={smallBtn} onClick={() => setReporting((v) => !v)}>Báo cáo</button>}
         {post.canModerate && (
           <>

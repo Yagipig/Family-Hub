@@ -65,23 +65,23 @@ export function Composer({ hasBranch }: { hasBranch: boolean }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-2xl border border-champagne/60 bg-ivory p-5 shadow-sm" aria-label="Viết bài mới">
-      <label className="block text-lg font-semibold">Chia sẻ với gia đình
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={5000} rows={4}
+    <form onSubmit={submit} className="space-y-3 rounded-2xl border border-champagne/60 bg-ivory p-4 shadow-sm md:p-5" aria-label="Viết bài mới">
+      <label className="block text-base font-semibold md:text-lg">Chia sẻ với gia đình
+        <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={5000} rows={3}
           placeholder="Bạn muốn chia sẻ điều gì hôm nay?"
-          className="mt-2 block w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-3 text-lg text-ink" />
+          className="mt-1.5 block w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2.5 text-[15px] text-ink md:py-3 md:text-base" />
       </label>
 
       {pics.length > 0 && (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {pics.map((p) => (
             <li key={p.key} className="relative overflow-hidden rounded-xl border border-champagne/60 bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.preview} alt={`Ảnh xem trước: ${p.name}`} className="aspect-square w-full object-cover" />
-              <div className="p-2 text-sm">
+              <div className="p-1.5 text-xs md:p-2 md:text-sm">
                 {p.status === "uploading" && (
                   <div role="progressbar" aria-label={`Tiến độ ${p.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p.progress * 100)}
-                    className="h-3 overflow-hidden rounded-full bg-champagne-soft">
+                    className="h-2 overflow-hidden rounded-full bg-champagne-soft md:h-3">
                     <div className="h-full bg-wine transition-all" style={{ width: `${Math.round(p.progress * 100)}%` }} />
                   </div>
                 )}
@@ -90,28 +90,28 @@ export function Composer({ hasBranch }: { hasBranch: boolean }) {
               </div>
               <button type="button" onClick={() => setPics((cur) => cur.filter((x) => x.key !== p.key))}
                 aria-label={`Bỏ ảnh ${p.name}`}
-                className="absolute right-1 top-1 flex h-12 w-12 items-center justify-center rounded-full bg-black/65 text-xl text-white">✕</button>
+                className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-black/65 text-lg text-white md:h-10 md:w-10">✕</button>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className={`${buttonGhostClass} cursor-pointer ${pics.length >= MAX_PICS ? "pointer-events-none opacity-60" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className={`${buttonGhostClass} cursor-pointer text-sm md:text-base ${pics.length >= MAX_PICS ? "pointer-events-none opacity-60" : ""}`}>
           Thêm ảnh
           <input ref={fileInput} type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif" className="sr-only"
             disabled={pics.length >= MAX_PICS} onChange={(e) => onFiles(e.target.files)} />
         </label>
         {hasBranch && (
-          <label className="text-base font-semibold">Ai xem được
+          <label className="text-sm font-semibold md:text-base">Ai xem
             <select value={visibility} onChange={(e) => setVisibility(e.target.value === "branch" ? "branch" : "family")}
-              className="ml-2 min-h-12 rounded-xl border border-ink-soft/40 bg-white px-3 text-base">
+              className="ml-1.5 min-h-10 rounded-xl border border-ink-soft/40 bg-white px-2 text-sm md:min-h-12 md:px-3 md:text-base">
               <option value="family">Cả gia đình</option>
-              <option value="branch">Chỉ nhánh của tôi</option>
+              <option value="branch">Nhánh tôi</option>
             </select>
           </label>
         )}
-        <button className={buttonClass} disabled={posting || uploading}>{posting ? "Đang đăng…" : uploading ? "Đang tải ảnh…" : "Đăng bài"}</button>
+        <button className={buttonClass + " text-sm md:text-base"} disabled={posting || uploading}>{posting ? "Đang đăng…" : uploading ? "Đang tải…" : "Đăng"}</button>
       </div>
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
     </form>
