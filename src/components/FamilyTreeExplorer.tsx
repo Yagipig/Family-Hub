@@ -119,6 +119,10 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
   }, []);
   // An giu vao huy hieu mot nguoi (hoac chuot phai): mo menu them nhanh con / cha me / vo chong
   const [quickAddId, setQuickAddId] = useState<string | null>(null);
+  // Nút + lớn trên màn hình cây: chọn người làm mốc trước, rồi chọn quan hệ với người đó
+  const [addOpen, setAddOpen] = useState(false);
+  const [addAnchor, setAddAnchor] = useState<string | null>(null);
+  const addAnchorPerson = addAnchor ? fullIndex.people.get(addAnchor) ?? null : null;
   const quickAddAt = useRef(0);
   const onQuickAdd = useCallback((id: string) => {
     quickAddAt.current = Date.now();
@@ -221,9 +225,21 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
               </div>
             </div>
             {/* Nhac xoay ngang tren dien thoai doc: cay ngang rong, xem doc khong du thi xoay may */}
-            <div className="pointer-events-none absolute bottom-3 right-3 z-10 hidden items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-bold text-[#ffeec2] portrait:flex md:portrait:hidden">
+            <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-bold text-[#ffeec2] portrait:flex md:portrait:hidden">
               <span aria-hidden="true">↻</span> Xoay ngang điện thoại để xem cây đầy đủ
             </div>
+            {/* Nut + LON ngay tren man hinh cay (nguoi dung yeu cau 01/11/2026): bam la them nguoi vao cay */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => { setAddAnchor(null); setAddOpen(true); }}
+                aria-label="Thêm người vào cây"
+                className="absolute bottom-3 right-3 z-20 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-[#b8912f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#7c2d12] shadow-xl hover:brightness-105"
+              >
+                <span className="text-[26px] font-black leading-none">+</span>
+                <span className="text-[9px] font-bold leading-tight">Thêm</span>
+              </button>
+            )}
             {elements.nodes.length === 0 ? (
               <p className="relative p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
             ) : placed && (
@@ -245,6 +261,61 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
         </div>
       )}
       </div>
+
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 sm:items-center" role="dialog" aria-modal="true"
+          aria-label="Thêm người vào cây" onClick={() => setAddOpen(false)}>
+          <div className="max-h-[85dvh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            {!addAnchorPerson ? (
+              <>
+                <p className="text-lg font-bold text-[#4a2c14]">Thêm người vào cây</p>
+                <p className="mt-0.5 text-sm text-ink-soft">Người mới sẽ là người thân của ai? Chọn một người đã có trên cây:</p>
+                <div className="mt-3 space-y-2">
+                  {people.map((p) => (
+                    <button key={p.id} type="button" onClick={() => setAddAnchor(p.id)}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-[#d9b878] bg-white px-3 py-2 text-left shadow-sm hover:bg-[#fdf2df]">
+                      <Avatar name={p.name} src={p.avatar} gender={p.gender} size={36} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-base font-semibold text-[#4a2c14]">{p.name}</span>
+                        <span className="block text-xs text-ink-soft">{lifeSpan(p.by, p.dy, p.dead) || "Chưa rõ năm sinh"}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <Avatar name={addAnchorPerson.name} src={addAnchorPerson.avatar} gender={addAnchorPerson.gender} size={52} />
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-bold text-[#4a2c14]">{addAnchorPerson.name}</p>
+                    <p className="text-sm text-ink-soft">Người mới là gì của người này?</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Link href={`/thanh-vien/moi?rel=parent&g=male&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm cha</Link>
+                  <Link href={`/thanh-vien/moi?rel=parent&g=female&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm mẹ</Link>
+                  <Link href={`/thanh-vien/moi?rel=partner&g=female&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm vợ</Link>
+                  <Link href={`/thanh-vien/moi?rel=partner&g=male&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm chồng</Link>
+                  <Link href={`/thanh-vien/moi?rel=child&g=male&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm con trai</Link>
+                  <Link href={`/thanh-vien/moi?rel=child&g=female&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm con gái</Link>
+                  {parentIdsOf(fullIndex, addAnchorPerson.id).length > 0 ? (
+                    <Link href={`/thanh-vien/moi?rel=sibling&to=${addAnchorPerson.id}`} className={`${qaItem} col-span-2`}>＋ Thêm anh / chị / em</Link>
+                  ) : (
+                    <p className="col-span-2 rounded-xl bg-[#fdf2df] px-3 py-2 text-center text-[13px] leading-snug text-ink-soft">
+                      Muốn thêm anh/chị/em cho {addAnchorPerson.name} thì cần có cha hoặc mẹ của họ trên cây trước.
+                    </p>
+                  )}
+                  <button type="button" className="col-span-2 flex min-h-11 w-full items-center justify-center rounded-full px-4 text-base font-semibold text-ink-soft hover:bg-[#fdf2df]"
+                    onClick={() => setAddAnchor(null)}>← Chọn người khác</button>
+                </div>
+              </>
+            )}
+            <button type="button" className="mt-2 flex min-h-11 w-full items-center justify-center rounded-full px-4 text-base font-semibold text-ink-soft hover:bg-[#fdf2df]"
+              onClick={() => setAddOpen(false)}>Đóng</button>
+          </div>
+        </div>
+      )}
 
       {quickAddPerson && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 sm:items-center" role="dialog" aria-modal="true"
