@@ -48,6 +48,16 @@ export async function createMemberAction(_prev: FormState, formData: FormData): 
   const rel = relTargetSchema.safeParse({ rel: formData.get("rel") ?? "", relTo: formData.get("relTo") ?? "" });
 
   const supabase = await createClient();
+  // "Thêm anh/chị/em": người mới là con của cha/mẹ ĐÃ GHI của người hiện tại.
+  // Chưa có cha/mẹ nào trên cây thì KHÔNG tạo hồ sơ rời — thêm là phải có quan hệ ngay.
+  let siblingParents: string[] = [];
+  if (rel.success && rel.data.rel === "sibling" && rel.data.relTo) {
+    const { data: plinks } = await supabase.from("member_parent_links_v").select("parent_id").eq("child_id", rel.data.relTo);
+    siblingParents = [...new Set((plinks ?? []).map((r) => (r as { parent_id: string }).parent_id))];
+    if (siblingParents.length === 0) {
+      return fail("Người này chưa có cha/mẹ nào trên cây nên chưa thêm được anh/chị/em. Hãy thêm cha hoặc mẹ cho họ trước.");
+    }
+  }
   const { data, error } = await supabase.rpc("create_member", { p_family: session.familyId, p_data: createPayload(parsed.data) });
   if (error) return fail(memberError(error));
   const newId = z.uuid().safeParse(data);
@@ -57,17 +67,29 @@ export async function createMemberAction(_prev: FormState, formData: FormData): 
   let warn = "";
   if (rel.success && rel.data.rel && rel.data.relTo) {
     const other = rel.data.relTo;
-    const r = rel.data.rel === "child"
-      ? await supabase.rpc("add_parent_link", { p_child: newId.data, p_parent: other, p_kind: "biological" })
-      : rel.data.rel === "parent"
-        ? await supabase.rpc("add_parent_link", { p_child: other, p_parent: newId.data, p_kind: "biological" })
-        : await supabase.rpc("add_partnership", { p_x: newId.data, p_y: other, p_status: "married" });
-    if (r.error) warn = `Đã tạo hồ sơ nhưng chưa nối được quan hệ: ${memberError(r.error)}`;
+    if (rel.data.rel === "sibling") {
+      for (const pid of siblingParents) {
+        const rr = await supabase.rpc("add_parent_link", { p_child: newId.data, p_parent: pid, p_kind: "biological" });
+        if (rr.error) { warn = `Đã tạo hồ sơ nhưng chưa nối được quan hệ: ${memberError(rr.error)}`; break; }
+      }
+    } else {
+      const r = rel.data.rel === "child"
+        ? await supabase.rpc("add_parent_link", { p_child: newId.data, p_parent: other, p_kind: "biological" })
+        : rel.data.rel === "parent"
+          ? await supabase.rpc("add_parent_link", { p_child: other, p_parent: newId.data, p_kind: "biological" })
+          : await supabase.rpc("add_partnership", { p_x: newId.data, p_y: other, p_status: "married" });
+      if (r.error) warn = `Đã tạo hồ sơ nhưng chưa nối được quan hệ: ${memberError(r.error)}`;
+    }
   }
   revalidatePath("/thanh-vien");
   revalidatePath("/gia-pha");
   const base = `${profile(newId.data)}?ok=${encodeURIComponent("Đã thêm thành viên.")}`;
-  return redirect(warn ? `${base}&error=${encodeURIComponent(warn)}` : base);
+  if (warn) return redirect(`${base}&error=${encodeURIComponent(warn)}`);
+  // Thêm từ cây (có quan hệ): quay lại sơ đồ, căn giữa người mới để thấy ngay đường nối vừa tạo.
+  if (rel.success && rel.data.rel && rel.data.relTo) {
+    return redirect(`/gia-pha?focus=${newId.data}&ok=${encodeURIComponent("Đã thêm thành viên và nối quan hệ trên cây.")}`);
+  }
+  return redirect(base);
 }
 
 export async function requestCreateMemberAction(_prev: FormState, formData: FormData): Promise<FormState> {
