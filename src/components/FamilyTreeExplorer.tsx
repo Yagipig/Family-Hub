@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { FamilyOutline } from "@/components/FamilyOutline";
 import { TreePersonPanel } from "@/components/TreePersonPanel";
@@ -29,7 +29,8 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
   initialFocusId: string | null; selfId: string | null; canEdit: boolean; canArrange?: boolean;
 }) {
   const [mode, setMode] = useState<Mode>("diagram");
-  const [direction, setDirection] = useState<Direction>("BT");
+  // Huong cay CO DINH tu tren xuong nhu mau thiet ke (nguoi dung chot 31/10/2026: khong dung kieu to o goc nua)
+  const direction: Direction = "TB";
   const [branch, setBranch] = useState("");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(initialFocusId);
@@ -73,7 +74,20 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
     setFocus({ id, nonce: Date.now() });
   }, [branch, index]);
 
-  const onSelect = useCallback((id: string | null) => { setSelectedId(id); if (id) setPanelOpen(true); }, []);
+  const onSelect = useCallback((id: string | null) => {
+    setSelectedId(id);
+    // Vua an giu de them nguoi thi khong mo ngan chi tiet (menu them dang hien)
+    if (id && Date.now() - quickAddAt.current > 800) setPanelOpen(true);
+  }, []);
+  // An giu vao huy hieu mot nguoi (hoac chuot phai): mo menu them nhanh con / cha me / vo chong
+  const [quickAddId, setQuickAddId] = useState<string | null>(null);
+  const quickAddAt = useRef(0);
+  const onQuickAdd = useCallback((id: string) => {
+    quickAddAt.current = Date.now();
+    if (canEdit) setQuickAddId(id);
+    else { setSelectedId(id); setPanelOpen(true); }
+  }, [canEdit]);
+  const quickAddPerson = quickAddId ? fullIndex.people.get(quickAddId) ?? null : null;
   const pick = (id: string) => { setQuery(""); focusPerson(id); };
   const selectedPerson = selectedId ? fullIndex.people.get(selectedId) : null;
   const legendBranches = useMemo(() => branches.filter((b) => people.some((p) => p.branchId === b.id)), [branches, people]);
@@ -96,7 +110,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
         </div>
         <button type="button" aria-expanded={showOpts} onClick={() => setShowOpts((v) => !v)}
           className={`${pillBtn} sm:hidden`}>
-          {showOpts ? "Ẩn tùy chọn" : "Lọc nhánh, hướng…"}
+          {showOpts ? "Ẩn tùy chọn" : "Lọc nhánh…"}
         </button>
         {selfId && fullIndex.people.has(selfId) && (
           <button type="button" onClick={() => focusPerson(selfId)}
@@ -126,7 +140,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
           )}
         </div>
 
-        <div className={`${showOpts ? "grid" : "hidden"} w-full grid-cols-2 gap-3 sm:contents`}>
+        <div className={`${showOpts ? "grid" : "hidden"} w-full grid-cols-1 gap-3 sm:contents`}>
           <label className="block text-sm font-semibold">Nhánh
             <select value={branch} onChange={(e) => setBranch(e.target.value)}
               className="mt-1 block min-h-12 w-full rounded-xl border border-sky-300 bg-white px-3 text-base font-normal text-ink">
@@ -135,16 +149,6 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </label>
-          {mode === "diagram" && (
-            <label className="block text-sm font-semibold">Hướng
-              <select value={direction} onChange={(e) => setDirection(e.target.value as Direction)}
-                className="mt-1 block min-h-12 w-full rounded-xl border border-sky-300 bg-white px-3 text-base font-normal text-ink">
-                <option value="BT">Kiểu cây phả đồ (tổ ở gốc, con cháu lên trên)</option>
-                <option value="TB">Từ trên xuống (tổ ở trên)</option>
-                <option value="LR">Từ trái sang phải</option>
-              </select>
-            </label>
-          )}
         </div>
       </div>
 
@@ -179,7 +183,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
             ) : placed && (
               <FamilyFlow key={flowKey} nodes={elements.nodes} edges={elements.edges} placed={placed} index={index} gens={gens}
                 divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
-                onSelect={onSelect} />
+                onSelect={onSelect} onQuickAdd={onQuickAdd} />
             )}
           </div>
           {selectedPerson && selectedId && (
@@ -192,11 +196,36 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
         <FamilyOutline index={index} gens={gens} query={query} highlightId={selectedId} onShowInDiagram={focusPerson} />
       )}
 
+      {quickAddPerson && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 sm:items-center" role="dialog" aria-modal="true"
+          aria-label={`Thêm người thân của ${quickAddPerson.name}`} onClick={() => setQuickAddId(null)}>
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <Avatar name={quickAddPerson.name} src={quickAddPerson.avatar} gender={quickAddPerson.gender} size={52} />
+              <div className="min-w-0">
+                <p className="truncate text-lg font-bold text-sky-950">{quickAddPerson.name}</p>
+                <p className="text-sm text-ink-soft">Thêm người thân vào nhánh này</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <Link href={`/thanh-vien/moi?rel=child&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50">＋ Thêm con</Link>
+              <Link href={`/thanh-vien/moi?rel=parent&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50">＋ Thêm cha / mẹ</Link>
+              <Link href={`/thanh-vien/moi?rel=partner&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50">＋ Thêm vợ / chồng</Link>
+              <button type="button" className="flex min-h-12 w-full items-center justify-center rounded-full bg-sky-600 px-4 text-base font-bold text-white shadow-sm hover:bg-sky-700"
+                onClick={() => { setQuickAddId(null); setSelectedId(quickAddPerson.id); setPanelOpen(true); }}>Xem chi tiết</button>
+              <button type="button" className="flex min-h-12 w-full items-center justify-center rounded-full px-4 text-base font-semibold text-ink-soft hover:bg-sky-50"
+                onClick={() => setQuickAddId(null)}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <details className="rounded-xl border border-sky-200/80 bg-white/85 px-4">
         <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-sky-900">Chú giải</summary>
         <ul className="space-y-2 pb-4 text-base">
           <li>Mỗi người là một <strong>huy hiệu ảnh tròn</strong> với <strong>bảng tên vàng</strong> bên dưới, treo trên cành cây như phả đồ truyền thống. Vòng quanh ảnh: <span className="font-semibold text-[#6f8fb0]">xanh dương: nam</span> · <span className="font-semibold text-[#c9798a]">hồng: nữ</span> · vàng champagne: khác/chưa rõ.</li>
-          <li>Kiểu cây phả đồ: <strong>tổ tiên ở gốc cây phía dưới</strong>, con cháu tỏa dần lên trên; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
+          <li>Cây vẽ <strong>từ trên xuống</strong>: tổ tiên ở trên cùng, con cháu tỏa dần xuống dưới; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
+          <li><strong>Ấn giữ</strong> vào ảnh một người (trên máy tính: bấm chuột phải) để mở menu thêm nhanh con, cha/mẹ hoặc vợ/chồng cho nhánh đó.</li>
           <li>Trái tim vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (trái tim xám: đã ly hôn hoặc góa); các con nối từ trái tim đó bằng cành cây màu vàng.</li>
           <li>Cành liền: con ruột. Cành đứt nét: con nuôi hoặc con kế. Dấu † và ảnh xám: người đã mất.</li>
           <li>Chấm màu nhỏ cạnh năm sinh là màu của nhánh họ:
