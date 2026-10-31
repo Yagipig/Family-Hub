@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #fbf6ec;
-  --color-ivory: #fffdf8;
+  --color-cream: #fdf2df;
+  --color-ivory: #fffaf1;
   --color-wine: #7b1e2b;
   --color-wine-dark: #5c1520;
-  --color-champagne: #c9a96b;
-  --color-champagne-soft: #f1e6cc;
+  --color-champagne: #d9a75f;
+  --color-champagne-soft: #f8e9c4;
   --color-ink: #2a1a1a;
   --color-ink-soft: #5a4646;
   --color-danger: #a4161a;
