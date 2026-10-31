@@ -160,7 +160,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
 
       {mode === "diagram" ? (
         <div className="flex flex-col gap-4 md:flex-row">
-          <div className="relative h-[68dvh] min-h-[420px] flex-1 overflow-hidden rounded-[1.75rem] border-4 border-[#6f4423] shadow-xl">
+          <div className="relative h-[74dvh] min-h-[420px] flex-1 overflow-hidden rounded-[1.75rem] border-4 border-[#6f4423] shadow-xl">
             {/* Nen nha tho ho vang + hoa dao + ho sen (tranh minh hoa, khong nguoi) + lop sang nhe de huy hieu nguoi noi ro */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/temple-bg.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />

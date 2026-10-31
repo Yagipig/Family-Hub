@@ -54,28 +54,39 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, canArran
   return (
     <aside aria-label={`Chi tiết: ${p.name}`}
       className="fixed inset-x-0 bottom-0 z-40 max-h-[65dvh] overflow-y-auto rounded-t-3xl border-t-4 border-sky-300 bg-gradient-to-b from-sky-50 to-white p-4 shadow-2xl md:static md:z-auto md:max-h-none md:w-80 md:shrink-0 md:self-start md:rounded-3xl md:border md:border-sky-200 md:shadow-md">
-      <div className="relative flex flex-col items-center pt-1 text-center">
-        <div className="absolute right-0 top-0 flex gap-2">
-          <button type="button" onClick={onToggle} aria-expanded={open}
-            className="min-h-12 rounded-full border border-sky-300 bg-white px-3 text-base font-semibold text-sky-800 shadow-sm md:hidden">{open ? "Thu gọn" : "Mở rộng"}</button>
-          <button type="button" onClick={onClose} aria-label="Đóng ngăn chi tiết"
-            className="min-h-12 min-w-12 rounded-full border border-sky-200 bg-white text-lg font-bold text-sky-900 shadow-sm hover:bg-sky-50">✕</button>
-        </div>
-        <div className="rounded-full bg-gradient-to-b from-[#ffe9a8] via-[#e9bc57] to-[#cf9c33] p-[3px] shadow-lg">
+      <div className="relative flex items-start gap-3">
+        <div className="shrink-0 rounded-full bg-gradient-to-b from-[#ffe9a8] via-[#e9bc57] to-[#cf9c33] p-[3px] shadow-lg">
           <div className="rounded-full bg-white p-[2px]">
-            <Avatar name={p.name} src={p.avatar} gender={p.gender} size={76} />
+            <Avatar name={p.name} src={p.avatar} gender={p.gender} size={72} />
           </div>
         </div>
-        <h2 className="mt-2 text-[22px] font-bold leading-tight text-sky-950">{p.name}</h2>
-        {p.nick && <p className="text-sm text-ink-soft">Thường gọi: {p.nick}</p>}
-        <p className="text-sm text-ink-soft">{[lifeSpan(p.by, p.dy, p.dead), age].filter(Boolean).join(" · ")}</p>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <h2 className="text-xl font-bold leading-tight text-sky-950">{p.name}</h2>
+          {p.nick && <p className="text-sm text-ink-soft">Thường gọi: {p.nick}</p>}
+          <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold">
+            <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${p.dead ? "bg-stone-400" : "bg-green-500"}`} />
+            <span className={p.dead ? "text-stone-500" : "text-green-600"}>{p.dead ? "Đã mất" : "Còn sống"}</span>
+            {age && <span className="font-normal text-ink-soft">· {age}</span>}
+          </p>
+          <div className="mt-1 space-y-0.5 text-sm text-ink-soft">
+            {gen != null && <p>👑 Đời thứ {gen}</p>}
+            {p.by != null && <p>🎂 Sinh năm: {p.by}</p>}
+            {p.dy != null && <p>✝ Mất năm: {p.dy}</p>}
+            {p.hometown && <p>🏠 Quê quán: {p.hometown}</p>}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2">
+          <button type="button" onClick={onClose} aria-label="Đóng ngăn chi tiết"
+            className="min-h-12 min-w-12 rounded-full border border-sky-200 bg-white text-lg font-bold text-sky-900 shadow-sm hover:bg-sky-50">✕</button>
+          <button type="button" onClick={onToggle} aria-expanded={open}
+            className="min-h-12 rounded-full border border-sky-300 bg-white px-3 text-base font-semibold text-sky-800 shadow-sm md:hidden">{open ? "Thu gọn" : "Mở rộng"}</button>
+        </div>
       </div>
       <div className={`${open ? "mt-4 space-y-4" : "hidden md:mt-4 md:block md:space-y-4"}`}>
-        <p className="flex flex-wrap justify-center gap-2 text-base">
+        <p className="flex flex-wrap gap-2 text-base">
           {p.gender && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">{GENDER_LABELS[p.gender]}</span>}
-          {gen != null && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">⭐ Đời {gen}</span>}
           {branchName && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">Nhánh {branchName}</span>}
-          {p.dead && <span className="rounded-full bg-stone-200 px-3 py-1 font-medium text-stone-700">Đã mất</span>}
+          {(p.by != null || p.dy != null) && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">{lifeSpan(p.by, p.dy, p.dead)}</span>}
         </p>
         {infoRows.length > 0 && (
           <div>
