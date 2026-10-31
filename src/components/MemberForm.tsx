@@ -84,7 +84,7 @@ export function MemberForm(p: Props) {
       )}
       {p.rel && p.mode === "create" && direct && (
         <p className="text-base text-ink-soft">
-          Hồ sơ mới sẽ được nối với <strong>{p.rel.relToName}</strong> ({p.rel.rel === "child" ? "là con" : p.rel.rel === "parent" ? "là cha/mẹ" : "là vợ/chồng"}).
+          Hồ sơ mới sẽ được nối với <strong>{p.rel.relToName}</strong> ({p.rel.rel === "child" ? "là con" : p.rel.rel === "parent" ? "là cha/mẹ" : p.rel.rel === "sibling" ? "là anh/chị/em (cùng cha mẹ)" : "là vợ/chồng"}).
         </p>
       )}
       {p.rel && !direct && (

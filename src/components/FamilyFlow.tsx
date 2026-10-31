@@ -12,7 +12,12 @@ import { PERSON_H, PERSON_W, UNION_SIZE, type Direction, type Placed } from "@/l
 import { branchColor, lifeSpan } from "@/lib/members-text";
 import type { TreePerson } from "@/lib/members-types";
 
-type PersonData = { person: TreePerson; gen: number | null; dim: boolean; color: string; onQuickAdd: () => void };
+type PersonData = {
+  person: TreePerson; gen: number | null; dim: boolean; color: string;
+  onQuickAdd: () => void;
+  /** Thu gọn nhánh: người này có con cháu, đang thu gọn hay không, và số người đang ẩn */
+  hasChildren: boolean; collapsed: boolean; hiddenCount: number; onToggleCollapse: () => void;
+};
 type UnionData = { divorced: boolean };
 type PersonNodeT = Node<PersonData, "person">;
 type UnionNodeT = Node<UnionData, "union">;
@@ -56,6 +61,23 @@ const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, ta
         {p.dead
           ? <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 rounded-full bg-ivory px-1 text-sm leading-tight text-ink-soft shadow">†</span>
           : <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-green-500 shadow" />}
+        {/* Ký hiệu giới tính ở góc trái huy hiệu */}
+        {(p.gender === "male" || p.gender === "female") && (
+          <span aria-hidden="true" className={`absolute -bottom-0.5 -left-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[11px] font-black shadow ${p.gender === "male" ? "bg-[#dbeafe] text-[#1d4ed8]" : "bg-[#fce7f3] text-[#be185d]"}`}>
+            {p.gender === "male" ? "♂" : "♀"}
+          </span>
+        )}
+        {/* Nút + luôn hiện ở góc huy hiệu: bấm là mở menu thêm người thân (không cần ấn giữ nữa) */}
+        <button
+          type="button"
+          aria-label={`Thêm người thân của ${p.name}`}
+          title="Thêm người thân"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); data.onQuickAdd(); }}
+          className="absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[#b8912f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-base font-black leading-none text-[#7c2d12] shadow-md hover:brightness-105"
+        >
+          +
+        </button>
       </div>
       <div className="mt-1.5 w-full rounded-lg border border-[#b8912f] bg-gradient-to-b from-[#f9e28d] to-[#efc95e] px-2 py-1 shadow-sm">
         <p className="line-clamp-2 text-center text-[14px] font-bold leading-tight text-[#571c10]">{p.name}</p>
@@ -64,6 +86,18 @@ const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, ta
         <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-black/10" style={{ background: color }} />
         <span className="truncate">{[p.nick ? `“${p.nick}”` : null, span, gen ? `Đời ${gen}` : null].filter(Boolean).join(" · ")}</span>
       </p>
+      {/* Nút thu gọn / mở nhánh con cháu của người này */}
+      {data.hasChildren && (
+        <button
+          type="button"
+          aria-label={data.collapsed ? `Mở nhánh con cháu của ${p.name} (${data.hiddenCount} người đang ẩn)` : `Thu gọn nhánh con cháu của ${p.name}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); data.onToggleCollapse(); }}
+          className="absolute -bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full border border-[#3f270f] bg-[#5d3d1e] px-2.5 py-0.5 text-[11px] font-bold leading-tight text-[#ffd97a] shadow-md hover:bg-[#6d4a26]"
+        >
+          {data.collapsed ? `+ ${data.hiddenCount}` : "−"}
+        </button>
+      )}
       <Handle type="target" position={targetPosition ?? Position.Top} isConnectable={false} style={hiddenHandle} />
       <Handle type="source" position={sourcePosition ?? Position.Bottom} isConnectable={false} style={hiddenHandle} />
     </div>
@@ -115,8 +149,12 @@ export type FlowProps = {
   focus: { id: string; nonce: number; select?: boolean } | null;
   initialSelectedId: string | null;
   onSelect: (id: string | null) => void;
-  /** Ấn giữ / chuột phải vào huy hiệu: mở menu thêm nhanh người thân */
+  /** Ấn giữ / chuột phải / nút + trên huy hiệu: mở menu thêm người thân */
   onQuickAdd: (id: string) => void;
+  /** Thu gọn nhánh: tập người đang thu gọn + số con cháu đang ẩn của từng người */
+  collapsedIds: Set<string>;
+  hiddenCounts: Map<string, number>;
+  onToggleCollapse: (id: string) => void;
 };
 
 function Inner(p: FlowProps) {
@@ -142,7 +180,14 @@ function Inner(p: FlowProps) {
     return {
       ...base, type: "person", selected: n.id === initialSel.current,
       ariaLabel: `${person.name}${person.dead ? ", đã mất" : ""}${person.by ? `, sinh năm ${person.by}` : ""}. Nhấn Enter để xem chi tiết.`,
-      data: { person, gen: person.gen ?? p.gens.get(n.id) ?? null, dim: p.core != null && !p.core.has(n.id), color: branchColor(person.branchId), onQuickAdd: () => p.onQuickAdd(n.id) },
+      data: {
+        person, gen: person.gen ?? p.gens.get(n.id) ?? null, dim: p.core != null && !p.core.has(n.id), color: branchColor(person.branchId),
+        onQuickAdd: () => p.onQuickAdd(n.id),
+        hasChildren: (p.index.childrenOf.get(n.id)?.length ?? 0) > 0,
+        collapsed: p.collapsedIds.has(n.id),
+        hiddenCount: p.hiddenCounts.get(n.id) ?? 0,
+        onToggleCollapse: () => p.onToggleCollapse(n.id),
+      },
     } as PersonNodeT;
   // Bố cục chỉ đổi khi component được gắn lại (key đổi) nên bỏ qua phụ thuộc còn lại
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,7 +195,11 @@ function Inner(p: FlowProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
 
   const edges = useMemo<Edge[]>(() => p.edges.map((e) => ({
-    id: e.id, source: e.source, target: e.target, type: "default", selectable: false, focusable: false,
+    id: e.id, source: e.source, target: e.target, selectable: false, focusable: false,
+    // Đường con dùng smoothstep (gấp khúc vuông): từ trái tim đi xuống rồi rẽ ngang vào từng con
+    // như sơ đồ gia phả cổ điển; đường vợ chồng giữ cong mềm ngang qua trái tim.
+    type: e.role === "spouse" ? "default" : "smoothstep",
+    pathOptions: e.role === "spouse" ? undefined : { borderRadius: 14 },
     style: e.role === "spouse" ? EDGE_STYLE.spouse : e.kind === "biological" ? EDGE_STYLE.child : EDGE_STYLE.childDashed,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   })), []);
