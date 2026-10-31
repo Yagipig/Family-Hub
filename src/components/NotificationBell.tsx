@@ -17,11 +17,11 @@ export async function NotificationBell({ className = "" }: { className?: string 
     <Link
       href="/thong-bao"
       aria-label={label}
-      className={`relative inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg px-3 text-base font-medium hover:bg-wine-dark ${className}`}
+      className={`relative inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg px-3 text-base font-medium hover:bg-white/15 ${className}`}
     >
       <span aria-hidden className="text-xl">🔔</span>
       {n > 0 && (
-        <span aria-hidden className="absolute right-0 top-1 min-w-6 rounded-full bg-champagne px-1.5 text-center text-sm font-bold text-ink">
+        <span aria-hidden className="absolute right-0 top-1 min-w-6 rounded-full bg-amber-300 px-1.5 text-center text-sm font-bold text-ink">
           {n > 99 ? "99+" : n}
         </span>
       )}
