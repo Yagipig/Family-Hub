@@ -13,6 +13,11 @@ export default async function MembersAdminPage({ searchParams }: { searchParams:
   if (session.role === "branch_admin") redirect("/admin");
   const { ok, error } = await searchParams;
   const isSuper = session.role === "super_admin";
+  // Quan tri gia dinh cung duoc chi dinh admin phu (Quan tri nhanh) — RPC set_member_role
+  // da mo quyen nay (migration 20261104000014) voi gioi han: chi dat branch_admin/member/guest
+  // cho tai khoan dang la branch_admin/member/guest.
+  const canManage = isSuper || session.role === "family_admin";
+  const manageable = (role: string) => isSuper || ["branch_admin", "member", "guest"].includes(role);
   const supabase = await createClient();
 
   const { data: memberships } = await supabase
@@ -32,10 +37,16 @@ export default async function MembersAdminPage({ searchParams }: { searchParams:
       <h1 className="text-3xl font-bold text-wine">Tài khoản và quản trị viên</h1>
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
-      {isSuper && (
+      {canManage && (
         <p className="text-base text-ink-soft">
-          Để thêm admin phụ: vào mục Lời mời, chọn vai trò Quản trị gia đình hoặc Quản trị nhánh. Với người đã có tài khoản,
-          dùng nút “Đổi vai trò” bên dưới.
+          {isSuper ? (
+            <>Để thêm admin phụ: vào mục Lời mời, chọn vai trò Quản trị gia đình hoặc Quản trị nhánh. Với người đã có tài khoản,
+            dùng nút “Đổi vai trò” bên dưới.</>
+          ) : (
+            <>Bạn có thể chọn thành viên làm <strong>admin phụ (Quản trị nhánh)</strong> để cùng duyệt các yêu cầu cập nhật
+            thông tin trong nhánh của họ: chọn vai trò Quản trị nhánh, chọn đúng nhánh rồi bấm “Đổi vai trò”.
+            Muốn thu lại quyền, đổi họ về Thành viên.</>
+          )}
         </p>
       )}
       <Card>
@@ -57,14 +68,14 @@ export default async function MembersAdminPage({ searchParams }: { searchParams:
                 </div>
                 {active && !self && (
                   <div className="flex flex-wrap items-end gap-3">
-                    {isSuper && (
+                    {canManage && manageable(m.role_key) && (
                       <form action={setMemberRole} className="flex flex-wrap items-end gap-2">
                         <input type="hidden" name="id" value={m.id} />
                         <label className="text-sm font-semibold">Vai trò mới
                           <select name="role" defaultValue={m.role_key === "super_admin" ? "family_admin" : m.role_key}
                             className="mt-1 block min-h-10 rounded-xl border border-ink-soft/40 bg-white px-3 text-base">
-                            <option value="family_admin">Quản trị gia đình</option>
-                            <option value="branch_admin">Quản trị nhánh</option>
+                            {isSuper && <option value="family_admin">Quản trị gia đình</option>}
+                            <option value="branch_admin">Quản trị nhánh (admin phụ)</option>
                             <option value="member">Thành viên</option>
                             <option value="guest">Khách</option>
                           </select>
