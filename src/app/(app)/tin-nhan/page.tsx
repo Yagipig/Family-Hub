@@ -4,11 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { chatAllowed, loadUserTimezone } from "@/lib/chat-server";
 import { formatListTime, type ConversationRow } from "@/lib/chat";
 import { normalizeSearch, unreadLabel } from "@/lib/chat-text";
-import { Alert, Card, buttonClass } from "@/components/ui";
+import { Alert, Card } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
 import { ChatAutoRefresh } from "@/components/ChatAutoRefresh";
 
 export const metadata = { title: "Tin nhắn" };
+
+// Muc Tin nhan mang tong xanh duong rieng theo mau thiet ke nguoi dung gui 31/10/2026 (app chat gia dinh).
+const chatBtn =
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-sky-600 px-5 py-2 text-base font-bold text-white shadow-sm hover:bg-sky-700 disabled:opacity-60";
 
 const KIND_LABEL: Record<ConversationRow["kind"], string> = {
   family: "Cả gia đình",
@@ -60,9 +64,9 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
       <ChatAutoRefresh />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold text-wine">
-          Tin nhắn{totalUnread > 0 && <span className="ml-3 rounded-full bg-wine px-3 py-1 align-middle text-base text-white">{unreadLabel(totalUnread)} chưa đọc</span>}
+          Tin nhắn{totalUnread > 0 && <span className="ml-3 rounded-full bg-red-500 px-3 py-1 align-middle text-base text-white">{unreadLabel(totalUnread)} chưa đọc</span>}
         </h1>
-        <Link href="/tin-nhan/moi" className={buttonClass}>Tin nhắn mới</Link>
+        <Link href="/tin-nhan/moi" className={chatBtn}>Tin nhắn mới</Link>
       </div>
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
@@ -75,10 +79,10 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
             defaultValue={q}
             maxLength={80}
             placeholder="Tìm theo tên người hoặc nhóm…"
-            className="block min-h-12 w-full rounded-full border border-ink-soft/40 bg-white px-5 py-2 text-base font-normal text-ink"
+            className="block min-h-12 w-full rounded-full border border-sky-300/80 bg-white px-5 py-2 text-base font-normal text-ink"
           />
         </label>
-        <button className={buttonClass}>Tìm</button>
+        <button className={chatBtn}>Tìm</button>
         {q && <Link href="/tin-nhan" className="inline-flex min-h-12 items-center px-3 text-base font-semibold text-wine underline">Xoá tìm kiếm</Link>}
       </form>
 
@@ -89,14 +93,14 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
           </p>
         </Card>
       ) : (
-        <ul className="divide-y divide-champagne/50 overflow-hidden rounded-2xl border border-champagne/60 bg-ivory shadow-sm" aria-label="Các cuộc trò chuyện">
+        <ul className="divide-y divide-sky-100 overflow-hidden rounded-2xl border border-sky-200/70 bg-ivory shadow-sm" aria-label="Các cuộc trò chuyện">
           {rows.map((c) => {
             const unread = c.unread_count > 0;
             return (
               <li key={c.id}>
                 <Link
                   href={`/tin-nhan/${c.id}`}
-                  className={`flex items-center gap-3 px-4 py-3 focus-visible:outline-none ${unread ? "bg-champagne-soft/50 hover:bg-champagne-soft" : "hover:bg-champagne-soft/40"}`}
+                  className={`flex items-center gap-3 px-4 py-3 focus-visible:outline-none ${unread ? "bg-sky-50 hover:bg-sky-100/70" : "hover:bg-sky-50/70"}`}
                 >
                   <Avatar name={c.title} size={56} />
                   <div className="min-w-0 flex-1">
@@ -109,12 +113,12 @@ export default async function ChatListPage({ searchParams }: { searchParams: Pro
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5 self-start pt-1">
-                    <span className={`whitespace-nowrap text-sm ${unread ? "font-bold text-wine" : "text-ink-soft"}`} suppressHydrationWarning>
+                    <span className={`whitespace-nowrap text-sm ${unread ? "font-bold text-sky-700" : "text-ink-soft"}`} suppressHydrationWarning>
                       {c.last_preview ? formatListTime(c.last_activity_at, tz) : ""}
                     </span>
                     {unread && (
                       <span
-                        className="inline-flex min-h-7 min-w-7 items-center justify-center rounded-full bg-wine px-2 text-sm font-bold text-white"
+                        className="inline-flex min-h-7 min-w-7 items-center justify-center rounded-full bg-red-500 px-2 text-sm font-bold text-white"
                         aria-label={`${c.unread_count >= 100 ? "Hơn 99" : c.unread_count} tin chưa đọc`}
                       >
                         {unreadLabel(c.unread_count)}

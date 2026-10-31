@@ -40,12 +40,12 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ id: s
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/tin-nhan" className="inline-flex min-h-12 items-center rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft">
+        <Link href="/tin-nhan" className="inline-flex min-h-12 items-center rounded-full border border-sky-300 px-4 text-base font-semibold text-sky-800 hover:bg-sky-50">
           ← Danh sách
         </Link>
         <Avatar name={conv.title} size={48} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-bold text-wine">{conv.title}</h1>
+          <h1 className="truncate text-2xl font-bold text-sky-900">{conv.title}</h1>
           <p className="text-base text-ink-soft">
             {KIND_LABEL[conv.kind]}
             {conv.kind !== "direct" ? ` · ${conv.member_count} người` : ""}
@@ -54,7 +54,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ id: s
         </div>
         <Link
           href={`/tin-nhan/${id}/thanh-vien`}
-          className="inline-flex min-h-12 items-center rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft"
+          className="inline-flex min-h-12 items-center rounded-full border border-sky-300 px-4 text-base font-semibold text-sky-800 hover:bg-sky-50"
         >
           Thành viên và tuỳ chọn
         </Link>

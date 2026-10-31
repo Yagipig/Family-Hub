@@ -29,14 +29,14 @@ export async function FamilyCover({ children, className = "" }: { children?: Rea
 
 /**
  * Ảnh bìa làm nền mờ toàn trang (rất nhạt, không bắt chuột). Đặt một lần trong layout của khu vực đã đăng nhập:
- * <FamilyCoverBackdrop /> ngay đầu <div className="min-h-dvh">. Không có ảnh bìa thì không hiện gì.
+ * <FamilyCoverBackdrop /> ngay đầu <div className="min-h-dvh">. Gia đình chưa đặt ảnh bìa riêng thì dùng
+ * ảnh hoàng hôn mặc định /sunset-sky.jpg (người dùng chọn 31/10/2026: cảnh hoàng hôn trên mặt nước, không bóng người).
  */
 export async function FamilyCoverBackdrop() {
-  const url = await coverUrl();
-  if (!url) return null;
+  const url = (await coverUrl()) ?? "/sunset-sky.jpg";
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={url} alt="" aria-hidden="true" decoding="async" loading="lazy"
-      className="pointer-events-none fixed inset-0 -z-10 h-full w-full scale-110 object-cover opacity-[0.14] blur-md" />
+      className="pointer-events-none fixed inset-0 -z-10 h-full w-full scale-110 object-cover opacity-[0.16] blur-md" />
   );
 }
