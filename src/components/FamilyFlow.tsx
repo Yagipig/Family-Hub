@@ -12,7 +12,7 @@ import { PERSON_H, PERSON_W, UNION_SIZE, type Direction, type Placed } from "@/l
 import { branchColor, lifeSpan } from "@/lib/members-text";
 import type { TreePerson } from "@/lib/members-types";
 
-type PersonData = { person: TreePerson; gen: number | null; dim: boolean; color: string };
+type PersonData = { person: TreePerson; gen: number | null; dim: boolean; color: string; onQuickAdd: () => void };
 type UnionData = { divorced: boolean };
 type PersonNodeT = Node<PersonData, "person">;
 type UnionNodeT = Node<UnionData, "union">;
@@ -30,9 +30,24 @@ const RING: Record<string, string> = {
 const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, targetPosition }: NodeProps<PersonNodeT>) {
   const { person: p, gen, dim, color } = data;
   const span = lifeSpan(p.by, p.dy, p.dead);
+  // An giu (550ms, khong di chuyen) de mo menu them nhanh; chuot phai cung vay. Keo/di chuyen thi huy.
+  const pressTimer = useRef<number | null>(null);
+  const cancelPress = () => {
+    if (pressTimer.current != null) { window.clearTimeout(pressTimer.current); pressTimer.current = null; }
+  };
+  const startPress = () => {
+    cancelPress();
+    pressTimer.current = window.setTimeout(() => {
+      pressTimer.current = null;
+      try { navigator.vibrate?.(30); } catch { /* may khong ho tro rung */ }
+      data.onQuickAdd();
+    }, 550);
+  };
   return (
     <div
       style={{ width: PERSON_W, height: PERSON_H }}
+      onPointerDown={startPress} onPointerUp={cancelPress} onPointerLeave={cancelPress} onPointerMove={cancelPress}
+      onContextMenu={(e) => { e.preventDefault(); data.onQuickAdd(); }}
       className={`relative flex flex-col items-center px-2 pt-1.5 ${dim ? "opacity-40" : ""}`}>
       <div className={`relative rounded-full bg-gradient-to-b from-[#ffe9a8] via-[#e9bc57] to-[#cf9c33] p-[3px] shadow-lg ${selected ? "shadow-[0_0_0_4px_rgba(245,197,66,0.95),0_0_30px_rgba(245,158,11,0.9)]" : ""}`}>
         <div className={`rounded-full border-2 bg-white ${RING[p.gender ?? "other"]} ${p.dead ? "grayscale" : ""}`}>
@@ -100,6 +115,8 @@ export type FlowProps = {
   focus: { id: string; nonce: number; select?: boolean } | null;
   initialSelectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** Ấn giữ / chuột phải vào huy hiệu: mở menu thêm nhanh người thân */
+  onQuickAdd: (id: string) => void;
 };
 
 function Inner(p: FlowProps) {
@@ -125,7 +142,7 @@ function Inner(p: FlowProps) {
     return {
       ...base, type: "person", selected: n.id === initialSel.current,
       ariaLabel: `${person.name}${person.dead ? ", đã mất" : ""}${person.by ? `, sinh năm ${person.by}` : ""}. Nhấn Enter để xem chi tiết.`,
-      data: { person, gen: person.gen ?? p.gens.get(n.id) ?? null, dim: p.core != null && !p.core.has(n.id), color: branchColor(person.branchId) },
+      data: { person, gen: person.gen ?? p.gens.get(n.id) ?? null, dim: p.core != null && !p.core.has(n.id), color: branchColor(person.branchId), onQuickAdd: () => p.onQuickAdd(n.id) },
     } as PersonNodeT;
   // Bố cục chỉ đổi khi component được gắn lại (key đổi) nên bỏ qua phụ thuộc còn lại
   // eslint-disable-next-line react-hooks/exhaustive-deps
