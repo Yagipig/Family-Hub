@@ -224,10 +224,6 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
                 <p className="text-sm font-bold italic leading-snug text-[#4a2c14]">Gia đình là điểm tựa<br />của hạnh phúc ❤</p>
               </div>
             </div>
-            {/* Nhac xoay ngang tren dien thoai doc: cay ngang rong, xem doc khong du thi xoay may */}
-            <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-bold text-[#ffeec2] portrait:flex md:portrait:hidden">
-              <span aria-hidden="true">↻</span> Xoay ngang điện thoại để xem cây đầy đủ
-            </div>
             {/* Nut + LON ngay tren man hinh cay (nguoi dung yeu cau 01/11/2026): bam la them nguoi vao cay */}
             {canEdit && (
               <button
