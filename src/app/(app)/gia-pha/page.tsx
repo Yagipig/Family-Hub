@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { can, requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Alert, buttonGhostClass } from "@/components/ui";
+import { Alert } from "@/components/ui";
 import { FamilyTreeExplorer } from "@/components/FamilyTreeExplorer";
 import { loadBranches, loadTreeData, UUID_RE } from "@/lib/members-data";
 
@@ -28,10 +27,6 @@ export default async function FamilyTreePage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-3xl font-bold text-wine">Cây gia phả</h1>
-        <Link href="/thanh-vien" className={buttonGhostClass}>Danh sách thành viên</Link>
-      </div>
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {!data ? <Alert kind="error">Không tải được dữ liệu gia phả. Vui lòng thử lại sau.</Alert> : (
