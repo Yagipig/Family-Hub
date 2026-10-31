@@ -37,12 +37,12 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, canArran
 
   const group = (title: string, ids: { id: string; note?: string }[]) => ids.length === 0 ? null : (
     <div>
-      <h3 className="text-base font-bold text-ink-soft">{title}</h3>
+      <h3 className="text-base font-bold text-sky-900">{title}</h3>
       <ul className="mt-1 flex flex-wrap gap-2">
         {ids.map((x) => (
           <li key={x.id}>
             <button type="button" onClick={() => onFocus(x.id)}
-              className="min-h-12 rounded-xl border border-champagne bg-white px-3 text-left text-base hover:bg-champagne-soft">
+              className="min-h-12 rounded-full border border-sky-200 bg-white px-3 text-left text-base shadow-sm hover:bg-sky-50">
               {index.people.get(x.id)?.name ?? "—"}{x.note ? <span className="text-sm text-ink-soft"> ({x.note})</span> : null}
             </button>
           </li>
@@ -53,34 +53,38 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, canArran
 
   return (
     <aside aria-label={`Chi tiết: ${p.name}`}
-      className="fixed inset-x-0 bottom-0 z-40 max-h-[65dvh] overflow-y-auto rounded-t-2xl border-t-4 border-champagne bg-ivory p-4 shadow-2xl md:static md:z-auto md:max-h-none md:w-80 md:shrink-0 md:self-start md:rounded-2xl md:border md:border-champagne/60 md:shadow-sm">
-      <div className="flex items-center gap-3">
-        <Avatar name={p.name} src={p.avatar} gender={p.gender} size={56} />
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold leading-tight text-wine">{p.name}</h2>
-          {p.nick && <p className="text-sm text-ink-soft">Thường gọi: {p.nick}</p>}
-          <p className="text-sm text-ink-soft">{[lifeSpan(p.by, p.dy, p.dead), age].filter(Boolean).join(" · ")}</p>
+      className="fixed inset-x-0 bottom-0 z-40 max-h-[65dvh] overflow-y-auto rounded-t-3xl border-t-4 border-sky-300 bg-gradient-to-b from-sky-50 to-white p-4 shadow-2xl md:static md:z-auto md:max-h-none md:w-80 md:shrink-0 md:self-start md:rounded-3xl md:border md:border-sky-200 md:shadow-md">
+      <div className="relative flex flex-col items-center pt-1 text-center">
+        <div className="absolute right-0 top-0 flex gap-2">
+          <button type="button" onClick={onToggle} aria-expanded={open}
+            className="min-h-12 rounded-full border border-sky-300 bg-white px-3 text-base font-semibold text-sky-800 shadow-sm md:hidden">{open ? "Thu gọn" : "Mở rộng"}</button>
+          <button type="button" onClick={onClose} aria-label="Đóng ngăn chi tiết"
+            className="min-h-12 min-w-12 rounded-full border border-sky-200 bg-white text-lg font-bold text-sky-900 shadow-sm hover:bg-sky-50">✕</button>
         </div>
-        <button type="button" onClick={onToggle} aria-expanded={open}
-          className="min-h-12 rounded-xl border border-wine px-3 text-base font-semibold text-wine md:hidden">{open ? "Thu gọn" : "Mở rộng"}</button>
-        <button type="button" onClick={onClose} aria-label="Đóng ngăn chi tiết"
-          className="min-h-12 min-w-12 rounded-xl border border-ink-soft/40 text-lg font-bold text-ink-soft hover:bg-champagne-soft">✕</button>
+        <div className="rounded-full bg-gradient-to-b from-[#ffe9a8] via-[#e9bc57] to-[#cf9c33] p-[3px] shadow-lg">
+          <div className="rounded-full bg-white p-[2px]">
+            <Avatar name={p.name} src={p.avatar} gender={p.gender} size={76} />
+          </div>
+        </div>
+        <h2 className="mt-2 text-[22px] font-bold leading-tight text-sky-950">{p.name}</h2>
+        {p.nick && <p className="text-sm text-ink-soft">Thường gọi: {p.nick}</p>}
+        <p className="text-sm text-ink-soft">{[lifeSpan(p.by, p.dy, p.dead), age].filter(Boolean).join(" · ")}</p>
       </div>
       <div className={`${open ? "mt-4 space-y-4" : "hidden md:mt-4 md:block md:space-y-4"}`}>
-        <p className="flex flex-wrap gap-2 text-base">
-          {p.gender && <span className="rounded-lg bg-champagne-soft px-3 py-1">{GENDER_LABELS[p.gender]}</span>}
-          {gen != null && <span className="rounded-lg bg-champagne-soft px-3 py-1">Đời {gen}</span>}
-          {branchName && <span className="rounded-lg bg-champagne-soft px-3 py-1">Nhánh {branchName}</span>}
-          {p.dead && <span className="rounded-lg bg-champagne-soft px-3 py-1">Đã mất</span>}
+        <p className="flex flex-wrap justify-center gap-2 text-base">
+          {p.gender && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">{GENDER_LABELS[p.gender]}</span>}
+          {gen != null && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">⭐ Đời {gen}</span>}
+          {branchName && <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-900">Nhánh {branchName}</span>}
+          {p.dead && <span className="rounded-full bg-stone-200 px-3 py-1 font-medium text-stone-700">Đã mất</span>}
         </p>
         {infoRows.length > 0 && (
           <div>
-            <h3 className="text-base font-bold text-ink-soft">Thông tin</h3>
-            <dl className="mt-1 space-y-1 text-base">
+            <h3 className="text-base font-bold text-sky-900">📖 Thông tin cá nhân</h3>
+            <dl className="mt-1 text-base">
               {infoRows.map((r) => (
-                <div key={r.label} className="flex gap-2">
-                  <dt className="w-32 shrink-0 text-ink-soft">{r.label}</dt>
-                  <dd className="min-w-0 font-medium">{r.value}</dd>
+                <div key={r.label} className="flex items-baseline justify-between gap-3 border-b border-sky-100 py-1.5 last:border-b-0">
+                  <dt className="shrink-0 text-ink-soft">{r.label}</dt>
+                  <dd className="min-w-0 text-right font-medium">{r.value}</dd>
                 </div>
               ))}
             </dl>
@@ -88,26 +92,26 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, canArran
         )}
         {p.bio && (
           <div>
-            <h3 className="text-base font-bold text-ink-soft">Tiểu sử</h3>
+            <h3 className="text-base font-bold text-sky-900">📝 Tiểu sử</h3>
             <p className="mt-1 whitespace-pre-line text-base">{p.bio}</p>
           </div>
         )}
         <Link href={`/thanh-vien/${id}`}
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-wine px-5 text-base font-semibold text-white hover:bg-wine-dark">Mở hồ sơ đầy đủ</Link>
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-sky-600 px-5 text-base font-bold text-white shadow-sm hover:bg-sky-700">Mở hồ sơ đầy đủ</Link>
         {canArrange && siblings.length > 0 && (
-          <div className="border-t border-champagne/60 pt-3">
-            <h3 className="text-base font-bold text-ink-soft">Thứ tự anh chị em (admin sắp xếp)</h3>
+          <div className="border-t border-sky-100 pt-3">
+            <h3 className="text-base font-bold text-sky-900">Thứ tự anh chị em (admin sắp xếp)</h3>
             <p className="mt-0.5 text-sm text-ink-soft">Dời người này trong nhóm anh chị em cùng cha mẹ — cây sẽ xếp lại từ lớn đến nhỏ theo thứ tự này.</p>
             <div className="mt-2 flex gap-2">
               <form action={moveSiblingAction} className="flex-1">
                 <input type="hidden" name="memberId" value={id} />
                 <input type="hidden" name="dir" value="-1" />
-                <button type="submit" className="min-h-12 w-full rounded-xl border border-wine px-3 font-semibold text-wine hover:bg-champagne-soft">◀ Lên trước</button>
+                <button type="submit" className="min-h-12 w-full rounded-full border border-sky-300 px-3 font-semibold text-sky-800 hover:bg-sky-50">◀ Lên trước</button>
               </form>
               <form action={moveSiblingAction} className="flex-1">
                 <input type="hidden" name="memberId" value={id} />
                 <input type="hidden" name="dir" value="1" />
-                <button type="submit" className="min-h-12 w-full rounded-xl border border-wine px-3 font-semibold text-wine hover:bg-champagne-soft">Xuống sau ▶</button>
+                <button type="submit" className="min-h-12 w-full rounded-full border border-sky-300 px-3 font-semibold text-sky-800 hover:bg-sky-50">Xuống sau ▶</button>
               </form>
             </div>
           </div>
@@ -117,9 +121,9 @@ export function TreePersonPanel({ id, index, gens, branchName, canEdit, canArran
         {group("Con", children.map((x) => ({ id: x.id, note: x.kind === "biological" ? undefined : PARENT_KIND_LABELS[x.kind] })))}
         {group("Anh chị em", siblings.map((x) => ({ id: x.id, note: x.full ? undefined : "cùng cha hoặc mẹ" })))}
         {canEdit && (
-          <div className="flex flex-wrap gap-2 border-t border-champagne/60 pt-3 text-base">
-            <Link className="min-h-12 flex-1 rounded-xl border border-wine px-3 py-3 text-center font-semibold text-wine hover:bg-champagne-soft" href={`/thanh-vien/moi?rel=child&to=${id}`}>Thêm con</Link>
-            <Link className="min-h-12 flex-1 rounded-xl border border-wine px-3 py-3 text-center font-semibold text-wine hover:bg-champagne-soft" href={`/thanh-vien/moi?rel=partner&to=${id}`}>Thêm vợ/chồng</Link>
+          <div className="flex flex-wrap gap-2 border-t border-sky-100 pt-3 text-base">
+            <Link className="min-h-12 flex-1 rounded-full border border-sky-300 px-3 py-3 text-center font-semibold text-sky-800 hover:bg-sky-50" href={`/thanh-vien/moi?rel=child&to=${id}`}>Thêm con</Link>
+            <Link className="min-h-12 flex-1 rounded-full border border-sky-300 px-3 py-3 text-center font-semibold text-sky-800 hover:bg-sky-50" href={`/thanh-vien/moi?rel=partner&to=${id}`}>Thêm vợ/chồng</Link>
           </div>
         )}
       </div>

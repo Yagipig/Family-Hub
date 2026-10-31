@@ -36,6 +36,7 @@ export default async function FamilyTreePage({ searchParams }: { searchParams: P
       {error && <Alert kind="error">{error}</Alert>}
       {!data ? <Alert kind="error">Không tải được dữ liệu gia phả. Vui lòng thử lại sau.</Alert> : (
         <FamilyTreeExplorer
+          familyName={session.familyName}
           people={data.people} links={data.links} partners={data.partners} branches={branches}
           initialFocusId={initialFocus && data.people.some((p) => p.id === initialFocus) ? initialFocus : null}
           selfId={selfId} canEdit={session.role !== "guest"} canArrange={canArrange}

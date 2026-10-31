@@ -19,9 +19,12 @@ const FamilyFlow = dynamic(() => import("@/components/FamilyFlow").then((m) => m
 
 type Mode = "diagram" | "list";
 const seg = (active: boolean) =>
-  `min-h-12 px-5 text-base font-semibold first:rounded-l-xl last:rounded-r-xl border border-wine ${active ? "bg-wine text-white" : "bg-ivory text-wine hover:bg-champagne-soft"}`;
+  `min-h-12 rounded-full px-5 text-base font-semibold border shadow-sm ${active ? "border-sky-600 bg-sky-600 text-white" : "border-sky-200 bg-white text-sky-900 hover:bg-sky-50"}`;
+const pillBtn =
+  "min-h-12 rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50";
 
-export function FamilyTreeExplorer({ people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
+export function FamilyTreeExplorer({ familyName, people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
+  familyName: string;
   people: TreePerson[]; links: TreeLink[]; partners: TreePartner[]; branches: BranchRow[];
   initialFocusId: string | null; selfId: string | null; canEdit: boolean; canArrange?: boolean;
 }) {
@@ -78,8 +81,8 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
 
   if (people.length === 0) {
     return (
-      <div className="rounded-2xl border border-champagne/60 bg-ivory p-6 text-base">
-        Chưa có thành viên nào.{canEdit && <> <Link href="/thanh-vien/moi" className="font-semibold text-wine underline">Thêm thành viên đầu tiên</Link>.</>}
+      <div className="rounded-2xl border border-sky-200 bg-white p-6 text-base">
+        Chưa có thành viên nào.{canEdit && <> <Link href="/thanh-vien/moi" className="font-semibold text-sky-700 underline">Thêm thành viên đầu tiên</Link>.</>}
       </div>
     );
   }
@@ -87,17 +90,17 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div role="group" aria-label="Kiểu hiển thị" className="flex">
-          <button type="button" className={seg(mode === "diagram")} aria-pressed={mode === "diagram"} onClick={() => setMode("diagram")}>Sơ đồ</button>
-          <button type="button" className={seg(mode === "list")} aria-pressed={mode === "list"} onClick={() => setMode("list")}>Danh sách theo đời</button>
+        <div role="group" aria-label="Kiểu hiển thị" className="flex gap-2">
+          <button type="button" className={seg(mode === "diagram")} aria-pressed={mode === "diagram"} onClick={() => setMode("diagram")}>🌳 Sơ đồ</button>
+          <button type="button" className={seg(mode === "list")} aria-pressed={mode === "list"} onClick={() => setMode("list")}>📋 Danh sách theo đời</button>
         </div>
         <button type="button" aria-expanded={showOpts} onClick={() => setShowOpts((v) => !v)}
-          className="min-h-12 rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft sm:hidden">
+          className={`${pillBtn} sm:hidden`}>
           {showOpts ? "Ẩn tùy chọn" : "Lọc nhánh, hướng…"}
         </button>
         {selfId && fullIndex.people.has(selfId) && (
           <button type="button" onClick={() => focusPerson(selfId)}
-            className="min-h-12 rounded-xl border border-wine px-4 text-base font-semibold text-wine hover:bg-champagne-soft">Tới hồ sơ của tôi</button>
+            className={pillBtn}>Tới hồ sơ của tôi</button>
         )}
 
         <div className="relative w-full min-w-56 flex-1 sm:w-auto">
@@ -106,14 +109,14 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
               aria-expanded={mode === "diagram" && results.length > 0} aria-controls="tree-search-results"
               onKeyDown={(e) => { if (e.key === "Enter" && mode === "diagram" && results[0]) { e.preventDefault(); pick(results[0].id); } }}
               placeholder="Gõ tên, không cần dấu"
-              className="mt-1 block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-4 py-2 text-base font-normal text-ink" />
+              className="mt-1 block min-h-12 w-full rounded-full border border-sky-300 bg-white px-4 py-2 text-base font-normal text-ink" />
           </label>
           {mode === "diagram" && query.trim() !== "" && (
             <ul id="tree-search-results" role="listbox" aria-label="Kết quả tìm kiếm"
-              className="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-champagne bg-ivory shadow-lg">
+              className="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-sky-200 bg-white shadow-lg">
               {results.length === 0 ? <li className="px-4 py-3 text-base text-ink-soft">Không tìm thấy ai.</li> : results.map((r) => (
                 <li key={r.id} role="option" aria-selected={false}>
-                  <button type="button" onClick={() => pick(r.id)} className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left text-base hover:bg-champagne-soft">
+                  <button type="button" onClick={() => pick(r.id)} className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left text-base hover:bg-sky-50">
                     <Avatar name={r.name} src={r.avatar} gender={r.gender} size={32} />
                     <span>{r.name}<span className="text-sm text-ink-soft"> {lifeSpan(r.by, r.dy, r.dead)}</span></span>
                   </button>
@@ -126,7 +129,7 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
         <div className={`${showOpts ? "grid" : "hidden"} w-full grid-cols-2 gap-3 sm:contents`}>
           <label className="block text-sm font-semibold">Nhánh
             <select value={branch} onChange={(e) => setBranch(e.target.value)}
-              className="mt-1 block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-3 text-base font-normal text-ink">
+              className="mt-1 block min-h-12 w-full rounded-xl border border-sky-300 bg-white px-3 text-base font-normal text-ink">
               <option value="">Tất cả các nhánh</option>
               <option value="none">Chưa xếp nhánh</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -135,7 +138,7 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
           {mode === "diagram" && (
             <label className="block text-sm font-semibold">Hướng
               <select value={direction} onChange={(e) => setDirection(e.target.value as Direction)}
-                className="mt-1 block min-h-12 w-full rounded-xl border border-ink-soft/40 bg-white px-3 text-base font-normal text-ink">
+                className="mt-1 block min-h-12 w-full rounded-xl border border-sky-300 bg-white px-3 text-base font-normal text-ink">
                 <option value="BT">Kiểu cây phả đồ (tổ ở gốc, con cháu lên trên)</option>
                 <option value="TB">Từ trên xuống (tổ ở trên)</option>
                 <option value="LR">Từ trái sang phải</option>
@@ -146,17 +149,33 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
       </div>
 
       {branch && view.core && (
-        <p className="rounded-xl bg-champagne-soft px-4 py-3 text-base">
+        <p className="rounded-xl bg-sky-50 px-4 py-3 text-base text-sky-950">
           Đang lọc theo nhánh: hiện {view.core.size} thành viên của nhánh cùng vợ/chồng và cha mẹ của họ (phần mờ là người thuộc nhánh khác, giữ lại để nối quan hệ).
         </p>
       )}
 
       {mode === "diagram" ? (
         <div className="flex flex-col gap-4 md:flex-row">
-          <div className="relative h-[68dvh] min-h-[420px] flex-1 overflow-hidden rounded-2xl border-4 border-double border-[#c9a96b] shadow-inner"
-            style={{ background: "linear-gradient(180deg, #fdf8ec 0%, #f9efdb 55%, #f3e5c6 100%)" }}>
+          <div className="relative h-[68dvh] min-h-[420px] flex-1 overflow-hidden rounded-[1.75rem] border-4 border-[#6f4423] shadow-xl">
+            {/* Nen nha tho ho vang + hoa dao + ho sen (tranh minh hoa, khong nguoi) + lop sang nhe de huy hieu nguoi noi ro */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/temple-bg.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-white/10" />
+            {/* Bien go cham khac ten dong ho treo dau bang cay nhu mau thiet ke nguoi dung gui 31/10/2026 */}
+            <div className="pointer-events-none absolute left-1/2 top-3 z-10 w-max max-w-[86%] -translate-x-1/2">
+              <div className="rounded-xl border-2 border-[#3f270f] bg-gradient-to-b from-[#5d3d1e] to-[#3a2410] px-4 py-1.5 text-center shadow-[inset_0_0_0_2px_rgba(255,217,122,0.35),0_10px_15px_-3px_rgba(0,0,0,0.4)] sm:px-6 sm:py-2">
+                <p className="truncate text-base font-bold tracking-wide text-[#ffd97a] drop-shadow sm:text-xl">{familyName}</p>
+                <p className="truncate text-[11px] font-medium text-[#ffca7a] sm:text-xs">Gìn giữ cội nguồn · Kết nối yêu thương</p>
+              </div>
+            </div>
+            {/* Bien go nho goc duoi trai nhu mau: loi nhan cua dong ho */}
+            <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden -rotate-3 sm:block">
+              <div className="rounded-lg border-2 border-[#6f4423] bg-gradient-to-b from-[#c89b62] to-[#a9743f] px-3 py-2 shadow-lg">
+                <p className="text-sm font-bold italic leading-snug text-[#4a2c14]">Gia đình là điểm tựa<br />của hạnh phúc ❤</p>
+              </div>
+            </div>
             {elements.nodes.length === 0 ? (
-              <p className="p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
+              <p className="relative p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
             ) : placed && (
               <FamilyFlow key={flowKey} nodes={elements.nodes} edges={elements.edges} placed={placed} index={index} gens={gens}
                 divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
@@ -173,12 +192,12 @@ export function FamilyTreeExplorer({ people, links, partners, branches, initialF
         <FamilyOutline index={index} gens={gens} query={query} highlightId={selectedId} onShowInDiagram={focusPerson} />
       )}
 
-      <details className="rounded-xl border border-champagne/60 bg-ivory px-4">
-        <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-wine">Chú giải</summary>
+      <details className="rounded-xl border border-sky-200/80 bg-white/85 px-4">
+        <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-sky-900">Chú giải</summary>
         <ul className="space-y-2 pb-4 text-base">
           <li>Mỗi người là một <strong>huy hiệu ảnh tròn</strong> với <strong>bảng tên vàng</strong> bên dưới, treo trên cành cây như phả đồ truyền thống. Vòng quanh ảnh: <span className="font-semibold text-[#6f8fb0]">xanh dương: nam</span> · <span className="font-semibold text-[#c9798a]">hồng: nữ</span> · vàng champagne: khác/chưa rõ.</li>
           <li>Kiểu cây phả đồ: <strong>tổ tiên ở gốc cây phía dưới</strong>, con cháu tỏa dần lên trên; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
-          <li>Chấm tròn vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (chấm trắng: đã ly hôn hoặc góa); các con nối từ chấm đó bằng cành cây màu nâu.</li>
+          <li>Trái tim vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (trái tim xám: đã ly hôn hoặc góa); các con nối từ trái tim đó bằng cành cây màu vàng.</li>
           <li>Cành liền: con ruột. Cành đứt nét: con nuôi hoặc con kế. Dấu † và ảnh xám: người đã mất.</li>
           <li>Chấm màu nhỏ cạnh năm sinh là màu của nhánh họ:
             <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">

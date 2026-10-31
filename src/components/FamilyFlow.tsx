@@ -34,14 +34,18 @@ const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, ta
     <div
       style={{ width: PERSON_W, height: PERSON_H }}
       className={`relative flex flex-col items-center px-2 pt-1.5 ${dim ? "opacity-40" : ""}`}>
-      <div className={`relative rounded-full border-[3px] shadow-md ${RING[p.gender ?? "other"]} ${p.dead ? "grayscale" : ""} ${selected ? "ring-4 ring-wine" : ""}`}>
-        <Avatar name={p.name} src={p.avatar} gender={p.gender} size={60} />
-        {p.dead && <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 rounded-full bg-ivory px-1 text-sm leading-tight text-ink-soft shadow">†</span>}
+      <div className={`relative rounded-full bg-gradient-to-b from-[#ffe9a8] via-[#e9bc57] to-[#cf9c33] p-[3px] shadow-lg ${selected ? "shadow-[0_0_0_4px_rgba(245,197,66,0.95),0_0_30px_rgba(245,158,11,0.9)]" : ""}`}>
+        <div className={`rounded-full border-2 bg-white ${RING[p.gender ?? "other"]} ${p.dead ? "grayscale" : ""}`}>
+          <Avatar name={p.name} src={p.avatar} gender={p.gender} size={58} />
+        </div>
+        {p.dead
+          ? <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 rounded-full bg-ivory px-1 text-sm leading-tight text-ink-soft shadow">†</span>
+          : <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-green-500 shadow" />}
       </div>
       <div className="mt-1.5 w-full rounded-lg border border-[#b8912f] bg-gradient-to-b from-[#f9e28d] to-[#efc95e] px-2 py-1 shadow-sm">
         <p className="line-clamp-2 text-center text-[14px] font-bold leading-tight text-[#571c10]">{p.name}</p>
       </div>
-      <p className="mt-1 flex max-w-full items-center gap-1.5 text-[12px] leading-tight text-ink-soft">
+      <p className="mt-1 flex max-w-full items-center gap-1.5 rounded-full bg-white/80 px-2 py-0.5 text-[12px] leading-tight text-ink-soft shadow-sm">
         <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-black/10" style={{ background: color }} />
         <span className="truncate">{[p.nick ? `“${p.nick}”` : null, span, gen ? `Đời ${gen}` : null].filter(Boolean).join(" · ")}</span>
       </p>
@@ -51,10 +55,24 @@ const PersonCard = memo(function PersonCard({ data, selected, sourcePosition, ta
   );
 });
 
+/** Cặp vợ chồng: trái tim vàng phát sáng như mẫu thiết kế (trái tim xám khi đã ly hôn/góa). */
 const UnionDot = memo(function UnionDot({ data, sourcePosition, targetPosition }: NodeProps<UnionNodeT>) {
   return (
-    <div title="Gia đình (cặp vợ chồng)" style={{ width: UNION_SIZE, height: UNION_SIZE }}
-      className={`rounded-full border-2 border-[#b8912f] shadow-sm ${data.divorced ? "bg-white" : "bg-gradient-to-b from-[#f9e28d] to-[#efc95e]"}`}>
+    <div title="Gia đình (cặp vợ chồng)" style={{ width: UNION_SIZE, height: UNION_SIZE }} className="relative">
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_0_6px_rgba(245,158,11,0.9)]">
+        <defs>
+          <linearGradient id="unionHeartGold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffd97a" />
+            <stop offset="100%" stopColor="#e8a013" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M12 20.5S3.5 15.1 3.5 9.7A4.6 4.6 0 0 1 12 6.8a4.6 4.6 0 0 1 8.5 2.9c0 5.4-8.5 10.8-8.5 10.8Z"
+          fill={data.divorced ? "#d6d3d1" : "url(#unionHeartGold)"}
+          stroke={data.divorced ? "#a8a29e" : "#b8860b"}
+          strokeWidth="1.4"
+        />
+      </svg>
       <Handle type="target" position={targetPosition ?? Position.Top} isConnectable={false} style={hiddenHandle} />
       <Handle type="source" position={sourcePosition ?? Position.Bottom} isConnectable={false} style={hiddenHandle} />
     </div>
@@ -64,9 +82,9 @@ const UnionDot = memo(function UnionDot({ data, sourcePosition, targetPosition }
 const nodeTypes: NodeTypes = { person: PersonCard, union: UnionDot };
 
 const EDGE_STYLE = {
-  spouse: { stroke: "#c9a96b", strokeWidth: 2 },
-  child: { stroke: "#8a5a33", strokeWidth: 2.2 },
-  childDashed: { stroke: "#8a5a33", strokeWidth: 2.2, strokeDasharray: "7 5" },
+  spouse: { stroke: "#f0c75e", strokeWidth: 2.5, filter: "drop-shadow(0 0 3px rgba(240,199,94,0.9))" },
+  child: { stroke: "#d9a441", strokeWidth: 3, filter: "drop-shadow(0 0 3px rgba(217,164,65,0.75))" },
+  childDashed: { stroke: "#d9a441", strokeWidth: 3, strokeDasharray: "7 5", filter: "drop-shadow(0 0 3px rgba(217,164,65,0.75))" },
 } as const;
 
 export type FlowProps = {
@@ -163,7 +181,7 @@ function Inner(p: FlowProps) {
   }, [rf]);
 
   const miniColor = useCallback((n: Node) => (n.type === "union" ? "#c9a96b" : ((n.data as PersonData).color)), []);
-  const btn = "min-h-12 min-w-12 rounded-xl border border-wine bg-ivory px-3 text-base font-bold text-wine shadow-sm hover:bg-champagne-soft";
+  const btn = "min-h-12 min-w-12 rounded-xl border border-sky-200 bg-white/95 px-3 text-base font-bold text-sky-900 shadow-md hover:bg-sky-50";
 
   return (
     <ReactFlow
