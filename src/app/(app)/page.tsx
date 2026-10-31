@@ -5,6 +5,7 @@ import { getViewer, upcomingBirthdays } from "@/lib/events-server";
 import { createClient } from "@/lib/supabase/server";
 import { Card, buttonGhostClass } from "@/components/ui";
 import { NavIcon } from "@/components/NavIcons";
+import { SakuraPetals } from "@/components/SakuraPetals";
 
 export const metadata = { title: "Trang chủ" };
 
@@ -41,19 +42,26 @@ export default async function HomePage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-wine">Xin chào, {session.displayName}</h1>
-      <Card>
-        <p className="text-base">
-          Bạn đang ở không gian riêng của <strong>{session.familyName}</strong> với vai trò{" "}
-          <strong>{ROLE_LABELS[session.role]}</strong>.
-        </p>
-        {unreadCount > 0 && (
-          <p className="mt-3 text-base">
-            Bạn có <strong>{unreadCount}</strong> thông báo chưa đọc.{" "}
-            <Link href="/thong-bao" className="font-semibold text-wine underline">Xem thông báo</Link>
+      <SakuraPetals />
+      <section aria-label="Ảnh gia đình" className="relative overflow-hidden rounded-3xl shadow-lg">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/family-home.jpg" alt="Ảnh đại gia đình" className="h-56 w-full object-cover object-[50%_22%] sm:h-72 lg:h-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-6">
+          <h1 className="text-2xl font-bold drop-shadow-md sm:text-3xl">Xin chào, {session.displayName}</h1>
+          <p className="mt-1 text-sm text-white/90 drop-shadow sm:text-base">
+            Không gian riêng của <strong>{session.familyName}</strong> · vai trò <strong>{ROLE_LABELS[session.role]}</strong>
           </p>
+        </div>
+        {unreadCount > 0 && (
+          <Link
+            href="/thong-bao"
+            className="absolute right-4 top-4 rounded-full bg-wine/90 px-4 py-2 text-sm font-bold text-white shadow-lg hover:bg-wine"
+          >
+            🔔 {unreadCount} thông báo mới
+          </Link>
         )}
-      </Card>
+      </section>
 
       {canEvents && (
         <Card className="space-y-3">
