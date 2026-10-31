@@ -38,7 +38,7 @@ const POLL_WHEN_OFFLINE_MS = 20_000;
 const NEAR_BOTTOM_PX = 120;
 
 const smallBtn =
-  "inline-flex min-h-12 items-center justify-center rounded-xl border border-wine/60 px-4 py-2 text-base font-semibold text-wine hover:bg-champagne-soft disabled:opacity-60";
+  "inline-flex min-h-12 items-center justify-center rounded-full border border-sky-300 px-4 py-2 text-base font-semibold text-sky-800 hover:bg-sky-50 disabled:opacity-60";
 
 export function ChatRoom({
   conversationId, kind, me, timeZone, canSend, sendBlockedNote, canModerate, initialMessages, initialHasMore, members,
@@ -423,14 +423,18 @@ export function ChatRoom({
     : "Đang kết nối…";
 
   return (
-    <div className="flex h-[calc(100dvh-14rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-champagne/60 bg-ivory shadow-sm">
+    <div className="flex h-[calc(100dvh-14rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-sky-200/80 bg-white shadow-sm">
       {connText && (
-        <p role="status" className="border-b border-champagne/60 bg-champagne-soft px-4 py-2 text-base text-ink">
+        <p role="status" className="border-b border-sky-200 bg-sky-100/90 px-4 py-2 text-base text-sky-950">
           {connText}
         </p>
       )}
 
       <div className="relative min-h-0 flex-1">
+        {/* Nen phong chat: canh hoang hon (anh mac dinh cua app) phu lop sang am de bong bong tin nhan van de doc */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/sunset-sky.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-[#fff8ea]/60" />
         <div
           ref={listRef}
           onScroll={onScroll}
@@ -438,7 +442,7 @@ export function ChatRoom({
           aria-live="polite"
           aria-label="Các tin nhắn"
           tabIndex={0}
-          className="h-full overflow-y-auto px-3 py-4 sm:px-5"
+          className="relative h-full overflow-y-auto px-3 py-4 sm:px-5"
         >
           {hasMore && (
             <div className="mb-4 text-center">
@@ -468,12 +472,12 @@ export function ChatRoom({
                 <li key={rowKey} className={m.kind === "text" && !newDay ? (groupStart ? "mt-4" : "mt-0.5") : undefined}>
                   {newDay && (
                     <div className="my-4 text-center" suppressHydrationWarning>
-                      <span className="inline-block rounded-full bg-champagne-soft px-4 py-1 text-sm font-semibold text-ink-soft">{formatDay(m.created_at, timeZone)}</span>
+                      <span className="inline-block rounded-full bg-white/90 px-4 py-1 text-sm font-semibold text-ink-soft shadow-sm">{formatDay(m.created_at, timeZone)}</span>
                     </div>
                   )}
                   {m.kind === "system" ? (
                     <p className="my-2 text-center">
-                      <span className="inline-block rounded-full bg-champagne-soft/70 px-4 py-1 text-sm font-medium text-ink-soft">{m.body}</span>
+                      <span className="inline-block rounded-full bg-white/85 px-4 py-1 text-sm font-medium text-ink-soft shadow-sm">{m.body}</span>
                     </p>
                   ) : (
                     <MessageRow
@@ -512,7 +516,7 @@ export function ChatRoom({
           <button
             type="button"
             onClick={scrollToBottom}
-            className="absolute bottom-3 left-1/2 inline-flex min-h-12 -translate-x-1/2 items-center rounded-full bg-wine px-5 py-2 text-base font-semibold text-white shadow-lg hover:bg-wine-dark"
+            className="absolute bottom-3 left-1/2 inline-flex min-h-12 -translate-x-1/2 items-center rounded-full bg-sky-600 px-5 py-2 text-base font-semibold text-white shadow-lg hover:bg-sky-700"
           >
             Có tin mới ↓
           </button>
@@ -528,15 +532,15 @@ export function ChatRoom({
         </p>
       )}
 
-      <div className="border-t border-champagne/60 bg-cream p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="border-t border-sky-200/80 bg-white/90 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
         {!canSend || sendBlockedNote ? (
           <p className="px-1 py-2 text-base text-ink-soft">{sendBlockedNote ?? "Tài khoản của bạn chưa được gửi tin nhắn."}</p>
         ) : (
           <>
             {replyTo && (
-              <div className="mb-2 flex items-start gap-3 rounded-xl border-l-4 border-wine bg-white px-3 py-2">
+              <div className="mb-2 flex items-start gap-3 rounded-xl border-l-4 border-sky-500 bg-white px-3 py-2">
                 <div className="min-w-0 flex-1 text-base">
-                  <div className="font-semibold text-wine">Đang trả lời {replyTo.sender_name ?? "thành viên"}</div>
+                  <div className="font-semibold text-sky-800">Đang trả lời {replyTo.sender_name ?? "thành viên"}</div>
                   <div className="truncate text-ink-soft">{replyTo.deleted ? "Tin nhắn đã bị xoá" : replyTo.body}</div>
                 </div>
                 <button type="button" className={smallBtn} onClick={() => setReplyTo(null)} aria-label="Bỏ việc trả lời">Bỏ</button>
@@ -553,10 +557,10 @@ export function ChatRoom({
                   maxLength={MAX_BODY}
                   rows={1}
                   placeholder="Nhập tin nhắn…"
-                  className="block max-h-[168px] min-h-[52px] w-full resize-none overflow-y-auto rounded-[26px] border border-ink-soft/40 bg-white px-5 py-3 text-lg text-ink"
+                  className="block max-h-[168px] min-h-[52px] w-full resize-none overflow-y-auto rounded-[26px] border border-sky-300 bg-white px-5 py-3 text-lg text-ink"
                 />
               </label>
-              <button type="submit" className={`${buttonClass} !min-h-[52px] shrink-0 !rounded-full px-6 text-lg`} disabled={draft.trim().length === 0}>
+              <button type="submit" className="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-full bg-sky-600 px-6 text-lg font-bold text-white shadow-sm hover:bg-sky-700 disabled:opacity-60" disabled={draft.trim().length === 0}>
                 Gửi
               </button>
             </form>
@@ -610,11 +614,11 @@ function MessageRow(p: RowProps) {
   const canReport = !pending && !m.deleted && !own;
   const senderName = m.sender_name ?? "Thành viên";
   const bubble = own
-    ? "bg-wine text-white"
-    : "border border-champagne/70 bg-white text-ink";
+    ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-sm"
+    : "border border-sky-100 bg-white text-ink shadow-sm";
   // Góc “đuôi” nhỏ ở cuối cụm tin (phía dưới, hướng về phía người gửi) như Messenger
   const tail = p.groupEnd ? (own ? "rounded-br-md" : "rounded-bl-md") : "";
-  const quote = own ? "border-white/70 bg-white/15 text-white" : "border-wine bg-champagne-soft text-ink";
+  const quote = own ? "border-white/70 bg-white/15 text-white" : "border-sky-400 bg-sky-50 text-ink";
 
   // Chạm vào bong bóng để mở/đóng tuỳ chọn của chính tin đó (tin giữa cụm không có hàng tuỳ chọn riêng).
   // Bỏ qua khi đang sửa tin, khi bấm trúng liên kết, hoặc khi người đọc đang bôi đen để sao chép.
@@ -647,14 +651,14 @@ function MessageRow(p: RowProps) {
               />
             </label>
             <div className="flex flex-wrap gap-2">
-              <button type="button" className={`${buttonClass} !bg-white !text-wine hover:!bg-champagne-soft`} onClick={p.onSaveEdit} disabled={p.editing.busy}>
+              <button type="button" className={`${buttonClass} !bg-white !text-sky-700 hover:!bg-sky-50`} onClick={p.onSaveEdit} disabled={p.editing.busy}>
                 {p.editing.busy ? "Đang lưu…" : "Lưu"}
               </button>
-              <button type="button" className={`${buttonGhostClass} !border-white !text-white hover:!bg-wine-dark`} onClick={p.onCancelEdit}>Huỷ</button>
+              <button type="button" className={`${buttonGhostClass} !border-white !text-white hover:!bg-blue-700`} onClick={p.onCancelEdit}>Huỷ</button>
             </div>
           </div>
         ) : (
-          <ChatMessageText body={m.body} linkClass={own ? "text-white" : "text-wine"} />
+          <ChatMessageText body={m.body} linkClass={own ? "text-white" : "text-sky-700"} />
         )}
       </div>
   );
@@ -671,7 +675,7 @@ function MessageRow(p: RowProps) {
             type="button"
             onClick={p.onToggle}
             aria-expanded={p.active}
-            className="inline-flex min-h-12 items-center px-2 text-base font-semibold text-wine underline underline-offset-2"
+            className="inline-flex min-h-12 items-center px-2 text-base font-semibold text-sky-700 underline underline-offset-2"
           >
             {p.active ? "Đóng tuỳ chọn" : "Tuỳ chọn"}
           </button>
@@ -699,7 +703,7 @@ function MessageRow(p: RowProps) {
   ) : null;
 
   const reportForm = p.reporting ? (
-        <div className="mt-2 w-full max-w-md space-y-3 rounded-xl border border-champagne bg-white p-4 text-ink">
+        <div className="mt-2 w-full max-w-md space-y-3 rounded-xl border border-sky-200 bg-white p-4 text-ink">
           <p className="text-base font-semibold">Báo cáo tin nhắn này cho quản trị viên</p>
           <p className="text-sm text-ink-soft">Quản trị viên chỉ nhìn thấy nội dung tin này, không đọc được cả cuộc trò chuyện.</p>
           <label className="block text-base font-semibold">

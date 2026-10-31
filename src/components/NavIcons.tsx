@@ -61,6 +61,33 @@ export function BellIcon(p: P) {
   return (<svg {...base(p)}><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M10 21a2.2 2.2 0 0 0 4 0" /></svg>);
 }
 
+// Ô biểu tượng "vui" cho lối tắt trang chủ + trang Thêm (người dùng yêu cầu 31/10/2026):
+// mỗi chuyên mục một màu chuyển sắc riêng, biểu tượng trắng nổi trên ô bo tròn có bóng đổ.
+const NAV_TILE_GRADIENT: Record<string, string> = {
+  "/": "from-amber-400 to-orange-500",
+  "/gia-pha": "from-emerald-400 to-teal-600",
+  "/thanh-vien": "from-sky-400 to-blue-600",
+  "/tin-nhan": "from-blue-400 to-indigo-500",
+  "/lich": "from-rose-400 to-pink-600",
+  "/thiep": "from-fuchsia-400 to-purple-500",
+  "/li-xi": "from-red-400 to-rose-600",
+  "/bang-tin": "from-cyan-400 to-sky-600",
+  "/album": "from-violet-400 to-purple-600",
+  "/tro-choi": "from-lime-500 to-green-600",
+  "/cai-dat": "from-slate-400 to-slate-600",
+  "/admin": "from-yellow-400 to-amber-600",
+  "/them": "from-orange-400 to-red-500",
+};
+
+export function NavTile({ href }: { href: string }) {
+  const gradient = NAV_TILE_GRADIENT[href] ?? "from-amber-400 to-orange-500";
+  return (
+    <span className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-md ${gradient}`}>
+      <NavIcon href={href} />
+    </span>
+  );
+}
+
 export function NavIcon({ href, className }: { href: string; className?: string }) {
   const p = { className };
   switch (href) {
