@@ -3,7 +3,7 @@ import { can, requireSession } from "@/lib/auth";
 import { NAV } from "@/lib/nav";
 import { signOut } from "@/app/actions/auth";
 import { Card, buttonClass } from "@/components/ui";
-import { NavIcon } from "@/components/NavIcons";
+import { NavTile } from "@/components/NavIcons";
 
 export const metadata = { title: "Thêm" };
 
@@ -31,9 +31,7 @@ export default async function MorePage() {
         {visible.map((item) => (
           <Link key={item.href} href={item.href} className="block focus-visible:outline-none">
             <Card className="flex h-full flex-col items-center gap-2 py-5 text-center hover:border-wine">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-champagne-soft text-wine">
-                <NavIcon href={item.href} />
-              </span>
+              <NavTile href={item.href} />
               <span className="text-base font-bold text-wine">{item.label}</span>
             </Card>
           </Link>
