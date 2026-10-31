@@ -16,7 +16,7 @@ export function SideRail({ items }: { items: RailItem[] }) {
   return (
     <nav
       aria-label="Chuyên mục"
-      className="sticky top-12 z-30 flex max-h-[calc(100dvh-3rem)] min-h-[calc(100dvh-3rem)] w-14 shrink-0 flex-col gap-1.5 overflow-y-auto bg-[#fffbf0]/85 px-1 py-2 backdrop-blur [scrollbar-width:none] sm:top-14 sm:max-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-3.5rem)] sm:w-[4.25rem] sm:px-1.5 [&::-webkit-scrollbar]:hidden"
+      className="sticky top-12 z-30 flex max-h-[calc(100dvh-3rem)] min-h-[calc(100dvh-3rem)] w-12 shrink-0 flex-col gap-1.5 overflow-y-auto bg-[#fffbf0]/85 px-1 py-2 backdrop-blur [scrollbar-width:none] sm:top-14 sm:max-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-3.5rem)] sm:w-[4.25rem] sm:px-1.5 [&::-webkit-scrollbar]:hidden"
     >
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -25,14 +25,14 @@ export function SideRail({ items }: { items: RailItem[] }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-0.5 py-2 text-center shadow-sm ${
+            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-0.5 py-1.5 text-center shadow-sm sm:py-2 ${
               active
                 ? "bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#7c2d12]"
                 : "bg-white text-[#1e3a5f] hover:bg-[#fff7dd]"
             }`}
           >
-            <NavIcon href={item.href} className="h-5 w-5" />
-            <span className="text-[9.5px] font-bold leading-[1.05]">{item.label}</span>
+            <NavIcon href={item.href} className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+            <span className="text-[9px] font-bold leading-[1.05] sm:text-[9.5px]">{item.label}</span>
             {item.badge != null && item.badge > 0 && (
               <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow">
                 {item.badge > 99 ? "99+" : item.badge}

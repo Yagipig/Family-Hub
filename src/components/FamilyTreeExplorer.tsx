@@ -19,9 +19,9 @@ const FamilyFlow = dynamic(() => import("@/components/FamilyFlow").then((m) => m
 
 type Mode = "diagram" | "list";
 const seg = (active: boolean) =>
-  `min-h-10 rounded-full px-4 text-sm font-semibold border shadow ${active ? "border-[#c9932f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#5d3a17]" : "border-white/70 bg-white/90 text-[#33506e] hover:bg-white"}`;
+  `min-h-9 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] font-semibold border shadow ${active ? "border-[#c9932f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#5d3a17]" : "border-white/70 bg-white/90 text-[#33506e] hover:bg-white"}`;
 const pillBtn =
-  "min-h-10 rounded-full border border-white/70 bg-white/90 px-3.5 text-sm font-semibold text-[#33506e] shadow hover:bg-white";
+  "min-h-9 shrink-0 whitespace-nowrap rounded-full border border-white/70 bg-white/90 px-3 text-[13px] font-semibold text-[#33506e] shadow hover:bg-white";
 
 export function FamilyTreeExplorer({ familyName, people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
   familyName: string;
@@ -148,8 +148,8 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/temple-bg.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-[#fff8ea]/35" />
-      <div className="relative z-10 flex flex-wrap items-end gap-2 px-3 pt-3 text-[#3f270f]">
-        <div role="group" aria-label="Kiểu hiển thị" className="flex gap-2">
+      <div className="relative z-10 flex flex-wrap items-end gap-1.5 px-2 pt-2 text-[#3f270f] sm:px-3 sm:pt-3">
+        <div role="group" aria-label="Kiểu hiển thị" className="flex shrink-0 gap-1.5">
           <button type="button" className={seg(mode === "diagram")} aria-pressed={mode === "diagram"} onClick={() => setMode("diagram")}>🌳 Sơ đồ</button>
           <button type="button" className={seg(mode === "list")} aria-pressed={mode === "list"} onClick={() => setMode("list")}>📋 Danh sách theo đời</button>
         </div>
@@ -198,8 +198,8 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
       </div>
 
       {/* Bien go cham khac ten dong ho nhu anh mau */}
-      <div className="pointer-events-none relative z-10 flex justify-center px-3 pt-2">
-        <div className="max-w-[86%] rounded-xl border-2 border-[#3f270f] bg-gradient-to-b from-[#5d3d1e] to-[#3a2410] px-4 py-1.5 text-center shadow-[inset_0_0_0_2px_rgba(255,217,122,0.35),0_10px_15px_-3px_rgba(0,0,0,0.4)] sm:px-6 sm:py-2">
+      <div className="pointer-events-none relative z-10 flex justify-center px-3 pt-1.5">
+        <div className="max-w-[86%] rounded-xl border-2 border-[#3f270f] bg-gradient-to-b from-[#5d3d1e] to-[#3a2410] px-4 py-1 text-center shadow-[inset_0_0_0_2px_rgba(255,217,122,0.35),0_10px_15px_-3px_rgba(0,0,0,0.4)] sm:px-6 sm:py-1.5">
           <p className="truncate text-base font-bold tracking-wide text-[#ffd97a] drop-shadow sm:text-lg">{familyName}</p>
           <p className="truncate text-[10px] font-medium text-[#ffca7a] sm:text-[11px]">Gìn giữ cội nguồn · Kết nối yêu thương</p>
         </div>
@@ -212,8 +212,8 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
       )}
 
       {mode === "diagram" ? (
-        <div className="relative z-10 flex flex-col gap-3 p-3 pt-2 md:flex-row">
-          <div className="relative h-[72dvh] min-h-[420px] flex-1 overflow-hidden rounded-2xl">
+        <div className="relative z-10 flex flex-col gap-3 p-2 pt-1.5 sm:p-3 sm:pt-2 md:flex-row">
+          <div className="relative h-[54dvh] min-h-[380px] flex-1 overflow-hidden rounded-2xl sm:h-[68dvh]">
             {/* Bien go nho goc duoi trai nhu mau: loi nhan cua dong ho */}
             <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden -rotate-3 sm:block">
               <div className="rounded-lg border-2 border-[#6f4423] bg-gradient-to-b from-[#c89b62] to-[#a9743f] px-3 py-2 shadow-lg">
