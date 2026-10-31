@@ -25,23 +25,24 @@ export default async function NewMemberPage({ searchParams }: { searchParams: Pr
   const supabase = await createClient();
   const branches = await loadBranches(supabase);
 
-  // “Thêm con / cha mẹ / vợ chồng” từ hồ sơ của một người: ?rel=child|parent|partner&to=<id>
+  // “Thêm cha/mẹ/vợ/chồng/con/anh-chị-em” từ nút + trên cây: ?rel=child|parent|partner|sibling&to=<id>&g=male|female
   const relRaw = typeof sp.rel === "string" ? sp.rel : "";
   const toId = idSchema.safeParse(typeof sp.to === "string" ? sp.to : "");
-  const relTarget = toId.success && ["child", "parent", "partner"].includes(relRaw) ? await loadMember(supabase, toId.data) : null;
+  const relTarget = toId.success && ["child", "parent", "partner", "sibling"].includes(relRaw) ? await loadMember(supabase, toId.data) : null;
+  const genderPreset = sp.g === "male" || sp.g === "female" ? sp.g : "";
 
   // Nhánh nào được tạo trực tiếp (chế độ chỉnh sửa mở hoặc là quản trị viên của nhánh)
   const scopes: (string | null)[] = [null, ...branches.map((b) => b.id)];
   const flags = await Promise.all(scopes.map((b) => canEditMembers(supabase, session.familyId, b)));
   const directBranches = scopes.filter((_, i) => flags[i]).map((b) => b ?? "");
 
-  const initial = emptyValues({ branch_id: relTarget?.branch_id ?? "" });
+  const initial = emptyValues({ branch_id: relTarget?.branch_id ?? "", ...(genderPreset ? { gender: genderPreset } : {}) });
   return (
     <>
       <h1 className="text-3xl font-bold text-wine">Thêm thành viên</h1>
       {relTarget && (
         <p className="text-base text-ink-soft">
-          Thêm {relRaw === "child" ? "con" : relRaw === "parent" ? "cha/mẹ" : "vợ/chồng"} của <strong>{relTarget.full_name}</strong>.
+          Thêm {relRaw === "child" ? "con" : relRaw === "parent" ? "cha/mẹ" : relRaw === "sibling" ? "anh/chị/em (cùng cha mẹ)" : "vợ/chồng"} của <strong>{relTarget.full_name}</strong>.
         </p>
       )}
       <MemberForm
