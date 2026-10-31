@@ -111,7 +111,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       <div className="flex flex-1 items-start">
         <SideRail items={rail} />
-        <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 space-y-6 px-3 py-3 pb-24 sm:px-4 sm:py-4">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 space-y-6 px-2 py-3 pb-24 sm:px-4 sm:py-4">{children}</main>
       </div>
       <WoodenNavBar items={bar} />
     </div>
