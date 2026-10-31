@@ -25,20 +25,20 @@ export function WoodenNavBar({ items }: { items: BarItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className="flex min-h-14 items-center justify-center px-1 py-1.5"
+                className="flex min-h-[52px] items-center justify-center px-1 py-1"
               >
                 <span
-                  className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl px-3 py-1 text-[11px] leading-tight sm:text-xs ${
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl px-3 py-1 text-[10px] leading-tight sm:text-[11px] ${
                     active ? "bg-sky-500 font-bold text-white shadow-md" : "font-medium text-[#ffe9c9]"
                   }`}
                 >
                   {item.search ? (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                       <circle cx="11" cy="11" r="7" />
                       <path d="m20 20-3.8-3.8" />
                     </svg>
                   ) : (
-                    <NavIcon href={item.icon} />
+                    <NavIcon href={item.icon} className="h-5 w-5" />
                   )}
                   {item.label}
                 </span>

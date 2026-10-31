@@ -9,9 +9,9 @@ import { NavIcon } from "@/components/NavIcons";
 import { SideRail, type RailItem } from "@/components/SideRail";
 import { WoodenNavBar, type BarItem } from "@/components/WoodenNavBar";
 
-// Khung giao dien theo anh mau nguoi dung chot 31/10/2026 (chinh lai 22:58 cung ngay:
-// bo xanh duong tu them, doi sang go sam khac vang nhu trong anh):
-// - Thanh tren GO SAM khac vang: logo cay vang + ten dong ho + khau hieu + tim kiem/chuong/menu/anh dai dien.
+// Khung giao dien theo anh mau nguoi dung chot 31/10/2026 (ban spec cay gia pha cung ngay:
+// giu tong XANH DUONG + VANG KIM cua anh mau, moi thu THU NHO cho vua dien thoai):
+// - Thanh tren XANH DUONG gon: logo cay vang + ten dong ho vang + khau hieu (chi may lon) + tim kiem/chuong/menu/anh dai dien.
 // - Cot trai: MOI chuyen muc dang thay dang the bo tron (muc dang mo to vang), ke ca cac muc
 //   khong co trong anh mau (Thiep, Li xi, Bang tin, Tro choi, Quan tri...) de khong muc nao bi an.
 // - Thanh duoi bang go: Xem Cay / Dong Toc / Su Kien / Album / Tim Kiem.
@@ -26,7 +26,7 @@ const RAIL_LABEL: Record<string, string> = {
 };
 
 const iconBtn =
-  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-white hover:bg-white/15";
+  "inline-flex min-h-9 min-w-9 items-center justify-center rounded-full text-white hover:bg-white/15";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
@@ -77,15 +77,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh flex-col">
       <FamilyCoverBackdrop />
-      <header className="sticky top-0 z-40 border-b-2 border-[#c9932f]/70 bg-gradient-to-r from-[#4a2e15] via-[#5d3d1e] to-[#3a2410] text-white shadow-md">
-        <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-4">
+      <header className="sticky top-0 z-40 border-b border-blue-800/30 bg-gradient-to-r from-[#37a2ec] to-[#1e6fd9] text-white shadow-md">
+        <div className="flex h-12 items-center gap-2 px-3 sm:h-14 sm:gap-3 sm:px-4">
           <Link href="/gia-pha" className="flex min-w-0 items-center gap-2" aria-label="Về cây gia phả">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#6b4218] shadow" aria-hidden="true">
-              <NavIcon href="/gia-pha" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#6b4218] shadow" aria-hidden="true">
+              <NavIcon href="/gia-pha" className="h-5 w-5" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-lg font-bold leading-tight text-[#ffd97a] sm:text-xl">{session.familyName}</span>
-              <span className="block text-[11px] leading-tight text-white/85 md:hidden">Gìn giữ cội nguồn · Kết nối yêu thương</span>
+              <span className="block truncate text-[15px] font-bold leading-tight text-[#ffd97a] sm:text-lg">{session.familyName}</span>
             </span>
           </Link>
           <p className="mx-auto hidden items-center gap-2 whitespace-nowrap text-base italic text-white/95 lg:block">
@@ -105,14 +104,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </svg>
             </Link>
             <Link href="/cai-dat" aria-label="Tài khoản của tôi" className="shrink-0">
-              <Avatar name={session.displayName} size={40} className="border-2 border-white/70" />
+              <Avatar name={session.displayName} size={34} className="border-2 border-white/70" />
             </Link>
           </div>
         </div>
       </header>
       <div className="flex flex-1 items-start">
         <SideRail items={rail} />
-        <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 space-y-6 px-3 py-5 pb-28 sm:px-4">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 space-y-6 px-3 py-3 pb-24 sm:px-4 sm:py-4">{children}</main>
       </div>
       <WoodenNavBar items={bar} />
     </div>
