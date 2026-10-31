@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  branchWithDescendants, buildElements, buildIndex, buildOutline, buildUnions, computeGenerations, filterByBranch,
-  isUnionId, searchPeople, siblingsOf,
+  branchWithDescendants, buildElements, buildIndex, buildOutline, buildUnions, computeGenerations, descendantsOf, filterByBranch,
+  isUnionId, parentIdsOf, searchPeople, siblingsOf,
 } from "./family-graph";
 import type { TreeLink, TreePartner, TreePerson } from "./members-types";
 
@@ -199,5 +199,64 @@ describe("searchPeople", () => {
   it("chuỗi rỗng trả về rỗng; giới hạn số kết quả", () => {
     expect(searchPeople(ps, "  ")).toEqual([]);
     expect(searchPeople(ps, "van", 2)).toHaveLength(2);
+  });
+});
+
+describe("spec cây gia phả 31/10/2026: thêm người là có quan hệ ngay (H1-H5)", () => {
+  const couple = [P("cha", "Cha", 1980), P("me", "Mẹ", 1982)];
+  const couplePartners = [M("cha", "me")];
+
+  it("H1: thêm 1 con vào gia đình có sẵn — con nối vào đúng union của cha mẹ", () => {
+    const ix = buildIndex([...couple, P("con", "Con", 2010)], [L("con", "cha"), L("con", "me")], couplePartners);
+    const el = buildElements(ix);
+    const u = el.unions.find((x) => x.parents.includes("cha"))!;
+    expect(u.children).toEqual(["con"]);
+    expect(el.edges.some((e) => e.source === u.id && e.target === "con" && e.role === "child")).toBe(true);
+    expect(el.edges.filter((e) => e.role === "spouse")).toHaveLength(2);
+  });
+
+  it("H2: thêm 5 con cho cùng một cặp — cả 5 cùng union, cùng đời", () => {
+    const kids = ["c1", "c2", "c3", "c4", "c5"].map((id, i) => P(id, `Con ${i + 1}`, 2008 + i));
+    const ls = kids.flatMap((k) => [L(k.id, "cha"), L(k.id, "me")]);
+    const ix = buildIndex([...couple, ...kids], ls, couplePartners);
+    const el = buildElements(ix);
+    const u = el.unions.find((x) => x.parents.includes("cha"))!;
+    expect(u.children).toHaveLength(5);
+    expect(el.edges.filter((e) => e.source === u.id && e.role === "child")).toHaveLength(5);
+    const gens = computeGenerations(ix);
+    expect(new Set(kids.map((k) => gens.get(k.id)))).toEqual(new Set([2]));
+  });
+
+  it("H3: thêm vợ/chồng cho một thành viên — tạo union hôn nhân với 2 đường nối vợ chồng", () => {
+    const ix = buildIndex([P("a", "A", 1990), P("b", "B", 1992)], [], [M("a", "b")]);
+    const el = buildElements(ix);
+    expect(el.unions).toHaveLength(1);
+    expect(el.edges.filter((e) => e.role === "spouse")).toHaveLength(2);
+  });
+
+  it("H4+H5: thêm con cho đời 3 và nối tiếp nhiều đời — đời tăng đúng từng bậc", () => {
+    const ps = [P("g1", "Đ1", 1930), P("g1s", "Đ1b", 1932), P("g2", "Đ2", 1955), P("g3", "Đ3", 1980), P("g4", "Đ4", 2005), P("g5", "Đ5", 2030)];
+    const ls = [L("g2", "g1"), L("g2", "g1s"), L("g3", "g2"), L("g4", "g3"), L("g5", "g4")];
+    const ix = buildIndex(ps, ls, [M("g1", "g1s")]);
+    const gens = computeGenerations(ix);
+    expect([gens.get("g1"), gens.get("g2"), gens.get("g3"), gens.get("g4"), gens.get("g5")]).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("anh/chị/em: parentIdsOf trả đúng cha mẹ đã ghi; descendantsOf phủ hết con cháu (thu gọn nhánh)", () => {
+    const ix = buildIndex([...couple, P("con", "Con", 2010), P("chau", "Cháu", 2035)],
+      [L("con", "cha"), L("con", "me"), L("chau", "con")], couplePartners);
+    expect(parentIdsOf(ix, "con").sort()).toEqual(["cha", "me"]);
+    expect(parentIdsOf(ix, "cha")).toEqual([]);
+    expect(descendantsOf(ix, "cha")).toEqual(new Set(["con", "chau"]));
+    expect(descendantsOf(ix, "chau").size).toBe(0);
+  });
+
+  it("quan hệ nuôi/kế vẫn nối vào union nhưng giữ đúng loại đường (phân biệt huyết thống)", () => {
+    const ix = buildIndex([...couple, P("nuoi", "Con nuôi", 2012)], [L("nuoi", "cha", "adoptive"), L("nuoi", "me", "adoptive")], couplePartners);
+    const el = buildElements(ix);
+    const u = el.unions.find((x) => x.parents.includes("cha"))!;
+    const edge = el.edges.find((e) => e.target === "nuoi")!;
+    expect(u.children).toEqual(["nuoi"]);
+    expect(edge.kind).toBe("adoptive");
   });
 });

@@ -81,3 +81,32 @@ describe("layoutGraph", () => {
     expect(ms).toBeLessThan(8000);
   }, 20000);
 });
+
+describe("spec H2: cặp vợ chồng có 5 con — dàn trang không chồng lấn", () => {
+  const kidIds = ["c1", "c2", "c3", "c4", "c5"];
+  const ps = [P("cha", 1980), P("me", 1982), ...kidIds.map((id, i) => P(id, 2008 + i))];
+  const ls: TreeLink[] = kidIds.flatMap((c) => [
+    { id: `${c}>cha`, child: c, parent: "cha", kind: "biological" as const },
+    { id: `${c}>me`, child: c, parent: "me", kind: "biological" as const },
+  ]);
+  const ms: TreePartner[] = [{ id: "pm", a: "cha", b: "me", status: "married", start: null, end: null }];
+  const el = buildElements(buildIndex(ps, ls, ms));
+  const pos = layoutGraph(el.nodes, el.edges, "TB");
+
+  it("5 con cùng hàng ngang, không chồng lấn nhau, nằm dưới cha mẹ", () => {
+    const kids = kidIds.map((id) => pos.get(id)!);
+    expect(new Set(kids.map((k) => k.y)).size).toBe(1);
+    const sorted = [...kids].sort((a, b) => a.x - b.x);
+    for (let i = 1; i < sorted.length; i++) expect(sorted[i].x).toBeGreaterThanOrEqual(sorted[i - 1].x + PERSON_W);
+    expect(kids[0].y).toBeGreaterThan(pos.get("cha")!.y);
+  });
+
+  it("mọi cặp nút người đều không chồng lấn", () => {
+    const persons = el.nodes.filter((n) => n.type === "person").map((n) => pos.get(n.id)!);
+    for (let i = 0; i < persons.length; i++) for (let j = i + 1; j < persons.length; j++) {
+      const a = persons[i], b = persons[j];
+      const overlap = a.x < b.x + PERSON_W && b.x < a.x + PERSON_W && a.y < b.y + PERSON_H && b.y < a.y + PERSON_H;
+      expect(overlap).toBe(false);
+    }
+  });
+});

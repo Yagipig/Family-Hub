@@ -206,7 +206,7 @@ export const updatePartnerSchema = z.object({
 }).refine((v) => v.startYear == null || v.endYear == null || v.endYear >= v.startYear, { message: "Năm kết thúc không thể trước năm bắt đầu" });
 
 export const requestNoteField = noteSchema;
-export const relTargetSchema = z.object({ rel: z.enum(["", "child", "parent", "partner"]), relTo: optId });
+export const relTargetSchema = z.object({ rel: z.enum(["", "child", "parent", "partner", "sibling"]), relTo: optId });
 
 export const reviewSchema = z.object({
   id: z.uuid(),

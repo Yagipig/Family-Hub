@@ -47,6 +47,24 @@ export function partnerIds(ix: FamilyIndex, id: string): string[] {
   return (ix.partnersOf.get(id) ?? []).map((p) => other(p, id));
 }
 
+/** ID cha/mẹ đã ghi của một người (không trùng). Dùng cho "Thêm anh/chị/em": người mới sẽ là con của đúng những cha/mẹ này. */
+export function parentIdsOf(ix: FamilyIndex, id: string): string[] {
+  return [...new Set((ix.parentsOf.get(id) ?? []).map((l) => l.parent))];
+}
+
+/** Toàn bộ con cháu (trực hệ xuống) của một người — dùng cho thu gọn nhánh trên sơ đồ. */
+export function descendantsOf(ix: FamilyIndex, id: string): Set<string> {
+  const out = new Set<string>();
+  const stack = (ix.childrenOf.get(id) ?? []).map((l) => l.child);
+  while (stack.length) {
+    const cur = stack.pop()!;
+    if (out.has(cur) || cur === id) continue;
+    out.add(cur);
+    for (const l of ix.childrenOf.get(cur) ?? []) stack.push(l.child);
+  }
+  return out;
+}
+
 // ---------- Union (nút gia đình) ----------
 export type Union = {
   id: string;
