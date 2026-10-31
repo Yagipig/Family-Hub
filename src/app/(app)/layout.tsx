@@ -9,8 +9,9 @@ import { NavIcon } from "@/components/NavIcons";
 import { SideRail, type RailItem } from "@/components/SideRail";
 import { WoodenNavBar, type BarItem } from "@/components/WoodenNavBar";
 
-// Khung giao dien theo anh mau nguoi dung chot 31/10/2026:
-// - Thanh tren xanh duong: logo cay vang + ten dong ho + khau hieu + tim kiem/chuong/menu/anh dai dien.
+// Khung giao dien theo anh mau nguoi dung chot 31/10/2026 (chinh lai 22:58 cung ngay:
+// bo xanh duong tu them, doi sang go sam khac vang nhu trong anh):
+// - Thanh tren GO SAM khac vang: logo cay vang + ten dong ho + khau hieu + tim kiem/chuong/menu/anh dai dien.
 // - Cot trai: MOI chuyen muc dang thay dang the bo tron (muc dang mo to vang), ke ca cac muc
 //   khong co trong anh mau (Thiep, Li xi, Bang tin, Tro choi, Quan tri...) de khong muc nao bi an.
 // - Thanh duoi bang go: Xem Cay / Dong Toc / Su Kien / Album / Tim Kiem.
@@ -76,10 +77,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh flex-col">
       <FamilyCoverBackdrop />
-      <header className="sticky top-0 z-40 border-b border-blue-800/40 bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-md">
+      <header className="sticky top-0 z-40 border-b-2 border-[#c9932f]/70 bg-gradient-to-r from-[#4a2e15] via-[#5d3d1e] to-[#3a2410] text-white shadow-md">
         <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-4">
           <Link href="/gia-pha" className="flex min-w-0 items-center gap-2" aria-label="Về cây gia phả">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/95 text-[#c9932f] shadow" aria-hidden="true">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#6b4218] shadow" aria-hidden="true">
               <NavIcon href="/gia-pha" />
             </span>
             <span className="min-w-0">
