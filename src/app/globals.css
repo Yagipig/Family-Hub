@@ -38,3 +38,29 @@ img, video { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .animate-loto-pop { animation: none; }
 }
+
+/* Hoa anh dao roi o trang chu (nguoi dung yeu cau 31/10/2026): canh hoa hong nhe nhang roi + lac ngang.
+   Chi la trang tri (pointer-events-none o component); tat han khi nguoi dung chon giam chuyen dong. */
+.sakura-petal {
+  position: absolute;
+  top: -4%;
+  border-radius: 80% 4px 80% 4px;
+  background: linear-gradient(135deg, #ffe3ee 0%, #ffb9d4 55%, #ff9ec2 100%);
+  box-shadow: 0 0 6px rgb(255 158 194 / 0.35);
+  opacity: 0.9;
+  animation-name: sakura-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.sakura-petal.flip { border-radius: 4px 80% 4px 80%; }
+@keyframes sakura-fall {
+  0% { transform: translate3d(0, -4vh, 0) rotate(0deg); }
+  25% { transform: translate3d(2.6vw, 26vh, 0) rotate(100deg); }
+  50% { transform: translate3d(-1.6vw, 54vh, 0) rotate(185deg); }
+  75% { transform: translate3d(2.2vw, 80vh, 0) rotate(268deg); }
+  100% { transform: translate3d(-1vw, 106vh, 0) rotate(345deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sakura-petal { display: none; }
+}
