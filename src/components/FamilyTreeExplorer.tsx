@@ -19,9 +19,9 @@ const FamilyFlow = dynamic(() => import("@/components/FamilyFlow").then((m) => m
 
 type Mode = "diagram" | "list";
 const seg = (active: boolean) =>
-  `min-h-12 rounded-full px-5 text-base font-semibold border shadow-sm ${active ? "border-sky-600 bg-sky-600 text-white" : "border-sky-200 bg-white text-sky-900 hover:bg-sky-50"}`;
+  `min-h-12 rounded-full px-5 text-base font-semibold border shadow-sm ${active ? "border-[#c9932f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#5d3a17]" : "border-[#ffd97a]/40 bg-white/10 text-[#ffe9a8] hover:bg-white/20"}`;
 const pillBtn =
-  "min-h-12 rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50";
+  "min-h-12 rounded-full border border-[#ffd97a]/40 bg-white/10 px-4 text-base font-semibold text-[#ffe9a8] shadow-sm hover:bg-white/20";
 
 export function FamilyTreeExplorer({ familyName, people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
   familyName: string;
@@ -95,15 +95,18 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
 
   if (people.length === 0) {
     return (
-      <div className="rounded-2xl border border-sky-200 bg-white p-6 text-base">
-        Chưa có thành viên nào.{canEdit && <> <Link href="/thanh-vien/moi" className="font-semibold text-sky-700 underline">Thêm thành viên đầu tiên</Link>.</>}
+      <div className="rounded-2xl border border-[#ffd97a]/30 bg-[#2e1c0c]/90 p-6 text-base text-[#f8e9c4]">
+        Chưa có thành viên nào.{canEdit && <> <Link href="/thanh-vien/moi" className="font-semibold text-[#ffd97a] underline">Thêm thành viên đầu tiên</Link>.</>}
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
+      {/* Mot khoi canh lien nhu anh mau: thanh cong cu go sam o tren, canh nha tho ho o duoi,
+          khong con khung trang/xanh roi rac quanh cay nhu truoc. */}
+      <div className="overflow-hidden rounded-[1.75rem] bg-[#2e1c0c] shadow-2xl ring-1 ring-[#3f270f]/50">
+      <div className="flex flex-wrap items-end gap-3 bg-gradient-to-b from-[#43301b] to-[#2e1c0c] px-3 py-3 text-[#f8e9c4]">
         <div role="group" aria-label="Kiểu hiển thị" className="flex gap-2">
           <button type="button" className={seg(mode === "diagram")} aria-pressed={mode === "diagram"} onClick={() => setMode("diagram")}>🌳 Sơ đồ</button>
           <button type="button" className={seg(mode === "list")} aria-pressed={mode === "list"} onClick={() => setMode("list")}>📋 Danh sách theo đời</button>
@@ -123,7 +126,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
               aria-expanded={mode === "diagram" && results.length > 0} aria-controls="tree-search-results"
               onKeyDown={(e) => { if (e.key === "Enter" && mode === "diagram" && results[0]) { e.preventDefault(); pick(results[0].id); } }}
               placeholder="Gõ tên, không cần dấu"
-              className="mt-1 block min-h-12 w-full rounded-full border border-sky-300 bg-white px-4 py-2 text-base font-normal text-ink" />
+              className="mt-1 block min-h-12 w-full rounded-full border border-[#c9932f]/60 bg-white/95 px-4 py-2 text-base font-normal text-ink" />
           </label>
           {mode === "diagram" && query.trim() !== "" && (
             <ul id="tree-search-results" role="listbox" aria-label="Kết quả tìm kiếm"
@@ -143,7 +146,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
         <div className={`${showOpts ? "grid" : "hidden"} w-full grid-cols-1 gap-3 sm:contents`}>
           <label className="block text-sm font-semibold">Nhánh
             <select value={branch} onChange={(e) => setBranch(e.target.value)}
-              className="mt-1 block min-h-12 w-full rounded-xl border border-sky-300 bg-white px-3 text-base font-normal text-ink">
+              className="mt-1 block min-h-12 w-full rounded-xl border border-[#c9932f]/60 bg-white/95 px-3 text-base font-normal text-ink">
               <option value="">Tất cả các nhánh</option>
               <option value="none">Chưa xếp nhánh</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -153,14 +156,14 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
       </div>
 
       {branch && view.core && (
-        <p className="rounded-xl bg-sky-50 px-4 py-3 text-base text-sky-950">
+        <p className="bg-[#f8e9c4] px-4 py-3 text-base text-[#5d3a17]">
           Đang lọc theo nhánh: hiện {view.core.size} thành viên của nhánh cùng vợ/chồng và cha mẹ của họ (phần mờ là người thuộc nhánh khác, giữ lại để nối quan hệ).
         </p>
       )}
 
       {mode === "diagram" ? (
-        <div className="flex flex-col gap-4 md:flex-row">
-          <div className="relative h-[74dvh] min-h-[420px] flex-1 overflow-hidden rounded-[1.75rem] border-4 border-[#6f4423] shadow-xl">
+        <div className="flex flex-col gap-3 p-3 pt-0 md:flex-row">
+          <div className="relative h-[74dvh] min-h-[420px] flex-1 overflow-hidden rounded-2xl">
             {/* Nen nha tho ho vang + hoa dao + ho sen (tranh minh hoa, khong nguoi) + lop sang nhe de huy hieu nguoi noi ro */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/temple-bg.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
@@ -193,8 +196,11 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
           )}
         </div>
       ) : (
-        <FamilyOutline index={index} gens={gens} query={query} highlightId={selectedId} onShowInDiagram={focusPerson} />
+        <div className="bg-[#fffaf1] px-3 py-3">
+          <FamilyOutline index={index} gens={gens} query={query} highlightId={selectedId} onShowInDiagram={focusPerson} />
+        </div>
       )}
+      </div>
 
       {quickAddPerson && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 sm:items-center" role="dialog" aria-modal="true"
@@ -203,25 +209,25 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
             <div className="flex items-center gap-3">
               <Avatar name={quickAddPerson.name} src={quickAddPerson.avatar} gender={quickAddPerson.gender} size={52} />
               <div className="min-w-0">
-                <p className="truncate text-lg font-bold text-sky-950">{quickAddPerson.name}</p>
+                <p className="truncate text-lg font-bold text-[#4a2c14]">{quickAddPerson.name}</p>
                 <p className="text-sm text-ink-soft">Thêm người thân vào nhánh này</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
-              <Link href={`/thanh-vien/moi?rel=child&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50">＋ Thêm con</Link>
-              <Link href={`/thanh-vien/moi?rel=parent&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50">＋ Thêm cha / mẹ</Link>
-              <Link href={`/thanh-vien/moi?rel=partner&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-sky-300 bg-white px-4 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-50">＋ Thêm vợ / chồng</Link>
-              <button type="button" className="flex min-h-12 w-full items-center justify-center rounded-full bg-sky-600 px-4 text-base font-bold text-white shadow-sm hover:bg-sky-700"
+              <Link href={`/thanh-vien/moi?rel=child&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-[#d9b878] bg-white px-4 text-base font-semibold text-[#7c4a12] shadow-sm hover:bg-[#fdf2df]">＋ Thêm con</Link>
+              <Link href={`/thanh-vien/moi?rel=parent&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-[#d9b878] bg-white px-4 text-base font-semibold text-[#7c4a12] shadow-sm hover:bg-[#fdf2df]">＋ Thêm cha / mẹ</Link>
+              <Link href={`/thanh-vien/moi?rel=partner&to=${quickAddPerson.id}`} className="flex min-h-12 w-full items-center justify-center rounded-full border border-[#d9b878] bg-white px-4 text-base font-semibold text-[#7c4a12] shadow-sm hover:bg-[#fdf2df]">＋ Thêm vợ / chồng</Link>
+              <button type="button" className="flex min-h-12 w-full items-center justify-center rounded-full bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] px-4 text-base font-bold text-[#5d3a17] shadow-sm hover:brightness-105"
                 onClick={() => { setQuickAddId(null); setSelectedId(quickAddPerson.id); setPanelOpen(true); }}>Xem chi tiết</button>
-              <button type="button" className="flex min-h-12 w-full items-center justify-center rounded-full px-4 text-base font-semibold text-ink-soft hover:bg-sky-50"
+              <button type="button" className="flex min-h-12 w-full items-center justify-center rounded-full px-4 text-base font-semibold text-ink-soft hover:bg-[#fdf2df]"
                 onClick={() => setQuickAddId(null)}>Đóng</button>
             </div>
           </div>
         </div>
       )}
 
-      <details className="rounded-xl border border-sky-200/80 bg-white/85 px-4">
-        <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-sky-900">Chú giải</summary>
+      <details className="rounded-xl border border-[#ffd97a]/25 bg-[#2e1c0c]/90 px-4 text-[#f8e9c4]">
+        <summary className="min-h-12 cursor-pointer py-3 text-base font-semibold text-[#ffd97a]">Chú giải</summary>
         <ul className="space-y-2 pb-4 text-base">
           <li>Mỗi người là một <strong>huy hiệu ảnh tròn</strong> với <strong>bảng tên vàng</strong> bên dưới, treo trên cành cây như phả đồ truyền thống. Vòng quanh ảnh: <span className="font-semibold text-[#6f8fb0]">xanh dương: nam</span> · <span className="font-semibold text-[#c9798a]">hồng: nữ</span> · vàng champagne: khác/chưa rõ.</li>
           <li>Cây vẽ <strong>từ trên xuống</strong>: tổ tiên ở trên cùng, con cháu tỏa dần xuống dưới; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
