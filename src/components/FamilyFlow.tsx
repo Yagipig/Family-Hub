@@ -285,7 +285,9 @@ function Inner(p: FlowProps) {
       const rect = el?.getBoundingClientRect();
       const painted = document.querySelectorAll(".react-flow__node").length;
       const vp = rf.getViewport();
-      setDebugInfo(`nút ${painted}/${nodes.length} · khung ${rect ? `${Math.round(rect.width)}×${Math.round(rect.height)}` : "?"} · zoom ${vp.zoom.toFixed(2)}`);
+      const par = el?.parentElement;
+      const prect = par?.getBoundingClientRect();
+      setDebugInfo(`nút ${painted}/${nodes.length} · khung ${rect ? `${Math.round(rect.width)}×${Math.round(rect.height)}` : "?"} · cha ${prect ? `${Math.round(prect.width)}×${Math.round(prect.height)}` : "?"} · zoom ${vp.zoom.toFixed(2)}`);
     };
     const fit = () => { if (!p.focus) void rf.fitView({ duration: 0, padding: 0.15 }); };
     const t1 = window.setTimeout(() => { fit(); collect(); }, 500);
@@ -330,5 +332,11 @@ function Inner(p: FlowProps) {
 
 /** memo: gõ vào ô tìm kiếm ở thanh công cụ không làm sơ đồ dựng lại. */
 export const FamilyFlow = memo(function FamilyFlow(props: FlowProps) {
-  return <ReactFlowProvider><Inner {...props} /></ReactFlowProvider>;
+  // Khung absolute phủ kín ô bảng: chiều cao của sơ đồ không còn phụ thuộc vào chuỗi
+  // phần trăm chiều cao của các phần tử cha (sự cố khung cao 0px trên máy người dùng).
+  return (
+    <div className="absolute inset-0">
+      <ReactFlowProvider><Inner {...props} /></ReactFlowProvider>
+    </div>
+  );
 });
