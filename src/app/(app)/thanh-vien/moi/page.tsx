@@ -30,6 +30,11 @@ export default async function NewMemberPage({ searchParams }: { searchParams: Pr
   const toId = idSchema.safeParse(typeof sp.to === "string" ? sp.to : "");
   const relTarget = toId.success && ["child", "parent", "partner", "sibling"].includes(relRaw) ? await loadMember(supabase, toId.data) : null;
   const genderPreset = sp.g === "male" || sp.g === "female" ? sp.g : "";
+  // Ô trống "Con" của một cặp ở khuôn mẫu cây: con nối với CẢ cha lẫn mẹ (?to2 = cha/mẹ còn lại)
+  const to2Id = idSchema.safeParse(typeof sp.to2 === "string" ? sp.to2 : "");
+  const relTarget2 = relRaw === "child" && toId.success && to2Id.success && to2Id.data !== toId.data
+    ? await loadMember(supabase, to2Id.data)
+    : null;
 
   // Tạo hồ sơ cho người ĐÃ ĐĂNG KÝ tài khoản (?acct=<membershipId>): chỉ quản trị có quyền
   // gắn tài khoản; hồ sơ được điền sẵn tên tài khoản và sẽ tự gắn sau khi lưu.
@@ -65,7 +70,7 @@ export default async function NewMemberPage({ searchParams }: { searchParams: Pr
       )}
       {relTarget && (
         <p className="text-base text-ink-soft">
-          Thêm {relRaw === "child" ? "con" : relRaw === "parent" ? "cha/mẹ" : relRaw === "sibling" ? "anh/chị/em (cùng cha mẹ)" : "vợ/chồng"} của <strong>{relTarget.full_name}</strong>.
+          Thêm {relRaw === "child" ? "con" : relRaw === "parent" ? "cha/mẹ" : relRaw === "sibling" ? "anh/chị/em (cùng cha mẹ)" : "vợ/chồng"} của <strong>{relTarget.full_name}</strong>{relTarget2 ? <> và <strong>{relTarget2.full_name}</strong></> : null}.
         </p>
       )}
       <MemberForm
@@ -76,7 +81,7 @@ export default async function NewMemberPage({ searchParams }: { searchParams: Pr
         directBranches={directBranches}
         isAdmin={ADMIN_ROLES.includes(session.role)}
         showVisibility
-        rel={relTarget ? { rel: relRaw, relTo: relTarget.id, relToName: relTarget.full_name } : undefined}
+        rel={relTarget ? { rel: relRaw, relTo: relTarget.id, relToName: relTarget.full_name, ...(relTarget2 ? { relTo2: relTarget2.id, relTo2Name: relTarget2.full_name } : {}) } : undefined}
         acct={acct ?? undefined}
         directAction={createMemberAction}
         requestAction={requestCreateMemberAction}
