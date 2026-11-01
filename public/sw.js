@@ -3,7 +3,7 @@
  *  - KHÔNG bao giờ lưu đệm HTML đã đăng nhập, API, ảnh đã ký, tin nhắn, thông tin nhận tiền.
  *  - Khi mất mạng lúc mở một trang: hiện trang /offline thân thiện.
  */
-const VERSION = "fh-v1";
+const VERSION = "fh-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PRECACHE = ["/offline", "/icons/icon-192.png"];
 
