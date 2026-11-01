@@ -273,16 +273,40 @@ function Inner(p: FlowProps) {
     }
   }, [rf]);
 
+  // Chẩn đoán tạm thời (sự cố bảng cây trống trên máy người dùng, 01/11/2026): thử căn lại
+  // toàn cảnh vài lần sau khi sơ đồ sẵn sàng + khi trang hiện trở lại (trường hợp kích thước
+  // khung bị ghi nhận là 0 lúc mở app từ trạng thái đóng băng), và hiện một nhãn số liệu nhỏ
+  // ở góc bảng để đối chiếu qua ảnh chụp màn hình. Sẽ gỡ nhãn sau khi cây hiện ổn định.
+  const [debugInfo, setDebugInfo] = useState("");
+  useEffect(() => {
+    if (!ready) return;
+    const collect = () => {
+      const el = document.querySelector(".react-flow");
+      const rect = el?.getBoundingClientRect();
+      const painted = document.querySelectorAll(".react-flow__node").length;
+      const vp = rf.getViewport();
+      setDebugInfo(`nút ${painted}/${nodes.length} · khung ${rect ? `${Math.round(rect.width)}×${Math.round(rect.height)}` : "?"} · zoom ${vp.zoom.toFixed(2)}`);
+    };
+    const fit = () => { if (!p.focus) void rf.fitView({ duration: 0, padding: 0.15 }); };
+    const t1 = window.setTimeout(() => { fit(); collect(); }, 500);
+    const t2 = window.setTimeout(() => { fit(); collect(); }, 1800);
+    const onVis = () => { if (document.visibilityState === "visible") { fit(); collect(); } };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); document.removeEventListener("visibilitychange", onVis); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
   const miniColor = useCallback((n: Node) => (n.type === "union" ? "#c9a96b" : n.type === "ghost" ? "#d8cfc0" : ((n.data as PersonData).color)), []);
   const btn = "min-h-12 min-w-12 rounded-xl border border-sky-200 bg-white/95 px-3 text-base font-bold text-sky-900 shadow-md hover:bg-sky-50";
 
   return (
+    <>
     <ReactFlow
       nodes={nodes} edges={edges} onNodesChange={onNodesChange} nodeTypes={nodeTypes}
       onSelectionChange={onSelectionChange} onInit={() => setReady(true)}
       nodesDraggable={false} nodesConnectable={false} elementsSelectable nodesFocusable edgesFocusable={false}
       minZoom={0.04} maxZoom={2} fitView={!p.focus} fitViewOptions={{ padding: 0.15 }}
-      onlyRenderVisibleElements zoomOnDoubleClick={false} panOnScroll={false}
+      zoomOnDoubleClick={false} panOnScroll={false}
       aria-label="Sơ đồ cây gia phả. Kéo để di chuyển, hai ngón tay hoặc nút phóng to, thu nhỏ để đổi kích cỡ."
     >
       <MiniMap pannable zoomable nodeColor={miniColor} nodeStrokeWidth={2} maskColor="rgba(123,30,43,0.12)"
@@ -295,6 +319,12 @@ function Inner(p: FlowProps) {
         <button type="button" className={`${btn} text-sm`} onClick={() => window.print()}>In / PDF</button>
       </Panel>
     </ReactFlow>
+    {debugInfo && (
+      <div aria-hidden="true" className="pointer-events-none absolute left-2 top-2 z-50 rounded-md bg-black/70 px-2 py-1 font-mono text-[10px] leading-tight text-white">
+        SĐ {debugInfo}
+      </div>
+    )}
+    </>
   );
 }
 
