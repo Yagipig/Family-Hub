@@ -12,6 +12,9 @@ import { PERSON_H, PERSON_W, UNION_SIZE, type Direction, type Placed } from "@/l
 import { branchColor, lifeSpan } from "@/lib/members-text";
 import type { TreePerson } from "@/lib/members-types";
 
+type GhostData = { label: string; href: string; dim: boolean };
+type GhostNodeT = Node<GhostData, "ghost">;
+
 type PersonData = {
   person: TreePerson; gen: number | null; dim: boolean; color: string;
   onQuickAdd: () => void;
@@ -128,7 +131,25 @@ const UnionDot = memo(function UnionDot({ data, sourcePosition, targetPosition }
   );
 });
 
-const nodeTypes: NodeTypes = { person: PersonCard, union: UnionDot };
+/** Thẻ trống theo khuôn mẫu: viền đứt nét, bấm vào là thêm người vào đúng vị trí đó. */
+const GhostCard = memo(function GhostCard({ data, sourcePosition, targetPosition }: NodeProps<GhostNodeT>) {
+  return (
+    <a
+      href={data.href}
+      aria-label={`Ô trống ${data.label} — bấm để thêm người`}
+      style={{ width: PERSON_W, height: PERSON_H }}
+      className={`flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-[#b8912f]/80 bg-white/55 px-2 text-center shadow-sm transition hover:bg-white/90 ${data.dim ? "opacity-40" : ""}`}
+    >
+      <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed border-[#b8912f] text-2xl font-black leading-none text-[#b8912f]">+</span>
+      <span className="text-base font-bold leading-tight text-[#7c4a12]">{data.label}</span>
+      <span className="text-[11px] font-medium leading-tight text-ink-soft">Ô trống — bấm để thêm</span>
+      <Handle type="target" position={targetPosition ?? Position.Top} isConnectable={false} style={hiddenHandle} />
+      <Handle type="source" position={sourcePosition ?? Position.Bottom} isConnectable={false} style={hiddenHandle} />
+    </a>
+  );
+});
+
+const nodeTypes: NodeTypes = { person: PersonCard, union: UnionDot, ghost: GhostCard };
 
 const EDGE_STYLE = {
   spouse: { stroke: "#f0c75e", strokeWidth: 2.5, filter: "drop-shadow(0 0 3px rgba(240,199,94,0.9))" },
@@ -155,6 +176,8 @@ export type FlowProps = {
   collapsedIds: Set<string>;
   hiddenCounts: Map<string, number>;
   onToggleCollapse: (id: string) => void;
+  /** Thẻ trống khuôn mẫu theo ID nút: nhãn vị trí + đường dẫn thêm người + làm mờ khi lọc nhánh */
+  ghosts: Map<string, GhostData>;
 };
 
 function Inner(p: FlowProps) {
@@ -176,6 +199,10 @@ function Inner(p: FlowProps) {
       initialWidth: pos.w, initialHeight: pos.h,
     };
     if (n.type === "union") return { ...base, type: "union", selectable: false, focusable: false, data: { divorced: p.divorcedUnions.has(n.id) } } as UnionNodeT;
+    if (n.type === "ghost") {
+      const g = p.ghosts.get(n.id);
+      return { ...base, type: "ghost", selectable: false, focusable: false, data: { label: g?.label ?? "Ô trống", href: g?.href ?? "#", dim: g?.dim ?? false } } as GhostNodeT;
+    }
     const person = p.index.people.get(n.id)!;
     return {
       ...base, type: "person", selected: n.id === initialSel.current,
@@ -246,7 +273,7 @@ function Inner(p: FlowProps) {
     }
   }, [rf]);
 
-  const miniColor = useCallback((n: Node) => (n.type === "union" ? "#c9a96b" : ((n.data as PersonData).color)), []);
+  const miniColor = useCallback((n: Node) => (n.type === "union" ? "#c9a96b" : n.type === "ghost" ? "#d8cfc0" : ((n.data as PersonData).color)), []);
   const btn = "min-h-12 min-w-12 rounded-xl border border-sky-200 bg-white/95 px-3 text-base font-bold text-sky-900 shadow-md hover:bg-sky-50";
 
   return (

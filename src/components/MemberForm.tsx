@@ -25,7 +25,7 @@ type Props = {
   isAdmin: boolean;
   /** Hiện 4 mức hiển thị (ẩn khi chỉ gửi yêu cầu sửa hồ sơ có sẵn) */
   showVisibility: boolean;
-  rel?: { rel: string; relTo: string; relToName: string };
+  rel?: { rel: string; relTo: string; relToName: string; relTo2?: string; relTo2Name?: string };
   /** Tạo hồ sơ cho một tài khoản đã đăng ký: lưu xong sẽ gắn tài khoản với hồ sơ mới */
   acct?: { id: string; name: string };
   directAction: Action;
@@ -76,7 +76,7 @@ export function MemberForm(p: Props) {
     <form action={direct ? dAction : rAction} className="space-y-6" noValidate>
       <input type="hidden" name="groups" value={groups} />
       {p.memberId && <input type="hidden" name="memberId" value={p.memberId} />}
-      {p.rel && <><input type="hidden" name="rel" value={p.rel.rel} /><input type="hidden" name="relTo" value={p.rel.relTo} /></>}
+      {p.rel && <><input type="hidden" name="rel" value={p.rel.rel} /><input type="hidden" name="relTo" value={p.rel.relTo} />{p.rel.relTo2 && <input type="hidden" name="relTo2" value={p.rel.relTo2} />}</>}
       {p.acct && <input type="hidden" name="acct" value={p.acct.id} />}
 
       {error && <Alert kind="error">{error}</Alert>}
@@ -87,7 +87,7 @@ export function MemberForm(p: Props) {
       )}
       {p.rel && p.mode === "create" && direct && (
         <p className="text-base text-ink-soft">
-          Hồ sơ mới sẽ được nối với <strong>{p.rel.relToName}</strong> ({p.rel.rel === "child" ? "là con" : p.rel.rel === "parent" ? "là cha/mẹ" : p.rel.rel === "sibling" ? "là anh/chị/em (cùng cha mẹ)" : "là vợ/chồng"}).
+          Hồ sơ mới sẽ được nối với <strong>{p.rel.relToName}</strong> ({p.rel.rel === "child" ? "là con" : p.rel.rel === "parent" ? "là cha/mẹ" : p.rel.rel === "sibling" ? "là anh/chị/em (cùng cha mẹ)" : "là vợ/chồng"}){p.rel.relTo2Name ? <> và với <strong>{p.rel.relTo2Name}</strong> (cha/mẹ còn lại)</> : null}.
         </p>
       )}
       {p.rel && !direct && (

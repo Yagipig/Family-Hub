@@ -118,7 +118,7 @@ export function buildUnions(ix: FamilyIndex): Union[] {
 }
 
 // ---------- Phần tử đồ thị ----------
-export type GraphNode = { id: string; type: "person" | "union" };
+export type GraphNode = { id: string; type: "person" | "union" | "ghost" };
 export type GraphEdge = { id: string; source: string; target: string; role: "spouse" | "child"; kind: ParentKind };
 
 export function buildElements(ix: FamilyIndex): { nodes: GraphNode[]; edges: GraphEdge[]; unions: Union[] } {
@@ -143,6 +143,59 @@ export function buildElements(ix: FamilyIndex): { nodes: GraphNode[]; edges: Gra
     edges.push({ id: `${ls[0].parent}>${child}`, source: ls[0].parent, target: child, role: "child", kind: ls[0].kind });
   }
   return { nodes, edges, unions };
+}
+
+// ---------- Khuôn mẫu thẻ trống (người dùng chốt 01/11/2026) ----------
+export type GhostSlot = {
+  id: string;
+  role: "spouse" | "child";
+  /** Tên vị trí hiện trên thẻ trống: "Vợ", "Chồng", "Vợ / chồng", "Con" */
+  label: string;
+  /** spouse: ID người chưa có vợ/chồng; child: ID union (cặp) hoặc ID cha/mẹ đơn thân */
+  anchorId: string;
+  /** child: các cha/mẹ sẽ nối khi thêm người từ ô này (1 hoặc 2 người) */
+  parentIds: string[];
+  /** Giới tính đặt sẵn cho biểu mẫu thêm người (ô vợ/chồng); ô con để trống */
+  gender: "male" | "female" | null;
+};
+
+/**
+ * Thẻ trống theo khuôn mẫu gia đình — CHỈ để hiển thị trên sơ đồ, không phải dữ liệu thật:
+ * - Mọi người chưa có vợ/chồng đều có một ô trống "Vợ"/"Chồng" bên cạnh.
+ * - Mỗi gia đình (một cặp qua union, hoặc cha/mẹ đơn thân) luôn chừa đủ 2 ô trống "Con"
+ *   (đã có 1 con thì còn 1 ô, có từ 2 con trở lên thì không còn ô).
+ */
+export function buildGhosts(ix: FamilyIndex, unions: Union[]): { nodes: GraphNode[]; edges: GraphEdge[]; slots: Map<string, GhostSlot> } {
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  const slots = new Map<string, GhostSlot>();
+  const add = (slot: GhostSlot, source: string, role: "spouse" | "child") => {
+    slots.set(slot.id, slot);
+    nodes.push({ id: slot.id, type: "ghost" });
+    edges.push({ id: `${source}>${slot.id}`, source, target: slot.id, role, kind: "biological" });
+  };
+
+  for (const p of ix.people.values()) {
+    if (partnerIds(ix, p.id).length > 0) continue;
+    const label = p.gender === "male" ? "Vợ" : p.gender === "female" ? "Chồng" : "Vợ / chồng";
+    const gender: "male" | "female" | null = p.gender === "male" ? "female" : p.gender === "female" ? "male" : null;
+    add({ id: `g|sp|${p.id}`, role: "spouse", label, anchorId: p.id, parentIds: [], gender }, p.id, "spouse");
+  }
+
+  const padChildren = (anchorId: string, parentIds: string[], realCount: number, edgeSource: string) => {
+    for (let i = realCount; i < 2; i++) {
+      add({ id: `g|ch|${anchorId}|${i}`, role: "child", label: "Con", anchorId, parentIds, gender: null }, edgeSource, "child");
+    }
+  };
+  for (const u of unions) padChildren(u.id, u.parents, u.children.length, u.id);
+
+  // Cha/mẹ đơn thân không có union: con nối thẳng từ người đó, vẫn chừa đủ 2 ô con cho phần con riêng
+  const inUnion = new Set(unions.flatMap((u) => u.children));
+  for (const p of ix.people.values()) {
+    const own = (ix.childrenOf.get(p.id) ?? []).map((l) => l.child).filter((c) => !inUnion.has(c));
+    if (own.length > 0) padChildren(p.id, [p.id], own.length, p.id);
+  }
+  return { nodes, edges, slots };
 }
 
 // ---------- Đời ----------
@@ -215,6 +268,10 @@ function cmp(a: TreePerson, b: TreePerson): number {
   if (ao != null && bo != null && ao !== bo) return ao - bo;
   if (ao != null && bo == null) return -1;
   if (ao == null && bo != null) return 1;
+  // Trai bên trái, gái bên phải (người dùng chốt 01/11/2026): nam trước, nữ sau, chưa rõ giới tính cuối cùng
+  const ga = a.gender === "male" ? 0 : a.gender === "female" ? 1 : 2;
+  const gb = b.gender === "male" ? 0 : b.gender === "female" ? 1 : 2;
+  if (ga !== gb) return ga - gb;
   if (a.by != null && b.by != null && a.by !== b.by) return a.by - b.by;
   if (a.by != null && b.by == null) return -1;
   if (a.by == null && b.by != null) return 1;

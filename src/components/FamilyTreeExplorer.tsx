@@ -6,7 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { FamilyOutline } from "@/components/FamilyOutline";
 import { TreePersonPanel } from "@/components/TreePersonPanel";
 import {
-  branchWithDescendants, buildElements, buildIndex, buildOutline, computeGenerations, descendantsOf, filterByBranch, parentIdsOf, searchPeople,
+  branchWithDescendants, buildElements, buildGhosts, buildIndex, buildOutline, computeGenerations, descendantsOf, filterByBranch, parentIdsOf, searchPeople,
 } from "@/lib/family-graph";
 import { layoutGraph, type Direction } from "@/lib/family-layout";
 import { branchColor, lifeSpan } from "@/lib/members-text";
@@ -93,8 +93,23 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
   const index = useMemo(() => buildIndex(vis.people, vis.links, vis.partners), [vis]);
   const elements = useMemo(() => buildElements(index), [index]);
   const divorced = useMemo(() => new Set(elements.unions.filter((u) => u.partnership && u.partnership.status !== "married" && u.partnership.status !== "partner").map((u) => u.id)), [elements]);
+  // Khuôn mẫu thẻ trống (chỉ hiển thị trên sơ đồ): ô vợ/chồng cho người chưa có, 2 ô con cho mỗi gia đình
+  const ghosts = useMemo(() => buildGhosts(index, elements.unions), [index, elements]);
+  const dNodes = useMemo(() => [...elements.nodes, ...ghosts.nodes], [elements, ghosts]);
+  const dEdges = useMemo(() => [...elements.edges, ...ghosts.edges], [elements, ghosts]);
+  const ghostData = useMemo(() => {
+    const m = new Map<string, { label: string; href: string; dim: boolean }>();
+    for (const s of ghosts.slots.values()) {
+      const href = s.role === "spouse"
+        ? `/thanh-vien/moi?rel=partner${s.gender ? `&g=${s.gender}` : ""}&to=${s.anchorId}`
+        : `/thanh-vien/moi?rel=child&to=${s.parentIds[0]}${s.parentIds[1] ? `&to2=${s.parentIds[1]}` : ""}`;
+      const dim = view.core != null && !(s.role === "spouse" ? view.core.has(s.anchorId) : s.parentIds.some((x) => view.core!.has(x)));
+      m.set(s.id, { label: s.label, href, dim });
+    }
+    return m;
+  }, [ghosts, view.core]);
   // Chỉ dàn bố cục khi đang xem sơ đồ (tính phía client, ghi nhớ theo dữ liệu + hướng)
-  const placed = useMemo(() => (mode === "diagram" ? layoutGraph(elements.nodes, elements.edges, direction) : null), [mode, elements, direction]);
+  const placed = useMemo(() => (mode === "diagram" ? layoutGraph(dNodes, dEdges, direction) : null), [mode, dNodes, dEdges, direction]);
 
   const results = useMemo(() => searchPeople(view.people, query, 8), [view.people, query]);
 
@@ -244,10 +259,11 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
             {elements.nodes.length === 0 ? (
               <p className="relative p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
             ) : placed && (
-              <FamilyFlow key={flowKey} nodes={elements.nodes} edges={elements.edges} placed={placed} index={index} gens={gens}
+              <FamilyFlow key={flowKey} nodes={dNodes} edges={dEdges} placed={placed} index={index} gens={gens}
                 divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
                 onSelect={onSelect} onQuickAdd={onQuickAdd}
-                collapsedIds={collapsed} hiddenCounts={hiddenCounts} onToggleCollapse={onToggleCollapse} />
+                collapsedIds={collapsed} hiddenCounts={hiddenCounts} onToggleCollapse={onToggleCollapse}
+                ghosts={ghostData} />
             )}
           </div>
           {selectedPerson && selectedId && (
@@ -388,6 +404,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
           <li>Cây vẽ <strong>từ trên xuống</strong>: tổ tiên ở trên cùng, con cháu tỏa dần xuống dưới; trong mỗi gia đình, anh chị em xếp từ lớn đến nhỏ (admin là người sắp xếp thứ tự này).</li>
           <li>Bấm <strong>nút +</strong> trên huy hiệu một người (hoặc ấn giữ / chuột phải) để mở menu thêm cha, mẹ, vợ, chồng, con trai, con gái, anh/chị/em — lưu xong người mới hiện ngay trên cây với đường nối đúng quan hệ.</li>
           <li>Nút <strong>− / +N</strong> dưới huy hiệu: thu gọn hoặc mở lại nhánh con cháu của người đó (N là số người đang ẩn).</li>
+          <li>Thẻ <strong>viền đứt nét</strong> là ô trống theo khuôn mẫu: người chưa có vợ/chồng thì có ô “Vợ/Chồng” chờ sẵn, mỗi gia đình chừa 2 ô “Con” — bấm vào ô để thêm đúng người vào vị trí đó. Ô trống không phải hồ sơ thật, chỉ khi điền tên và lưu mới thành người trên cây.</li>
           <li>Trái tim vàng giữa hai người: <strong>cặp vợ chồng / gia đình</strong> (trái tim xám: đã ly hôn hoặc góa); các con nối từ trái tim đó bằng cành cây màu vàng.</li>
           <li>Cành liền: con ruột. Cành đứt nét: con nuôi hoặc con kế. Dấu † và ảnh xám: người đã mất.</li>
           <li>Chấm màu nhỏ cạnh năm sinh là màu của nhánh họ:

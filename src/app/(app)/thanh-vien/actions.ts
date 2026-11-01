@@ -79,6 +79,14 @@ export async function createMemberAction(_prev: FormState, formData: FormData): 
           ? await supabase.rpc("add_parent_link", { p_child: other, p_parent: newId.data, p_kind: "biological" })
           : await supabase.rpc("add_partnership", { p_x: newId.data, p_y: other, p_status: "married" });
       if (r.error) warn = `Đã tạo hồ sơ nhưng chưa nối được quan hệ: ${memberError(r.error)}`;
+      // Ô trống "Con" của một cặp: nối thêm cha/mẹ còn lại để con thuộc về cả hai người
+      if (!r.error && rel.data.rel === "child") {
+        const relTo2 = idSchema.safeParse(formData.get("relTo2") ?? "");
+        if (relTo2.success && relTo2.data !== other) {
+          const r2 = await supabase.rpc("add_parent_link", { p_child: newId.data, p_parent: relTo2.data, p_kind: "biological" });
+          if (r2.error) warn = `Đã tạo hồ sơ và nối với một cha/mẹ nhưng chưa nối được người còn lại: ${memberError(r2.error)}`;
+        }
+      }
     }
   }
   // Tạo hồ sơ cho người ĐÃ CÓ tài khoản: gắn tài khoản với hồ sơ mới
