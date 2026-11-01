@@ -26,6 +26,8 @@ type Props = {
   /** Hiện 4 mức hiển thị (ẩn khi chỉ gửi yêu cầu sửa hồ sơ có sẵn) */
   showVisibility: boolean;
   rel?: { rel: string; relTo: string; relToName: string };
+  /** Tạo hồ sơ cho một tài khoản đã đăng ký: lưu xong sẽ gắn tài khoản với hồ sơ mới */
+  acct?: { id: string; name: string };
   directAction: Action;
   requestAction: Action;
   cancelHref: string;
@@ -75,6 +77,7 @@ export function MemberForm(p: Props) {
       <input type="hidden" name="groups" value={groups} />
       {p.memberId && <input type="hidden" name="memberId" value={p.memberId} />}
       {p.rel && <><input type="hidden" name="rel" value={p.rel.rel} /><input type="hidden" name="relTo" value={p.rel.relTo} /></>}
+      {p.acct && <input type="hidden" name="acct" value={p.acct.id} />}
 
       {error && <Alert kind="error">{error}</Alert>}
       {!direct && (
@@ -89,6 +92,12 @@ export function MemberForm(p: Props) {
       )}
       {p.rel && !direct && (
         <p className="text-base text-ink-soft">Yêu cầu thêm hồ sơ không tự nối quan hệ; sau khi được duyệt hãy thêm quan hệ với {p.rel.relToName}.</p>
+      )}
+      {p.acct && p.mode === "create" && direct && (
+        <p className="text-base text-ink-soft">Hồ sơ này sẽ được <strong>gắn với tài khoản {p.acct.name || "(chưa đặt tên)"}</strong> ngay sau khi lưu.</p>
+      )}
+      {p.acct && p.mode === "create" && !direct && (
+        <p className="text-base text-ink-soft">Tài khoản {p.acct.name || "(chưa đặt tên)"} sẽ được quản trị viên gắn với hồ sơ sau khi yêu cầu được duyệt.</p>
       )}
 
       <Card className="space-y-6">
