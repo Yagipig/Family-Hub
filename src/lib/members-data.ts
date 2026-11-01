@@ -26,6 +26,22 @@ export async function fetchAll<T>(
   return out;
 }
 
+export type FamilyAccount = { membershipId: string; userId: string; name: string; roleKey: string; memberId: string | null };
+
+/** Mọi tài khoản đã đăng ký của gia đình (kể cả người chưa có hồ sơ thành viên),
+ *  kèm hồ sơ đã gắn nếu có. Trả về những gì quyền của người xem cho phép thấy. */
+export async function loadFamilyAccounts(supabase: Supa): Promise<FamilyAccount[]> {
+  const { data: ms } = await supabase.from("family_memberships")
+    .select("id, user_id, role_key, member_id").eq("status", "active").order("created_at");
+  const rows = (ms ?? []) as { id: string; user_id: string; role_key: string; member_id: string | null }[];
+  if (rows.length === 0) return [];
+  const { data: profiles } = await supabase.from("user_profiles").select("id, display_name").in("id", rows.map((r) => r.user_id));
+  const nameOf = new Map(((profiles ?? []) as { id: string; display_name: string }[]).map((p) => [p.id, p.display_name]));
+  return rows.map((r) => ({
+    membershipId: r.id, userId: r.user_id, name: nameOf.get(r.user_id) ?? "(chưa đặt tên)", roleKey: r.role_key, memberId: r.member_id,
+  }));
+}
+
 export async function loadBranches(supabase: Supa): Promise<BranchRow[]> {
   const { data } = await supabase.from("branches").select("id, name, parent_branch_id").order("name");
   return (data ?? []) as BranchRow[];

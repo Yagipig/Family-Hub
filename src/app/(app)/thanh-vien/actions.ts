@@ -81,6 +81,13 @@ export async function createMemberAction(_prev: FormState, formData: FormData): 
       if (r.error) warn = `Đã tạo hồ sơ nhưng chưa nối được quan hệ: ${memberError(r.error)}`;
     }
   }
+  // Tạo hồ sơ cho người ĐÃ CÓ tài khoản: gắn tài khoản với hồ sơ mới
+  // (RPC link_membership_member tự kiểm tra quyền quản trị; lỗi thì báo để gắn tay ở Quản trị → Gắn hồ sơ)
+  const acct = idSchema.safeParse(formData.get("acct") ?? "");
+  if (acct.success) {
+    const lr = await supabase.rpc("link_membership_member", { p_membership: acct.data, p_member: newId.data });
+    if (lr.error && !warn) warn = `Đã tạo hồ sơ nhưng chưa gắn được tài khoản: ${memberError(lr.error)}`;
+  }
   revalidatePath("/thanh-vien");
   revalidatePath("/gia-pha");
   const base = `${profile(newId.data)}?ok=${encodeURIComponent("Đã thêm thành viên.")}`;

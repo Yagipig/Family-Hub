@@ -23,10 +23,12 @@ const seg = (active: boolean) =>
 const pillBtn =
   "min-h-9 shrink-0 whitespace-nowrap rounded-full border border-white/70 bg-white/90 px-3 text-[13px] font-semibold text-[#33506e] shadow hover:bg-white";
 
-export function FamilyTreeExplorer({ familyName, people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false }: {
+export function FamilyTreeExplorer({ familyName, people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false, unlinkedAccounts = [] }: {
   familyName: string;
   people: TreePerson[]; links: TreeLink[]; partners: TreePartner[]; branches: BranchRow[];
   initialFocusId: string | null; selfId: string | null; canEdit: boolean; canArrange?: boolean;
+  /** Tài khoản đã đăng ký nhưng chưa có hồ sơ (chỉ quản trị mới nhận được danh sách này) */
+  unlinkedAccounts?: { membershipId: string; name: string }[];
 }) {
   const [mode, setMode] = useState<Mode>("diagram");
   // Huong cay CO DINH tu tren xuong nhu mau thiet ke (nguoi dung chot 31/10/2026: khong dung kieu to o goc nua)
@@ -123,6 +125,9 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
   const [addOpen, setAddOpen] = useState(false);
   const [addAnchor, setAddAnchor] = useState<string | null>(null);
   const addAnchorPerson = addAnchor ? fullIndex.people.get(addAnchor) ?? null : null;
+  // Người đã đăng ký được chọn để tạo hồ sơ (thay vì người mới hoàn toàn)
+  const [addAccount, setAddAccount] = useState<{ membershipId: string; name: string } | null>(null);
+  const acctQ = addAccount ? `&acct=${addAccount.membershipId}` : "";
   const quickAddAt = useRef(0);
   const onQuickAdd = useCallback((id: string) => {
     quickAddAt.current = Date.now();
@@ -228,7 +233,7 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
             {canEdit && (
               <button
                 type="button"
-                onClick={() => { setAddAnchor(null); setAddOpen(true); }}
+                onClick={() => { setAddAnchor(null); setAddAccount(null); setAddOpen(true); }}
                 aria-label="Thêm người vào cây"
                 className="absolute bottom-3 right-3 z-20 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-[#b8912f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#7c2d12] shadow-xl hover:brightness-105"
               >
@@ -265,8 +270,37 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
             {!addAnchorPerson ? (
               <>
                 <p className="text-lg font-bold text-[#4a2c14]">Thêm người vào cây</p>
-                <p className="mt-0.5 text-sm text-ink-soft">Người mới sẽ là người thân của ai? Chọn một người đã có trên cây:</p>
-                <div className="mt-3 space-y-2">
+                {unlinkedAccounts.length > 0 && !addAccount && (
+                  <>
+                    <p className="mt-2 text-sm font-semibold text-[#14532d]">Người đã đăng ký, chưa có hồ sơ — chọn để tạo hồ sơ cho họ:</p>
+                    <div className="mt-2 space-y-2">
+                      {unlinkedAccounts.map((a) => (
+                        <button key={a.membershipId} type="button" onClick={() => setAddAccount(a)}
+                          className="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-[#2f9e6e]/50 bg-[#f2fbf6] px-3 py-2 text-left shadow-sm hover:bg-[#e6f7ee]">
+                          <Avatar name={a.name} size={36} />
+                          <span className="min-w-0">
+                            <span className="block truncate text-base font-semibold text-[#14532d]">{a.name}</span>
+                            <span className="block text-xs text-ink-soft">Đã có tài khoản · chưa có hồ sơ</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {addAccount && (
+                  <div className="mt-3 rounded-2xl bg-[#fdf2df] px-3 py-2.5">
+                    <p className="text-sm text-ink">Đang tạo hồ sơ cho <strong>{addAccount.name}</strong> (tài khoản đã đăng ký).</p>
+                    <button type="button" className="mt-1 text-sm font-semibold text-[#7c4a12] underline" onClick={() => setAddAccount(null)}>Chọn người khác</button>
+                  </div>
+                )}
+                <p className="mt-3 text-sm text-ink-soft">
+                  {addAccount
+                    ? `${addAccount.name} sẽ là người thân của ai? Chọn một người đã có trên cây:`
+                    : unlinkedAccounts.length > 0
+                      ? "Hoặc thêm người mới — người mới sẽ là người thân của ai?"
+                      : "Người mới sẽ là người thân của ai? Chọn một người đã có trên cây:"}
+                </p>
+                <div className="mt-2 space-y-2">
                   {people.map((p) => (
                     <button key={p.id} type="button" onClick={() => setAddAnchor(p.id)}
                       className="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-[#d9b878] bg-white px-3 py-2 text-left shadow-sm hover:bg-[#fdf2df]">
@@ -285,18 +319,18 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
                   <Avatar name={addAnchorPerson.name} src={addAnchorPerson.avatar} gender={addAnchorPerson.gender} size={52} />
                   <div className="min-w-0">
                     <p className="truncate text-lg font-bold text-[#4a2c14]">{addAnchorPerson.name}</p>
-                    <p className="text-sm text-ink-soft">Người mới là gì của người này?</p>
+                    <p className="text-sm text-ink-soft">{addAccount ? `Hồ sơ của ${addAccount.name} sẽ là gì của người này?` : "Người mới là gì của người này?"}</p>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Link href={`/thanh-vien/moi?rel=parent&g=male&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm cha</Link>
-                  <Link href={`/thanh-vien/moi?rel=parent&g=female&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm mẹ</Link>
-                  <Link href={`/thanh-vien/moi?rel=partner&g=female&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm vợ</Link>
-                  <Link href={`/thanh-vien/moi?rel=partner&g=male&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm chồng</Link>
-                  <Link href={`/thanh-vien/moi?rel=child&g=male&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm con trai</Link>
-                  <Link href={`/thanh-vien/moi?rel=child&g=female&to=${addAnchorPerson.id}`} className={qaItem}>＋ Thêm con gái</Link>
+                  <Link href={`/thanh-vien/moi?rel=parent&g=male&to=${addAnchorPerson.id}${acctQ}`} className={qaItem}>＋ Thêm cha</Link>
+                  <Link href={`/thanh-vien/moi?rel=parent&g=female&to=${addAnchorPerson.id}${acctQ}`} className={qaItem}>＋ Thêm mẹ</Link>
+                  <Link href={`/thanh-vien/moi?rel=partner&g=female&to=${addAnchorPerson.id}${acctQ}`} className={qaItem}>＋ Thêm vợ</Link>
+                  <Link href={`/thanh-vien/moi?rel=partner&g=male&to=${addAnchorPerson.id}${acctQ}`} className={qaItem}>＋ Thêm chồng</Link>
+                  <Link href={`/thanh-vien/moi?rel=child&g=male&to=${addAnchorPerson.id}${acctQ}`} className={qaItem}>＋ Thêm con trai</Link>
+                  <Link href={`/thanh-vien/moi?rel=child&g=female&to=${addAnchorPerson.id}${acctQ}`} className={qaItem}>＋ Thêm con gái</Link>
                   {parentIdsOf(fullIndex, addAnchorPerson.id).length > 0 ? (
-                    <Link href={`/thanh-vien/moi?rel=sibling&to=${addAnchorPerson.id}`} className={`${qaItem} col-span-2`}>＋ Thêm anh / chị / em</Link>
+                    <Link href={`/thanh-vien/moi?rel=sibling&to=${addAnchorPerson.id}${acctQ}`} className={`${qaItem} col-span-2`}>＋ Thêm anh / chị / em</Link>
                   ) : (
                     <p className="col-span-2 rounded-xl bg-[#fdf2df] px-3 py-2 text-center text-[13px] leading-snug text-ink-soft">
                       Muốn thêm anh/chị/em cho {addAnchorPerson.name} thì cần có cha hoặc mẹ của họ trên cây trước.

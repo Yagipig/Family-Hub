@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { can, requireSession } from "@/lib/auth";
+import { can, requireSession, ROLE_LABELS, type Role } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Alert, buttonClass, buttonGhostClass, Card, SelectField } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
 import { MemberCard, type MemberCardData } from "@/components/MemberCard";
 import { branchWithDescendants } from "@/lib/family-graph";
-import { loadBranches } from "@/lib/members-data";
+import { loadBranches, loadFamilyAccounts, loadPickerMembers } from "@/lib/members-data";
 import { signAvatarPaths } from "@/lib/members-media";
 import { parseListParams } from "@/lib/members-schemas";
 import { accentInsensitivePattern } from "@/lib/members-text";
@@ -52,6 +53,13 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isGuest = session.role === "guest";
   const canTrash = !isGuest && (await can(session, "members", "delete"));
+  // Người đã đăng ký tài khoản (kể cả chưa nhập thông tin hồ sơ) — luôn hiển thị ở mục Thành viên
+  const [accounts, pickerMembers, canLinkAccounts] = await Promise.all([
+    loadFamilyAccounts(supabase),
+    loadPickerMembers(supabase, branches),
+    can(session, "roles", "update"),
+  ]);
+  const memberNameOf = new Map(pickerMembers.map((m) => [m.id, m.name]));
 
   const link = (page: number) => {
     const u = new URLSearchParams();
@@ -76,6 +84,37 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
       {ok && <Alert kind="ok">{ok}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       {qError && <Alert kind="error">Không tải được danh sách. Vui lòng thử lại.</Alert>}
+
+      {accounts.length > 0 && (
+        <Card className="space-y-2">
+          <h2 className="text-xl font-bold text-wine">Người đã đăng ký tài khoản ({accounts.length})</h2>
+          <p className="text-sm text-ink-soft">Tất cả người đã đăng ký qua link mời — kể cả người chưa nhập thông tin hồ sơ.</p>
+          <ul className="divide-y divide-[#eee3c8]">
+            {accounts.map((a) => (
+              <li key={a.membershipId} className="flex flex-wrap items-center gap-3 py-2.5">
+                <Avatar name={a.name} size={36} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold text-ink">{a.name}</span>
+                  <span className="block text-xs text-ink-soft">
+                    {ROLE_LABELS[a.roleKey as Role] ?? a.roleKey}
+                    {a.memberId ? ` · Hồ sơ: ${memberNameOf.get(a.memberId) ?? ""}` : ""}
+                  </span>
+                </span>
+                {a.memberId ? (
+                  <Link href={`/thanh-vien/${a.memberId}`} className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">Đã có hồ sơ</Link>
+                ) : (
+                  <>
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Chưa nhập thông tin</span>
+                    {canLinkAccounts && (
+                      <Link href={`/thanh-vien/moi?acct=${a.membershipId}`} className={buttonGhostClass}>Tạo hồ sơ & gắn tài khoản</Link>
+                    )}
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card>
         <form method="get" action="/thanh-vien" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="search" aria-label="Tìm thành viên">
