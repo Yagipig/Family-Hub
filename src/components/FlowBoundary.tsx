@@ -5,12 +5,16 @@ import { Component, type ReactNode } from "react";
  * Khung chắn lỗi cho sơ đồ cây: nếu phần sơ đồ gặp lỗi khi chạy trên máy người dùng
  * (mạng chập chờn, trình duyệt giữ bản cũ...), hiện thông báo rõ ràng kèm nút tải lại
  * thay vì để bảng cây trống im lặng không rõ nguyên nhân.
+ * Nguyên văn lỗi được hiện luôn để người dùng chụp màn hình gửi hỗ trợ chẩn đoán.
  */
-export class FlowBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
+export class FlowBoundary extends Component<{ children: ReactNode }, { failed: boolean; message: string }> {
+  state = { failed: false, message: "" };
 
-  static getDerivedStateFromError() {
-    return { failed: true };
+  static getDerivedStateFromError(error: unknown) {
+    return {
+      failed: true,
+      message: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+    };
   }
 
   render() {
@@ -21,6 +25,11 @@ export class FlowBoundary extends Component<{ children: ReactNode }, { failed: b
           <p className="max-w-sm text-sm text-ink-soft">
             Có thể do mạng chập chờn hoặc trình duyệt đang giữ bản cũ của app. Bấm nút dưới để tải lại trang.
           </p>
+          {this.state.message && (
+            <p className="max-w-sm break-words rounded-xl bg-red-50 px-3 py-2 font-mono text-[11px] leading-snug text-red-800">
+              {this.state.message}
+            </p>
+          )}
           <button
             type="button"
             onClick={() => window.location.reload()}
