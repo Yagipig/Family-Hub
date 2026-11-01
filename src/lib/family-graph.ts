@@ -174,26 +174,37 @@ export function buildGhosts(ix: FamilyIndex, unions: Union[]): { nodes: GraphNod
     nodes.push({ id: slot.id, type: "ghost" });
     edges.push({ id: `${source}>${slot.id}`, source, target: slot.id, role, kind: "biological" });
   };
+  const inUnionChildren = new Set(unions.flatMap((u) => u.children));
+  const inUnionParents = new Set(unions.flatMap((u) => u.parents));
+  /** Con của riêng một người (chưa thuộc cặp nào) — tính vào số ô con chừa sẵn của người đó */
+  const ownKidCount = (pid: string) => (ix.childrenOf.get(pid) ?? []).map((l) => l.child).filter((c) => !inUnionChildren.has(c)).length;
 
-  for (const p of ix.people.values()) {
-    if (partnerIds(ix, p.id).length > 0) continue;
-    const label = p.gender === "male" ? "Vợ" : p.gender === "female" ? "Chồng" : "Vợ / chồng";
-    const gender: "male" | "female" | null = p.gender === "male" ? "female" : p.gender === "female" ? "male" : null;
-    add({ id: `g|sp|${p.id}`, role: "spouse", label, anchorId: p.id, parentIds: [], gender }, p.id, "spouse");
+  // Cặp thật (union): chừa đủ 2 ô con phía dưới cặp
+  for (const u of unions) {
+    for (let i = u.children.length; i < 2; i++) {
+      add({ id: `g|ch|${u.id}|${i}`, role: "child", label: "Con", anchorId: u.id, parentIds: u.parents, gender: null }, u.id, "child");
+    }
   }
 
-  const padChildren = (anchorId: string, parentIds: string[], realCount: number, edgeSource: string) => {
-    for (let i = realCount; i < 2; i++) {
-      add({ id: `g|ch|${anchorId}|${i}`, role: "child", label: "Con", anchorId, parentIds, gender: null }, edgeSource, "child");
-    }
-  };
-  for (const u of unions) padChildren(u.id, u.parents, u.children.length, u.id);
-
-  // Cha/mẹ đơn thân không có union: con nối thẳng từ người đó, vẫn chừa đủ 2 ô con cho phần con riêng
-  const inUnion = new Set(unions.flatMap((u) => u.children));
+  // Người chưa có vợ/chồng và chưa thuộc cặp nào: thêm ô vợ/chồng trống đứng CẠNH người đó
+  // qua một điểm nối cặp (union) như vợ chồng thật — thành một cặp có trái tim ở giữa,
+  // và cặp này cũng chừa đủ 2 ô con phía dưới (trừ số con thật người đó đã có một mình).
   for (const p of ix.people.values()) {
-    const own = (ix.childrenOf.get(p.id) ?? []).map((l) => l.child).filter((c) => !inUnion.has(c));
-    if (own.length > 0) padChildren(p.id, [p.id], own.length, p.id);
+    if (partnerIds(ix, p.id).length > 0) continue;
+    if (inUnionParents.has(p.id)) continue;
+    const gid = `g|sp|${p.id}`;
+    const uid = `g|u|${p.id}`;
+    const label = p.gender === "male" ? "Vợ" : p.gender === "female" ? "Chồng" : "Vợ / chồng";
+    const gender: "male" | "female" | null = p.gender === "male" ? "female" : p.gender === "female" ? "male" : null;
+    slots.set(gid, { id: gid, role: "spouse", label, anchorId: p.id, parentIds: [], gender });
+    nodes.push({ id: gid, type: "ghost" }, { id: uid, type: "union" });
+    edges.push(
+      { id: `${p.id}>${uid}`, source: p.id, target: uid, role: "spouse", kind: "biological" },
+      { id: `${gid}>${uid}`, source: gid, target: uid, role: "spouse", kind: "biological" },
+    );
+    for (let i = ownKidCount(p.id); i < 2; i++) {
+      add({ id: `g|ch|${uid}|${i}`, role: "child", label: "Con", anchorId: uid, parentIds: [p.id], gender: null }, uid, "child");
+    }
   }
   return { nodes, edges, slots };
 }
