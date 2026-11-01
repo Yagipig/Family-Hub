@@ -1,9 +1,10 @@
 "use client";
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { FamilyFlow } from "@/components/FamilyFlow";
 import { FamilyOutline } from "@/components/FamilyOutline";
+import { FlowBoundary } from "@/components/FlowBoundary";
 import { TreePersonPanel } from "@/components/TreePersonPanel";
 import {
   branchWithDescendants, buildElements, buildGhosts, buildIndex, buildOutline, computeGenerations, descendantsOf, filterByBranch, parentIdsOf, searchPeople,
@@ -12,11 +13,6 @@ import { layoutGraph, type Direction } from "@/lib/family-layout";
 import { branchColor, lifeSpan } from "@/lib/members-text";
 import type { BranchRow, TreeLink, TreePartner, TreePerson } from "@/lib/members-types";
 
-const FamilyFlow = dynamic(() => import("@/components/FamilyFlow").then((m) => m.FamilyFlow), {
-  ssr: false,
-  loading: () => <p className="p-6 text-base text-ink-soft" role="status">Đang tải sơ đồ…</p>,
-});
-
 type Mode = "diagram" | "list";
 const seg = (active: boolean) =>
   `min-h-9 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] font-semibold border shadow ${active ? "border-[#c9932f] bg-gradient-to-b from-[#ffe9a8] to-[#e9bc57] text-[#5d3a17]" : "border-white/70 bg-white/90 text-[#33506e] hover:bg-white"}`;
@@ -24,12 +20,18 @@ const pillBtn =
   "min-h-9 shrink-0 whitespace-nowrap rounded-full border border-white/70 bg-white/90 px-3 text-[13px] font-semibold text-[#33506e] shadow hover:bg-white";
 
 export function FamilyTreeExplorer({ familyName, people, links, partners, branches, initialFocusId, selfId, canEdit, canArrange = false, unlinkedAccounts = [] }: {
+  // Sơ đồ (React Flow) chỉ dựng sau khi trang đã gắn phía máy khách: tránh lỗi lệch
   familyName: string;
   people: TreePerson[]; links: TreeLink[]; partners: TreePartner[]; branches: BranchRow[];
   initialFocusId: string | null; selfId: string | null; canEdit: boolean; canArrange?: boolean;
   /** Tài khoản đã đăng ký nhưng chưa có hồ sơ (chỉ quản trị mới nhận được danh sách này) */
   unlinkedAccounts?: { membershipId: string; name: string }[];
 }) {
+  // Sơ đồ (React Flow) chỉ dựng sau khi trang đã gắn phía máy khách: tránh lỗi lệch
+  // nội dung máy chủ/máy khách và để phần sơ đồ nằm ngay trong gói trang chính,
+  // không còn phụ thuộc vào một tệp tải riêng có thể lỗi thầm lặng trên mạng yếu.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [mode, setMode] = useState<Mode>("diagram");
   // Huong cay CO DINH tu tren xuong nhu mau thiet ke (nguoi dung chot 31/10/2026: khong dung kieu to o goc nua)
   const direction: Direction = "TB";
@@ -258,12 +260,16 @@ export function FamilyTreeExplorer({ familyName, people, links, partners, branch
             )}
             {elements.nodes.length === 0 ? (
               <p className="relative p-6 text-base text-ink-soft">Không có ai thuộc nhánh này.</p>
+            ) : !mounted ? (
+              <p className="p-6 text-base text-ink-soft" role="status">Đang tải sơ đồ…</p>
             ) : placed && (
-              <FamilyFlow key={flowKey} nodes={dNodes} edges={dEdges} placed={placed} index={index} gens={gens}
-                divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
-                onSelect={onSelect} onQuickAdd={onQuickAdd}
-                collapsedIds={collapsed} hiddenCounts={hiddenCounts} onToggleCollapse={onToggleCollapse}
-                ghosts={ghostData} />
+              <FlowBoundary>
+                <FamilyFlow key={flowKey} nodes={dNodes} edges={dEdges} placed={placed} index={index} gens={gens}
+                  divorcedUnions={divorced} direction={direction} core={view.core} focus={focus} initialSelectedId={selectedId}
+                  onSelect={onSelect} onQuickAdd={onQuickAdd}
+                  collapsedIds={collapsed} hiddenCounts={hiddenCounts} onToggleCollapse={onToggleCollapse}
+                  ghosts={ghostData} />
+              </FlowBoundary>
             )}
           </div>
           {selectedPerson && selectedId && (
