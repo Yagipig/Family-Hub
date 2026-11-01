@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  branchWithDescendants, buildElements, buildIndex, buildOutline, buildUnions, computeGenerations, descendantsOf, filterByBranch,
+  branchWithDescendants, buildElements, buildGhosts, buildIndex, buildOutline, buildUnions, computeGenerations, descendantsOf, filterByBranch,
   isUnionId, parentIdsOf, searchPeople, siblingsOf,
 } from "./family-graph";
 import type { TreeLink, TreePartner, TreePerson } from "./members-types";
@@ -258,5 +258,59 @@ describe("spec cây gia phả 31/10/2026: thêm người là có quan hệ ngay 
     const edge = el.edges.find((e) => e.target === "nuoi")!;
     expect(u.children).toEqual(["nuoi"]);
     expect(edge.kind).toBe("adoptive");
+  });
+});
+
+describe("khuôn mẫu thẻ trống + trai trái gái phải (người dùng chốt 01/11/2026)", () => {
+  const withG = (p: TreePerson, gender: "male" | "female"): TreePerson => ({ ...p, gender });
+  const slotsOf = (ix: ReturnType<typeof buildIndex>) => [...buildGhosts(ix, buildUnions(ix)).slots.values()];
+
+  it("con trai xếp trước con gái dù nhỏ tuổi hơn; cùng giới tính theo năm sinh", () => {
+    const ps = [
+      withG(P("cha", "Cha", 1980), "male"), withG(P("me", "Mẹ", 1982), "female"),
+      withG(P("gai", "Chị", 2005), "female"), withG(P("trai", "Anh", 2010), "male"), withG(P("trai2", "Em trai", 2012), "male"),
+    ];
+    const ls = [L("gai", "cha"), L("gai", "me"), L("trai", "cha"), L("trai", "me"), L("trai2", "cha"), L("trai2", "me")];
+    const ix = buildIndex(ps, ls, [M("cha", "me")]);
+    const u = buildUnions(ix).find((x) => x.parents.includes("cha"))!;
+    expect(u.children).toEqual(["trai", "trai2", "gai"]);
+  });
+
+  it("đàn ông chưa vợ có ô trống 'Vợ'; phụ nữ chưa chồng có ô 'Chồng'; có vợ/chồng rồi thì không có ô", () => {
+    const solo = buildIndex([withG(P("a", "A", 1990), "male")], [], []);
+    expect(slotsOf(solo).filter((s) => s.role === "spouse").map((s) => s.label)).toEqual(["Vợ"]);
+    const couple = buildIndex([withG(P("c", "C", 1985), "male"), withG(P("d", "D", 1987), "female")], [], [M("c", "d")]);
+    expect(slotsOf(couple).filter((s) => s.role === "spouse")).toHaveLength(0);
+  });
+
+  it("mỗi cặp chừa đủ 2 ô con: chưa con 2 ô, 1 con còn 1 ô, 3 con không còn ô; ô con mang cả hai cha mẹ", () => {
+    const couple = [withG(P("c", "C", 1985), "male"), withG(P("d", "D", 1987), "female")];
+    const ix0 = buildIndex(couple, [], [M("c", "d")]);
+    const ch0 = slotsOf(ix0).filter((s) => s.role === "child");
+    expect(ch0).toHaveLength(2);
+    expect(ch0[0].parentIds.slice().sort()).toEqual(["c", "d"]);
+    const ix1 = buildIndex([...couple, P("k1", "Con1", 2010)], [L("k1", "c"), L("k1", "d")], [M("c", "d")]);
+    expect(slotsOf(ix1).filter((s) => s.role === "child")).toHaveLength(1);
+    const ix3 = buildIndex(
+      [...couple, P("k1", "Con1", 2010), P("k2", "Con2", 2011), P("k3", "Con3", 2012)],
+      [L("k1", "c"), L("k1", "d"), L("k2", "c"), L("k2", "d"), L("k3", "c"), L("k3", "d")], [M("c", "d")]);
+    expect(slotsOf(ix3).filter((s) => s.role === "child")).toHaveLength(0);
+  });
+
+  it("mẹ đơn thân: có ô 'Chồng' và ô con chừa đủ 2, ô con chỉ trỏ đúng một cha/mẹ", () => {
+    const ix = buildIndex([withG(P("me2", "Mẹ đơn", 1990), "female"), P("k", "Con", 2015)], [L("k", "me2")], []);
+    const slots = slotsOf(ix);
+    expect(slots.filter((s) => s.role === "spouse" && s.anchorId === "me2").map((s) => s.label)).toEqual(["Chồng"]);
+    const ch = slots.filter((s) => s.role === "child");
+    expect(ch).toHaveLength(1);
+    expect(ch[0].parentIds).toEqual(["me2"]);
+  });
+
+  it("ô trống là nút ghost riêng, không lẫn với nút người thật", () => {
+    const ix = buildIndex([withG(P("a", "A", 1990), "male")], [], []);
+    const g = buildGhosts(ix, buildUnions(ix));
+    expect(g.nodes.every((n) => n.type === "ghost")).toBe(true);
+    expect(g.nodes).toHaveLength(1);
+    expect(g.edges[0]).toMatchObject({ source: "a", role: "spouse" });
   });
 });
